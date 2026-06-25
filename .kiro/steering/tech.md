@@ -42,5 +42,5 @@ inclusion: always
 - Supabase Row Level Security (RLS) policies must be enabled on all tables.
 - Authentication flows use Supabase Auth with email/password and optional OAuth.
 - Image uploads go to Supabase Storage; the Gemini API processes them for trait extraction.
-- The Temporal "Escalating Search Protocol" workflow manages time-delayed notifications (1h, 6h, 24h tiers).
+- The Temporal "Escalating Search Protocol" workflow manages time-delayed notifications (6h, 24h, 48h tiers).
 - Leaflet heatmap overlays represent "High Probability Zones" based on roaming distance calculations.
