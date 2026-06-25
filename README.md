@@ -1,18 +1,14 @@
-<![CDATA[<div align="center">
+# 🐾 MEOWTRIX
 
-```
-███╗   ███╗███████╗ ██████╗ ██╗    ██╗████████╗██████╗ ██╗██╗  ██╗
-████╗ ████║██╔════╝██╔═══██╗██║    ██║╚══██╔══╝██╔══██╗██║╚██╗██╔╝
-██╔████╔██║█████╗  ██║   ██║██║ █╗ ██║   ██║   ██████╔╝██║ ╚███╔╝ 
-██║╚██╔╝██║██╔══╝  ██║   ██║██║███╗██║   ██║   ██╔══██╗██║ ██╔██╗ 
-██║ ╚═╝ ██║███████╗╚██████╔╝╚███╔███╔╝   ██║   ██║  ██║██║██╔╝ ██╗
-╚═╝     ╚═╝╚══════╝ ╚═════╝  ╚══╝╚══╝    ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝
-```
+### Feline Overlord Tracker
 
-**`> FELINE OVERLORD TRACKER v1.0`**
+> *Your overlord is out there. We will find them.*
 
-**`> STATUS: OPERATIONAL`**
+<br>
 
+<img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" alt="Mission Control">
+
+<br>
 <br>
 
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
@@ -28,73 +24,133 @@
 
 ## 📡 Mission Briefing
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│   MEOWTRIX is a real-time intelligence platform for tracking    │
-│   and recovering lost feline overlords. Powered by AI vision,   │
-│   predictive heatmaps, and escalating search protocols.         │
-│                                                                 │
-│   Your overlord is out there. We will find them.                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+MEOWTRIX is a real-time intelligence platform for tracking and recovering lost feline overlords. Powered by AI vision, predictive heatmaps, and escalating search protocols — wrapped in a spy-agency command-center aesthetic.
 
----
-
-## 🏗️ System Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                           MEOWTRIX HQ                                    │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                │
-│   │  DASHBOARD  │    │   MAP HQ    │    │ LEADERBOARD │                │
-│   │  (Next.js)  │    │ (Leaflet)   │    │  (Realtime) │                │
-│   └──────┬──────┘    └──────┬──────┘    └──────┬──────┘                │
-│          │                  │                   │                        │
-│          └──────────────────┼───────────────────┘                        │
-│                             │                                            │
-│                    ┌────────▼────────┐                                   │
-│                    │   API ROUTES    │                                   │
-│                    │  (App Router)   │                                   │
-│                    └────────┬────────┘                                   │
-│                             │                                            │
-│          ┌──────────────────┼──────────────────┐                        │
-│          │                  │                  │                        │
-│   ┌──────▼──────┐   ┌──────▼──────┐   ┌──────▼──────┐                 │
-│   │  SUPABASE   │   │   GEMINI    │   │  TEMPORAL   │                 │
-│   │  Auth + DB  │   │  AI Vision  │   │  Workflows  │                 │
-│   │  + Storage  │   │  Tagging    │   │  Protocol   │                 │
-│   └─────────────┘   └─────────────┘   └─────────────┘                 │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+<div align="center">
+<img src="https://media.giphy.com/media/VbnUQpnihPSIgIXuZv/giphy.gif" width="400" alt="Surveillance Active">
+</div>
 
 ---
 
 ## ⚡ Core Operations
 
 | Operation | Codename | Description |
-|-----------|----------|-------------|
-| 🔴 Report Lost | `OVERLORD_DOWN` | File a report with photos, location, and traits |
-| 🟢 Report Found | `AGENT_SPOTTED` | Log a sighting with AI-powered trait extraction |
-| 🧠 AI Matching | `PATTERN_LOCK` | Gemini vision compares traits for matchmaking |
-| 🗺️ Heatmap | `ZONE_PREDICT` | Probability zones expand over time on the map |
-| ⏰ Escalation | `SEARCH_PROTOCOL` | Temporal workflows: 6h → 24h → 48h notifications |
-| ✅ Verification | `CLAIM_VERIFY` | 3-question challenge to confirm identity |
+|:---------:|:--------:|:------------|
+| 🔴 | `OVERLORD_DOWN` | File a report with photos, location, and traits |
+| 🟢 | `AGENT_SPOTTED` | Log a sighting with AI-powered trait extraction |
+| 🧠 | `PATTERN_LOCK` | Gemini vision compares traits for matchmaking |
+| 🗺️ | `ZONE_PREDICT` | Probability zones expand over time on the map |
+| ⏰ | `SEARCH_PROTOCOL` | Temporal workflows: 6h → 24h → 48h escalation |
+| ✅ | `CLAIM_VERIFY` | 3-question challenge to confirm identity |
 
 ---
 
-## 🚀 Deployment
+## 🏗️ System Architecture
+
+<div align="center">
+
+```mermaid
+graph TB
+    subgraph Client
+        UI[React UI]
+        Map[Leaflet Map]
+    end
+
+    subgraph Vercel
+        Router[App Router]
+        API[API Routes]
+    end
+
+    subgraph Supabase
+        Auth[Auth]
+        DB[(PostgreSQL)]
+        Storage[Storage]
+        RT[Realtime]
+    end
+
+    subgraph Services
+        Gemini[Gemini AI]
+        Temporal[Temporal]
+    end
+
+    UI --> Router
+    Map --> Router
+    Router --> API
+    API --> Auth
+    API --> DB
+    API --> Storage
+    API --> Gemini
+    API --> Temporal
+    RT --> UI
+```
+
+</div>
+
+---
+
+## 📊 Match Engine
+
+The AI-powered match engine scores potential overlord-agent pairs:
+
+| Factor | Weight | Method |
+|--------|:------:|--------|
+| Visual Similarity | 40% | Gemini trait tag comparison |
+| Text Comparison | 25% | Jaccard token overlap |
+| Proximity Score | 25% | Inverse distance (≤500m = 100%) |
+| Other Traits | 10% | Breed + fur length matching |
+
+> **Threshold:** ≥ 60/100 to generate an alert. Max 10 suggestions per overlord.
+
+---
+
+## ⏱️ Escalating Search Protocol
+
+Powered by **Temporal** durable workflows:
+
+| Time | Action | Radius |
+|:----:|--------|:------:|
+| 0h | 📋 Report filed | — |
+| 6h | 🔔 Notify nearby informants | 1km |
+| 24h | 📄 Auto-generate missing poster (PDF) | — |
+| 48h | 📡 Expand alert radius | 5km |
+| 14d | 🏁 Search concluded | — |
+
+If the overlord is recovered at any stage, the workflow cancels automatically.
+
+---
+
+## 🛡️ Security
+
+| Layer | Implementation |
+|-------|---------------|
+| Database | Row Level Security on all tables |
+| Verification | 3-step claim challenge (locked after 3 failures) |
+| Uploads | Format + size validation (JPEG/PNG/WebP, ≤5MB) |
+| Secrets | Server-side only — no keys in client bundles |
+| Scanning | Aikido SAST + Dependency Audit (continuous) |
+
+---
+
+## 🏆 Informant Leaderboard
+
++10 points per verified recovery. Ties broken by earliest match timestamp.
+
+Real-time updates via Supabase subscriptions. Social sharing with Open Graph meta tags.
+
+<div align="center">
+<img src="https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif" width="300" alt="Top Agent">
+</div>
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-```bash
-node >= 18.0.0
-npm >= 9.0.0
-```
+- Node.js ≥ 18.0.0
+- npm ≥ 9.0.0
+- Supabase project
+- Temporal server (local or cloud)
 
 ### Environment Variables
 
@@ -109,88 +165,15 @@ TEMPORAL_ADDRESS=your_temporal_address
 ### Launch Sequence
 
 ```bash
-# Clone the intel
 git clone https://github.com/your-username/meowtrix.git
 cd meowtrix
-
-# Install dependencies
 npm install
-
-# Initialize database
 npx supabase db push
-
-# Seed demo data
 npx ts-node scripts/seed.ts
-
-# Deploy locally
 npm run dev
 ```
 
-```
-> SYSTEM ONLINE AT http://localhost:3000
-> AWAITING FIELD REPORTS...
-```
-
----
-
-## 🛡️ Security Clearance
-
-```
-┌─────────────────────────────────────────────────┐
-│  AIKIDO SECURITY STATUS                         │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│  ■ SAST Scanning ................ ACTIVE        │
-│  ■ Dependency Audit ............. ACTIVE        │
-│  ■ RLS Policies ................. ENFORCED      │
-│  ■ Claim Verification ........... 3-STEP        │
-│  ■ Upload Validation ............ STRICT        │
-│                                                 │
-└─────────────────────────────────────────────────┘
-```
-
-- Row Level Security on all Supabase tables
-- Multi-step claim verification before overlord recovery
-- Image format & size validation (JPEG/PNG/WebP, ≤5MB)
-- No secrets in client bundles — server-side only API keys
-- Continuous scanning via Aikido connected to GitHub
-
----
-
-## 📊 Match Engine Scoring
-
-```
-MATCH CONFIDENCE BREAKDOWN
-══════════════════════════════════════════
-
-  Visual Similarity   ████████████████░░░░  40%
-  Text Comparison     ██████████░░░░░░░░░░  25%
-  Proximity Score     ██████████░░░░░░░░░░  25%
-  Other Traits        ████░░░░░░░░░░░░░░░░  10%
-
-══════════════════════════════════════════
-  THRESHOLD: ≥ 60/100 to generate alert
-  MAX SUGGESTIONS: 10 per overlord
-```
-
----
-
-## ⏱️ Escalating Search Protocol
-
-```
-TIME ─────────────────────────────────────────────────▶
-
- 0h          6h              24h             48h         14d
- │           │               │               │           │
- ▼           ▼               ▼               ▼           ▼
- ┌───┐      ┌───────┐      ┌───────┐      ┌───────┐   ┌────┐
- │ ! │      │NOTIFY │      │POSTER │      │EXPAND │   │END │
- │RPT│      │ 1km   │      │  PDF  │      │ 5km   │   │    │
- └───┘      └───────┘      └───────┘      └───────┘   └────┘
-  Filed      Nearby          Auto-gen       Wider       Search
-  Report     Informants      Missing        Radius      Concluded
-             Alerted         Poster         Alert
-```
+> 🟢 System online at `http://localhost:3000`
 
 ---
 
@@ -204,7 +187,7 @@ meowtrix/
 │   └── api/                # Server-side routes
 ├── components/
 │   ├── ui/                 # shadcn/ui primitives
-│   ├── map/                # Leaflet map components
+│   ├── map/                # Leaflet map + heatmap
 │   ├── forms/              # Report & claim forms
 │   └── leaderboard/        # Ranking table
 ├── hooks/                  # Custom React hooks
@@ -213,24 +196,6 @@ meowtrix/
 ├── types/                  # TypeScript interfaces
 └── scripts/                # Seed & utility scripts
 ```
-
----
-
-## 🏆 Informant Leaderboard
-
-```
-╔══════╦════════════════════╦════════╦═══════════╗
-║ RANK ║ CODENAME           ║ POINTS ║ RECOVERIES║
-╠══════╬════════════════════╬════════╬═══════════╣
-║  01  ║ ██████████████     ║   120  ║     12    ║
-║  02  ║ ████████████       ║    90  ║      9    ║
-║  03  ║ ██████████         ║    70  ║      7    ║
-║  04  ║ ████████           ║    50  ║      5    ║
-║  05  ║ ██████             ║    30  ║      3    ║
-╚══════╩════════════════════╩════════╩═══════════╝
-```
-
-+10 points per verified recovery. Ties broken by earliest match timestamp.
 
 ---
 
@@ -260,13 +225,11 @@ MIT
 
 <div align="center">
 
-```
-╔═══════════════════════════════════════════╗
-║                                           ║
-║   MEOWTRIX — TRUST NO ONE. FIND THEM.    ║
-║                                           ║
-╚═══════════════════════════════════════════╝
-```
+<img src="https://media.giphy.com/media/ICOgUNjpvO0PC/giphy.gif" width="200" alt="Agent Deployed">
+
+<br>
+
+**MEOWTRIX — TRUST NO ONE. FIND THEM.**
 
 </div>
 ]]>
