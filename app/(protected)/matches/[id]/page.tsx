@@ -9,7 +9,8 @@ import { AlertTriangle, ArrowLeft, Shield, MapPin, Clock } from "lucide-react";
 interface MatchOverlord {
   id: string;
   owner_id: string;
-  cat_name: string;
+  pet_name: string;
+  pet_type: "cat" | "dog";
   description: string;
   last_seen_lat: number;
   last_seen_lng: number;
@@ -282,7 +283,7 @@ export default function MatchDetailPage() {
                   >
                     <img
                       src={photo}
-                      alt={`${overlord.cat_name} photo ${idx + 1}`}
+                      alt={`${overlord.pet_name} photo ${idx + 1}`}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -291,7 +292,7 @@ export default function MatchDetailPage() {
 
               <div>
                 <p className="text-sm font-medium text-text-primary">
-                  {overlord.cat_name}
+                  {overlord.pet_name}
                 </p>
                 {overlord.description && (
                   <p className="mt-1 text-xs text-text-secondary line-clamp-3">

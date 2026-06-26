@@ -15,7 +15,7 @@ export default function ReportFoundPage() {
           </h1>
         </div>
         <p className="text-sm text-text-secondary">
-          Log a feline sighting. Upload photos and mark the location — our AI will
+          Log a pet sighting. Upload photos and mark the location — our AI will
           cross-reference against missing Overlords and alert their handlers.
         </p>
       </div>

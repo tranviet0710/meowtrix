@@ -5,7 +5,7 @@ import { ScoreBreakdown } from "./ScoreBreakdown";
 
 interface MatchOverlord {
   id: string;
-  cat_name: string;
+  pet_name: string;
   photos: string[];
   last_seen_at: string;
   status: string;
@@ -67,7 +67,7 @@ export function MatchCard({ match }: MatchCardProps) {
     <Link
       href={`/matches/${match.id}`}
       className={`group block rounded-[2px] border border-border bg-card p-4 transition-all duration-200 hover:border-accent/40 hover:bg-card/80 ${scoreGlow}`}
-      aria-label={`Match suggestion: ${overlord?.cat_name ?? "Unknown"} — ${match.overall_score}% confidence`}
+      aria-label={`Match suggestion: ${overlord?.pet_name ?? "Unknown"} — ${match.overall_score}% confidence`}
     >
       {/* Header: Score + Status */}
       <div className="mb-3 flex items-center justify-between">
@@ -105,7 +105,7 @@ export function MatchCard({ match }: MatchCardProps) {
             {overlord?.photos?.[0] ? (
               <img
                 src={overlord.photos[0]}
-                alt={`Lost cat: ${overlord.cat_name}`}
+                alt={`Lost pet: ${overlord.pet_name}`}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -149,7 +149,7 @@ export function MatchCard({ match }: MatchCardProps) {
         {/* Cat name and timing */}
         <div className="ml-3 flex flex-1 flex-col gap-1 overflow-hidden">
           <p className="truncate text-sm font-medium text-text-primary">
-            {overlord?.cat_name ?? "Unknown Overlord"}
+            {overlord?.pet_name ?? "Unknown Overlord"}
           </p>
           <p className="text-xs text-text-secondary">
             Detected{" "}
