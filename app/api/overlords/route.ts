@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
     }
 
     const {
-      cat_name,
+      pet_name,
+      pet_type,
       description,
       last_seen_lat,
       last_seen_lng,
@@ -83,7 +84,8 @@ export async function POST(request: NextRequest) {
       .from("overlords")
       .insert({
         owner_id: user.id,
-        cat_name,
+        pet_name,
+        pet_type,
         description,
         last_seen_lat,
         last_seen_lng,
@@ -204,7 +206,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("overlords")
       .select(
-        "id, owner_id, cat_name, description, last_seen_lat, last_seen_lng, last_seen_at, status, photos, trait_tags, tagging_status, poster_url, temporal_workflow_id, is_seed, created_at"
+        "id, owner_id, pet_name, pet_type, description, last_seen_lat, last_seen_lng, last_seen_at, status, photos, trait_tags, tagging_status, poster_url, temporal_workflow_id, is_seed, created_at"
       )
       .order("created_at", { ascending: false });
 
