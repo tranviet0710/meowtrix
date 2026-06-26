@@ -1,13 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { TraitTags, PatternType, FurLength } from "@/types";
 
-const GEMINI_PROMPT = `Analyze this cat photo and extract the following traits in JSON format:
+const GEMINI_PROMPT = `Analyze this pet photo (cat or dog) and extract the following traits in JSON format:
 - primary_color: main body color
 - secondary_color: secondary color if present, null otherwise
-- pattern_type: one of [solid, tabby, calico, bicolor, tortoiseshell, pointed, tuxedo]
+- pattern_type: one of [solid, tabby, calico, bicolor, tortoiseshell, pointed, tuxedo, merle, brindle, spotted, sable, harlequin]
 - fur_length: one of [short, medium, long]
 - breed_estimate: best guess or "unknown"
-- distinguishing_features: up to 5 notable physical features (eye color, ear shape, etc.)
+- distinguishing_features: up to 5 notable physical features (eye color, ear shape, tail type, etc.)
 
 Respond ONLY with valid JSON, no markdown formatting or code blocks.`;
 
@@ -19,6 +19,11 @@ const VALID_PATTERN_TYPES: PatternType[] = [
   "tortoiseshell",
   "pointed",
   "tuxedo",
+  "merle",
+  "brindle",
+  "spotted",
+  "sable",
+  "harlequin",
 ];
 
 const VALID_FUR_LENGTHS: FurLength[] = ["short", "medium", "long"];
@@ -304,7 +309,7 @@ async function callGeminiWithTimeout(imageUrl: string): Promise<string> {
 }
 
 /**
- * Extracts trait tags from a cat image using the Gemini API.
+ * Extracts trait tags from a pet image using the Gemini API.
  * Implements 30-second timeout with a single retry on failure.
  *
  * @throws Error if both attempts fail (caller should mark as manual_review)

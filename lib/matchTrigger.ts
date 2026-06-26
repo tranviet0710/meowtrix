@@ -209,7 +209,7 @@ async function processMatchPair(
     overlord.owner_id,
     matchId,
     result.overall_score,
-    overlord.cat_name,
+    overlord.pet_name,
     photoUrl
   );
 
@@ -220,7 +220,7 @@ async function processMatchPair(
     agent.reporter_id,
     matchId,
     result.overall_score,
-    overlord.cat_name,
+    overlord.pet_name,
     agentPhotoUrl
   );
 }
