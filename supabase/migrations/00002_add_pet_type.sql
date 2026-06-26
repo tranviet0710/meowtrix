@@ -18,7 +18,9 @@ ALTER TABLE agents
 ALTER TABLE overlords RENAME COLUMN cat_name TO pet_name;
 
 -- Update the overlords_public view to reflect the column rename
-CREATE OR REPLACE VIEW overlords_public AS
+-- Must DROP + CREATE because PostgreSQL doesn't allow renaming columns via CREATE OR REPLACE VIEW
+DROP VIEW IF EXISTS overlords_public;
+CREATE VIEW overlords_public AS
 SELECT
   id,
   owner_id,
