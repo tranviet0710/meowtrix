@@ -49,7 +49,8 @@ describe('registrationSchema', () => {
 
 describe('overlordFormSchema', () => {
   const validInput = {
-    cat_name: 'Whiskers',
+    pet_name: 'Whiskers',
+    pet_type: 'cat' as const,
     description: 'Orange tabby with a scar on left ear',
     last_seen_lat: 13.7563,
     last_seen_lng: 100.5018,
@@ -64,13 +65,13 @@ describe('overlordFormSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects cat name longer than 50 characters', () => {
-    const result = overlordFormSchema.safeParse({ ...validInput, cat_name: 'A'.repeat(51) });
+  it('rejects pet name longer than 50 characters', () => {
+    const result = overlordFormSchema.safeParse({ ...validInput, pet_name: 'A'.repeat(51) });
     expect(result.success).toBe(false);
   });
 
-  it('rejects empty cat name', () => {
-    const result = overlordFormSchema.safeParse({ ...validInput, cat_name: '' });
+  it('rejects empty pet name', () => {
+    const result = overlordFormSchema.safeParse({ ...validInput, pet_name: '' });
     expect(result.success).toBe(false);
   });
 
@@ -108,6 +109,7 @@ describe('overlordFormSchema', () => {
 describe('agentFormSchema', () => {
   it('accepts valid agent form input', () => {
     const result = agentFormSchema.safeParse({
+      pet_type: 'cat',
       description: 'Spotted near the park',
       sighting_lat: 13.75,
       sighting_lng: 100.50,
@@ -117,6 +119,7 @@ describe('agentFormSchema', () => {
 
   it('accepts empty description', () => {
     const result = agentFormSchema.safeParse({
+      pet_type: 'dog',
       description: '',
       sighting_lat: 13.75,
       sighting_lng: 100.50,
@@ -126,6 +129,7 @@ describe('agentFormSchema', () => {
 
   it('rejects description over 500 characters', () => {
     const result = agentFormSchema.safeParse({
+      pet_type: 'cat',
       description: 'A'.repeat(501),
       sighting_lat: 13.75,
       sighting_lng: 100.50,

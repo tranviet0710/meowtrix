@@ -96,7 +96,7 @@ describe("parseGeminiResponse", () => {
     const response = JSON.stringify({
       primary_color: "orange",
       secondary_color: null,
-      pattern_type: "spotted",
+      pattern_type: "polka_dots",
       fur_length: "short",
       breed_estimate: "unknown",
       distinguishing_features: [],

@@ -87,7 +87,8 @@ function makeOverlordArb(traitTags: fc.Arbitrary<TraitTags | null>): fc.Arbitrar
   return fc.record({
     id: fc.uuid(),
     owner_id: fc.uuid(),
-    cat_name: fc.string({ minLength: 1, maxLength: 50 }),
+    pet_name: fc.string({ minLength: 1, maxLength: 50 }),
+    pet_type: fc.constantFrom('cat', 'dog') as fc.Arbitrary<'cat' | 'dog'>,
     description: descriptionArb,
     last_seen_lat: latitudeArb,
     last_seen_lng: longitudeArb,
@@ -109,6 +110,7 @@ function makeAgentArb(traitTags: fc.Arbitrary<TraitTags | null>): fc.Arbitrary<A
   return fc.record({
     id: fc.uuid(),
     reporter_id: fc.uuid(),
+    pet_type: fc.constantFrom('cat', 'dog') as fc.Arbitrary<'cat' | 'dog'>,
     description: descriptionArb,
     sighting_lat: latitudeArb,
     sighting_lng: longitudeArb,
@@ -164,7 +166,8 @@ describe('Property 8: Match score weighted formula', () => {
         const overlord: Overlord = {
           id: 'overlord-1',
           owner_id: 'owner-1',
-          cat_name: 'Test Cat',
+          pet_name: 'Test Cat',
+          pet_type: 'cat',
           description: desc.length > 0 ? desc : 'a cat',
           last_seen_lat: lat,
           last_seen_lng: lng,
@@ -183,6 +186,7 @@ describe('Property 8: Match score weighted formula', () => {
         const agent: Agent = {
           id: 'agent-1',
           reporter_id: 'reporter-1',
+          pet_type: 'cat',
           description: desc.length > 0 ? desc : 'a cat',
           sighting_lat: lat,
           sighting_lng: lng,

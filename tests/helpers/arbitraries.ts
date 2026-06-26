@@ -29,8 +29,13 @@ export const patternTypeArb = fc.constantFrom(
   'bicolor',
   'tortoiseshell',
   'pointed',
-  'tuxedo'
-) as fc.Arbitrary<'solid' | 'tabby' | 'calico' | 'bicolor' | 'tortoiseshell' | 'pointed' | 'tuxedo'>;
+  'tuxedo',
+  'merle',
+  'brindle',
+  'spotted',
+  'sable',
+  'harlequin'
+) as fc.Arbitrary<'solid' | 'tabby' | 'calico' | 'bicolor' | 'tortoiseshell' | 'pointed' | 'tuxedo' | 'merle' | 'brindle' | 'spotted' | 'sable' | 'harlequin'>;
 
 /**
  * Generate a valid fur length.
@@ -38,9 +43,9 @@ export const patternTypeArb = fc.constantFrom(
 export const furLengthArb = fc.constantFrom('short', 'medium', 'long') as fc.Arbitrary<'short' | 'medium' | 'long'>;
 
 /**
- * Generate a valid cat name (1-50 characters).
+ * Generate a valid pet name (1-50 characters).
  */
-export const catNameArb = fc.string({ minLength: 1, maxLength: 50 });
+export const petNameArb = fc.string({ minLength: 1, maxLength: 50 });
 
 /**
  * Generate a valid description (0-500 characters).

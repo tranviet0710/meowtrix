@@ -27,7 +27,8 @@ function makeOverlord(overrides: Partial<Overlord> = {}): Overlord {
   return {
     id: 'overlord-1',
     owner_id: 'user-1',
-    cat_name: 'Whiskers',
+    pet_name: 'Whiskers',
+    pet_type: 'cat',
     description: 'Orange tabby cat with green eyes and notched left ear',
     last_seen_lat: 13.7563,
     last_seen_lng: 100.5018,
@@ -50,6 +51,7 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
   return {
     id: 'agent-1',
     reporter_id: 'user-2',
+    pet_type: 'cat',
     description: 'Spotted an orange tabby cat near the park with green eyes',
     sighting_lat: 13.7565,
     sighting_lng: 100.5020,
