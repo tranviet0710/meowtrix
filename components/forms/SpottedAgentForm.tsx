@@ -33,6 +33,7 @@ export function SpottedAgentForm() {
   const router = useRouter();
 
   // Form field state
+  const [petType, setPetType] = React.useState<"cat" | "dog">("cat");
   const [description, setDescription] = React.useState("");
   const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
@@ -47,6 +48,7 @@ export function SpottedAgentForm() {
 
     // Validate using Zod schema
     const result = agentFormSchema.safeParse({
+      pet_type: petType,
       description,
       sighting_lat: location?.lat,
       sighting_lng: location?.lng,
@@ -88,6 +90,7 @@ export function SpottedAgentForm() {
 
     try {
       const payload = {
+        pet_type: petType,
         description: description.trim(),
         sighting_lat: location!.lat,
         sighting_lng: location!.lng,
@@ -109,6 +112,7 @@ export function SpottedAgentForm() {
       }
 
       // Success: clear form and navigate to new record
+      setPetType("cat");
       setDescription("");
       setLocation(null);
       setPhotos([]);
@@ -143,6 +147,39 @@ export function SpottedAgentForm() {
           <span>{submitError}</span>
         </div>
       )}
+
+      {/* Pet Type Selector */}
+      <div className="space-y-2">
+        <Label>
+          Pet Type <span className="text-danger">*</span>
+        </Label>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setPetType("cat")}
+            className={cn(
+              "flex-1 rounded-[2px] border px-4 py-3 text-sm font-medium transition-colors",
+              petType === "cat"
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-border text-text-secondary hover:border-text-secondary"
+            )}
+          >
+            🐱 Cat
+          </button>
+          <button
+            type="button"
+            onClick={() => setPetType("dog")}
+            className={cn(
+              "flex-1 rounded-[2px] border px-4 py-3 text-sm font-medium transition-colors",
+              petType === "dog"
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-border text-text-secondary hover:border-text-secondary"
+            )}
+          >
+            🐶 Dog
+          </button>
+        </div>
+      </div>
 
       {/* Photo Upload */}
       <div className="space-y-2">
