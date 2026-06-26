@@ -13,6 +13,7 @@ The application is built as a Next.js App Router application with a dark-mode co
 3. **Temporal for durable workflows** — the Escalating Search Protocol and PDF generation are long-running, time-sensitive processes that benefit from Temporal's replay guarantees.
 4. **Edge-compatible API routes** — API routes under `app/api/` handle server-side Supabase calls and external service orchestration (Gemini, Temporal).
 5. **Dynamic Leaflet import** — Leaflet requires the DOM, so all map components are loaded with `next/dynamic` and `ssr: false`.
+6. **Privacy-first location consent** — Residential location is opt-in only. Users choose to share their location via a map picker (not text geocoding) with a clear explanation of its purpose (nearby missing cat alerts). Users who decline are simply excluded from proximity notifications.
 
 ---
 
@@ -43,7 +44,6 @@ graph TB
     subgraph "External Services"
         Gemini[Gemini API — Vision]
         Temporal[Temporal Server]
-        Geocoding[Geocoding API]
     end
 
     subgraph "Temporal Workers"
@@ -61,7 +61,6 @@ graph TB
     APIRoutes --> SupaStorage
     APIRoutes --> Gemini
     APIRoutes --> Temporal
-    APIRoutes --> Geocoding
     SupaRealtime --> UI
     Temporal --> SearchWorker
     SearchWorker --> PDFWorker
@@ -80,6 +79,7 @@ meowtrix/
 │   ├── (auth)/
 │   │   ├── login/page.tsx
 │   │   ├── register/page.tsx
+│   │   ├── register/location-consent/page.tsx  # Location consent step with map picker
 │   │   └── layout.tsx              # Auth layout (no sidebar)
 │   ├── (protected)/
 │   │   ├── layout.tsx              # Dashboard layout (sidebar + nav)
@@ -91,7 +91,8 @@ meowtrix/
 │   │   ├── overlords/[id]/page.tsx # Overlord detail view
 │   │   ├── agents/[id]/page.tsx    # Agent detail view
 │   │   ├── leaderboard/page.tsx    # Leaderboard
-│   │   └── profile/page.tsx        # Informant profile
+│   │   ├── profile/page.tsx        # Informant profile
+│   │   └── settings/page.tsx       # Informant settings (location consent, notifications)
 │   └── api/
 │       ├── auth/
 │       │   ├── register/route.ts
@@ -115,6 +116,8 @@ meowtrix/
 │       │       └── verify/route.ts # POST verify claim answers
 │       ├── notifications/
 │       │   └── route.ts            # GET notifications for user
+│       ├── settings/
+│       │   └── route.ts            # GET/PATCH user settings (location consent, etc.)
 │       ├── leaderboard/route.ts    # GET leaderboard
 │       ├── stats/route.ts          # GET dashboard stats
 │       ├── upload/route.ts         # POST image upload + optimization
@@ -137,7 +140,8 @@ meowtrix/
 │   │   ├── LostOverlordForm.tsx    # Report lost cat form
 │   │   ├── SpottedAgentForm.tsx    # Report found cat form
 │   │   ├── ClaimVerificationForm.tsx
-│   │   └── PhotoUploader.tsx       # Multi-image upload component
+│   │   ├── PhotoUploader.tsx       # Multi-image upload component
+│   │   └── LocationConsentForm.tsx # Location consent + map picker (used in register & settings)
 │   ├── matches/
 │   │   ├── MatchCard.tsx           # Match suggestion card
 │   │   └── ScoreBreakdown.tsx      # Visual score breakdown
@@ -157,7 +161,6 @@ meowtrix/
 │   ├── matchEngine.ts             # Match scoring algorithm
 │   ├── heatmapCalc.ts             # Heatmap radius calculation
 │   ├── imageOptimizer.ts          # Image compression/conversion
-│   ├── geocoding.ts               # Geocoding utility
 │   ├── geodesic.ts                # Distance calculations
 │   └── validators.ts              # Zod schemas for validation
 ├── temporal/
@@ -166,7 +169,7 @@ meowtrix/
 │   ├── activities/
 │   │   ├── sendNotification.ts    # Notification delivery
 │   │   ├── generatePoster.ts      # PDF poster generation
-│   │   └── findNearbyInformants.ts # Proximity query
+│   │   └── findNearbyInformants.ts # Proximity query (filters by location_consent = true)
 │   └── worker.ts                  # Temporal worker entry point
 ├── types/
 │   └── index.ts                   # Shared TypeScript interfaces
@@ -178,9 +181,10 @@ meowtrix/
 
 1. **Authenticated request** → Next.js middleware checks Supabase session → routes to Server Component or API route
 2. **API route** → validates input (Zod) → calls Supabase with service role or user token → returns JSON
-3. **Vision processing** → API route triggers Gemini → stores tags → triggers Match Engine evaluation
-4. **Match Engine** → runs in API route context → compares traits/location/text → persists match suggestions → triggers notifications
-5. **Search Protocol** → Temporal workflow started on Overlord creation → sleeps for escalation intervals → executes notification activities
+3. **Registration** → Client submits email/password → Supabase Auth signUp → creates informant row → presents location consent step → if consented, user picks location on map → stores coordinates; if declined, skips location
+4. **Vision processing** → API route triggers Gemini → stores tags → triggers Match Engine evaluation
+5. **Match Engine** → runs in API route context → compares traits/location/text → persists match suggestions → triggers notifications
+6. **Search Protocol** → Temporal workflow started on Overlord creation → sleeps for escalation intervals → executes notification activities (filtering by `location_consent = true`)
 
 ---
 
@@ -199,6 +203,8 @@ graph TD
     
     AuthLayout --> LoginPage
     AuthLayout --> RegisterPage
+    RegisterPage --> LocationConsentStep
+    LocationConsentStep --> MapView
     
     ProtectedLayout --> Sidebar
     ProtectedLayout --> BottomNav
@@ -209,6 +215,7 @@ graph TD
     ProtectedLayout --> MatchesPage
     ProtectedLayout --> LeaderboardPage
     ProtectedLayout --> ProfilePage
+    ProtectedLayout --> SettingsPage
     
     DashboardPage --> StatGrid
     DashboardPage --> MapView
@@ -242,6 +249,7 @@ interface Informant {
   residential_area: string;
   residential_lat: number | null;
   residential_lng: number | null;
+  location_consent: boolean;         // true = opted-in to nearby missing cat notifications
   total_points: number;
   successful_matches: number;
   created_at: string;
@@ -365,6 +373,8 @@ interface LeaderboardEntry {
 | `/api/matches/[id]/claim` | POST | Initiate claim verification | Required |
 | `/api/claims/[id]/verify` | POST | Submit claim answers | Required |
 | `/api/notifications` | GET | Get user notifications | Required |
+| `/api/settings` | GET | Get user settings (location consent, etc.) | Required |
+| `/api/settings` | PATCH | Update settings (toggle location consent, update coordinates) | Required |
 | `/api/leaderboard` | GET | Get leaderboard (paginated) | Required |
 | `/api/stats` | GET | Dashboard statistics | Required |
 | `/api/upload` | POST | Upload + optimize image | Required |
@@ -385,6 +395,7 @@ erDiagram
         text residential_area
         float residential_lat
         float residential_lng
+        boolean location_consent
         int total_points
         int successful_matches
         timestamp first_match_at
@@ -515,12 +526,21 @@ erDiagram
 ### 1. Authentication Subsystem (Auth_Service)
 
 **Flow:**
-1. Registration: Client → `POST /api/auth/register` → Supabase Auth `signUp` → create `informants` row → geocode residential area → store coordinates
+1. Registration: Client → `POST /api/auth/register` → Supabase Auth `signUp` → create `informants` row → present location consent step → if consented, let user pick location on map → store coordinates and `location_consent: true`; if declined, store `null` coordinates and `location_consent: false`
 2. Login: Client → `POST /api/auth/login` → Supabase Auth `signInWithPassword` → return session
-3. OAuth: Client → Supabase Auth redirect → callback at `/api/auth/callback` → create/update `informants` row
+3. OAuth: Client → Supabase Auth redirect → callback at `/api/auth/callback` → create/update `informants` row → same location consent step as registration
 4. Session: Supabase manages JWT with 7-day inactivity expiry; middleware validates on every protected route
 
-**Geocoding:** Use a free geocoding service (Nominatim/OpenStreetMap) to convert `residential_area` text to lat/lng. Store coordinates for proximity calculations. If geocoding fails, store `null` coordinates and prompt user to update in profile.
+**Location Consent & Privacy:**
+
+During registration, after providing email/password and display name, the user is presented with a **location consent step** that:
+1. **Clearly explains the purpose**: "MEOWTRIX uses your residential location to notify you when cats go missing in your area. Without this, you won't receive nearby missing cat alerts."
+2. **Offers an opt-in choice**: The user can either agree or decline.
+3. **If agreed**: Display an interactive Leaflet map picker where the user drops a pin on their approximate residential area. The selected coordinates are stored as `residential_lat`/`residential_lng` and `location_consent` is set to `true`.
+4. **If declined**: No location is collected. `residential_lat`/`residential_lng` are set to `null`, `location_consent` is set to `false`, and the nearby missing cat notification feature is disabled for this user.
+5. **No geocoding of text input**: The old approach of geocoding a text address is replaced by the map picker to give users full control over the precision of their location data.
+
+Users can change their preference at any time via **Settings** (see Profile/Settings below).
 
 **Middleware Pattern:**
 ```typescript
@@ -644,20 +664,20 @@ function calculateHeatmapRadius(lastSeenAt: Date): number {
 ```typescript
 // temporal/workflows/searchProtocol.ts
 export async function searchProtocolWorkflow(overlordId: string): Promise<void> {
-  // Stage 1: 6 hours — notify 1km radius
+  // Stage 1: 6 hours — notify 1km radius (only consented informants)
   await sleep('6 hours');
   if (await isOverlordResolved(overlordId)) return;
-  await notifyNearbyInformants(overlordId, 1000); // 1km radius
+  await notifyNearbyInformants(overlordId, 1000); // 1km radius, location_consent = true only
 
   // Stage 2: 24 hours — generate PDF poster
   await sleep('18 hours'); // 24h total
   if (await isOverlordResolved(overlordId)) return;
   await generateMissingPoster(overlordId);
 
-  // Stage 3: 48 hours — notify 5km radius
+  // Stage 3: 48 hours — notify 5km radius (only consented informants)
   await sleep('24 hours'); // 48h total
   if (await isOverlordResolved(overlordId)) return;
-  await notifyNearbyInformants(overlordId, 5000); // 5km, exclude previously notified
+  await notifyNearbyInformants(overlordId, 5000); // 5km, exclude previously notified, location_consent = true only
 
   // Stage 4: 14 days — auto-terminate
   await sleep('12 days'); // 14 days total
@@ -667,7 +687,7 @@ export async function searchProtocolWorkflow(overlordId: string): Promise<void> 
 ```
 
 **Activities:**
-- `notifyNearbyInformants`: Query informants within radius using PostGIS-style distance calc, send notifications
+- `notifyNearbyInformants`: Query informants within radius using PostGIS-style distance calc, **excluding Informants where `location_consent = false`**, send notifications
 - `generateMissingPoster`: Create A4 PDF with cat photo, name, traits, location using `@react-pdf/renderer` or `pdfkit`, upload to Storage
 - `sendSearchConcludedNotification`: Notify Overlord owner that automated search period ended
 
@@ -710,6 +730,8 @@ function verifyAnswer(stored: string, submitted: string): boolean {
 
 **Delivery:** In-app only (stored in `notifications` table, delivered via Supabase Realtime subscriptions or polling).
 
+**Location-Based Notification Filtering:** When sending proximity-based notifications (e.g., Search Protocol escalations), the Notification_Service SHALL only include Informants where `location_consent = true` AND `residential_lat`/`residential_lng` are not null. Informants who have opted out of location sharing are excluded from all geographic notifications.
+
 **Toast Display:** Maximum 3 toasts visible simultaneously, 5-second auto-dismiss, queued overflow. Styled as "incoming transmissions" with spy-theme copy.
 
 **Types:**
@@ -722,7 +744,43 @@ function verifyAnswer(stored: string, submitted: string): boolean {
 
 ---
 
-### 9. Leaderboard Subsystem
+### 9. Informant Settings Subsystem (Settings_Service)
+
+**Purpose:** Allow Informants to manage their location consent and nearby missing cat notification preferences after registration.
+
+**Settings Page (`/settings`):**
+- **Location Consent Toggle**: A clearly labeled switch with explanation text: "Cho phép MEOWTRIX thông báo cho bạn khi có mèo mất tích trong khu vực / Enable nearby missing cat notifications"
+  - **When toggled ON**: Display the interactive Leaflet map picker. The user can drop a pin to set or update their residential location. Saves `location_consent: true` and the selected coordinates.
+  - **When toggled OFF**: Clear `residential_lat`/`residential_lng` to `null`, set `location_consent: false`. Display a notice: "You will not receive alerts about missing cats in your area."
+- **Current Location Display**: If location is set, show a small map preview with the current pin location (no exact address text exposed).
+
+**API Contract:**
+```typescript
+// PATCH /api/settings
+interface UpdateSettingsRequest {
+  location_consent?: boolean;
+  residential_lat?: number | null;   // required when location_consent = true
+  residential_lng?: number | null;   // required when location_consent = true
+}
+
+// GET /api/settings
+interface SettingsResponse {
+  location_consent: boolean;
+  residential_lat: number | null;
+  residential_lng: number | null;
+  display_name: string;
+  email: string;
+}
+```
+
+**Validation Rules:**
+- If `location_consent` is set to `true`, `residential_lat` and `residential_lng` must both be provided and valid (lat: -90 to 90, lng: -180 to 180).
+- If `location_consent` is set to `false`, coordinates are set to `null` regardless of any provided values.
+- Only the authenticated Informant can update their own settings (enforced by RLS).
+
+---
+
+### 10. Leaderboard Subsystem
 
 **Scoring:** +10 points awarded to the Agent reporter when a claim is verified against their Agent record.
 
@@ -736,7 +794,7 @@ function verifyAnswer(stored: string, submitted: string): boolean {
 
 ---
 
-### 10. Seed Data Subsystem (Seed_Service)
+### 11. Seed Data Subsystem (Seed_Service)
 
 **Trigger:** CLI script (`npx ts-node scripts/seed.ts`) or environment variable `SEED_DATA=true` on first init.
 
@@ -901,7 +959,7 @@ function verifyAnswer(stored: string, submitted: string): boolean {
 |-----------|-----------|----------|
 | Auth | Invalid credentials | Generic error message (no email/password hints) |
 | Auth | Duplicate email | Specific "email already in use" message |
-| Auth | Geocoding failure | Complete registration, null coords, prompt to update |
+| Auth | Geocoding failure | N/A — replaced by user-driven map picker |
 | Upload | Invalid format/size | Inline validation error before upload attempt |
 | Upload | Storage failure | Retain form data, show error, allow retry |
 | Vision | Gemini timeout/error | Retry once, then mark for manual review |
@@ -920,7 +978,7 @@ function verifyAnswer(stored: string, submitted: string): boolean {
 ### Global Error Patterns
 
 1. **Optimistic UI with rollback** — Show success state immediately, rollback on server error (used for form submissions)
-2. **Retry with backoff** — For transient failures in external services (Gemini, Temporal, Geocoding)
+2. **Retry with backoff** — For transient failures in external services (Gemini, Temporal)
 3. **Graceful degradation** — If a subsystem fails (Vision, Heatmap), core functionality continues without it
 4. **User notification** — All user-facing errors produce toast or inline messages; never silent failures for user actions
 
