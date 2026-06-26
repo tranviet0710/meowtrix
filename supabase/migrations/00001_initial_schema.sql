@@ -32,7 +32,7 @@ CREATE TABLE informants (
 -- TABLE: overlords
 -- =============================================================================
 CREATE TABLE overlords (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   owner_id UUID NOT NULL REFERENCES informants(id) ON DELETE CASCADE,
   cat_name TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
@@ -56,7 +56,7 @@ CREATE TABLE overlords (
 -- TABLE: agents
 -- =============================================================================
 CREATE TABLE agents (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   reporter_id UUID NOT NULL REFERENCES informants(id) ON DELETE CASCADE,
   description TEXT NOT NULL DEFAULT '',
   sighting_lat FLOAT NOT NULL,
@@ -74,7 +74,7 @@ CREATE TABLE agents (
 -- TABLE: match_suggestions
 -- =============================================================================
 CREATE TABLE match_suggestions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   overlord_id UUID NOT NULL REFERENCES overlords(id) ON DELETE CASCADE,
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   overall_score INTEGER NOT NULL CHECK (overall_score >= 0 AND overall_score <= 100),
@@ -91,7 +91,7 @@ CREATE TABLE match_suggestions (
 -- TABLE: claims
 -- =============================================================================
 CREATE TABLE claims (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   match_suggestion_id UUID NOT NULL REFERENCES match_suggestions(id) ON DELETE CASCADE,
   claimant_id UUID NOT NULL REFERENCES informants(id) ON DELETE CASCADE,
   overlord_id UUID NOT NULL REFERENCES overlords(id) ON DELETE CASCADE,
@@ -110,7 +110,7 @@ CREATE TABLE claims (
 -- TABLE: notifications
 -- =============================================================================
 CREATE TABLE notifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   recipient_id UUID NOT NULL REFERENCES informants(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
   title TEXT NOT NULL,

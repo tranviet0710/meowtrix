@@ -7,7 +7,7 @@ import { agentFormSchema } from "@/lib/validators";
 /**
  * POST /api/agents
  *
- * Creates a new Agent (spotted cat) record.
+ * Creates a new Agent (spotted pet) record.
  * - Validates input with agentFormSchema
  * - Sets reporter_id from authenticated user
  * - Sets sighted_at to the system-generated timestamp (moment of submission)
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { description, sighting_lat, sighting_lng } = parsed.data;
+    const { pet_type, description, sighting_lat, sighting_lng } = parsed.data;
 
     // Photos array should be passed separately (already uploaded via /api/upload)
     const photos: string[] = body.photos ?? [];
@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
       .from("agents")
       .insert({
         reporter_id: user.id,
+        pet_type,
         description,
         sighting_lat,
         sighting_lng,

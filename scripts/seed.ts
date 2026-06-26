@@ -188,7 +188,7 @@ const TRAIT_TAGS_POOL = [
   },
 ];
 
-const CAT_NAMES = [
+const PET_NAMES = [
   "Shadow Commander",
   "General Whiskers",
   "Colonel Fluffington",
@@ -390,7 +390,7 @@ async function seedDatabase(supabase: AdminClient): Promise<void> {
 
     const record = {
       owner_id: ownerId,
-      cat_name: CAT_NAMES[i],
+      pet_name: PET_NAMES[i],
       description: DESCRIPTIONS[i],
       last_seen_lat: coord.lat,
       last_seen_lng: coord.lng,
@@ -399,7 +399,7 @@ async function seedDatabase(supabase: AdminClient): Promise<void> {
       photos: [`https://placekitten.com/${400 + i}/${300 + i}`],
       trait_tags: traitTags,
       tagging_status: "complete",
-      verification_name: CAT_NAMES[i].split(" ").pop() || CAT_NAMES[i],
+      verification_name: PET_NAMES[i].split(" ").pop() || PET_NAMES[i],
       verification_marking: traitTags.distinguishing_features[0],
       verification_trait: traitTags.distinguishing_features.length > 1
         ? traitTags.distinguishing_features[1]

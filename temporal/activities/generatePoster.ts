@@ -53,7 +53,7 @@ export async function generateMissingPoster(overlordId: string): Promise<void> {
   const { data: overlord, error: overlordError } = await supabase
     .from('overlords')
     .select(
-      'id, cat_name, description, photos, trait_tags, last_seen_lat, last_seen_lng, last_seen_at'
+      'id, pet_name, description, photos, trait_tags, last_seen_lat, last_seen_lng, last_seen_at'
     )
     .eq('id', overlordId)
     .single();
@@ -83,12 +83,12 @@ export async function generateMissingPoster(overlordId: string): Promise<void> {
 
   const pageWidth = 595.28 - 100; // minus margins
 
-  // Header: MISSING CAT
+  // Header: MISSING PET
   doc
     .fontSize(36)
     .font('Helvetica-Bold')
     .fillColor('#FF4444')
-    .text('MISSING CAT', { align: 'center' });
+    .text('MISSING PET', { align: 'center' });
 
   doc.moveDown(0.5);
 
@@ -129,7 +129,7 @@ export async function generateMissingPoster(overlordId: string): Promise<void> {
     .fontSize(28)
     .font('Helvetica-Bold')
     .fillColor('#000000')
-    .text(overlord.cat_name, { align: 'center' });
+    .text(overlord.pet_name, { align: 'center' });
 
   doc.moveDown(0.5);
 

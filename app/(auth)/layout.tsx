@@ -11,7 +11,7 @@ export default function AuthLayout({
           MEOWTRIX
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Feline Overlord Tracker
+          Feline &amp; Canine Overlord Tracker
         </p>
       </div>
 

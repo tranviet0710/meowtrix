@@ -142,7 +142,7 @@ describe("MapPopup component logic", () => {
     });
 
     it("should display 'Spotted Agent' for agent type", () => {
-      const type = "agent" as const;
+      const type = "agent" as "overlord" | "agent";
       const label = type === "overlord" ? "Lost Overlord" : "Spotted Agent";
       expect(label).toBe("Spotted Agent");
     });

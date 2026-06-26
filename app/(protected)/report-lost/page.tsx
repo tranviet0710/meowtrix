@@ -16,7 +16,7 @@ export default function ReportLostPage() {
         </div>
         <p className="text-sm text-text-secondary">
           File a missing Overlord report. Our network of Informants will be alerted
-          and the Escalating Search Protocol will activate automatically.
+          and the Escalating Search Protocol will activate automatically. Works for both cats and dogs.
         </p>
       </div>
 

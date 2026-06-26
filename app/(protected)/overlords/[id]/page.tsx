@@ -25,7 +25,8 @@ interface TraitTags {
 interface OverlordDetail {
   id: string;
   owner_id: string;
-  cat_name: string;
+  pet_name: string;
+  pet_type: "cat" | "dog";
   description: string;
   last_seen_lat: number;
   last_seen_lng: number;
@@ -186,7 +187,7 @@ export default function OverlordDetailPage() {
           <div className="h-3 w-3 rounded-full bg-danger animate-pulse" />
           <div>
             <h1 className="text-lg font-bold text-text-primary">
-              {overlord.cat_name}
+              {overlord.pet_name}
             </h1>
             <p className="font-mono text-xs text-text-secondary uppercase tracking-wider">
               OVERLORD INTELLIGENCE REPORT
@@ -218,7 +219,7 @@ export default function OverlordDetailPage() {
               >
                 <img
                   src={photo}
-                  alt={`${overlord.cat_name} photo ${idx + 1}`}
+                  alt={`${overlord.pet_name} photo ${idx + 1}`}
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -357,7 +358,7 @@ export default function OverlordDetailPage() {
               rel="noopener noreferrer"
               download
               className="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 rounded-[2px] bg-accent px-5 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-accent-hover"
-              aria-label={`Download missing poster for ${overlord.cat_name}`}
+              aria-label={`Download missing poster for ${overlord.pet_name}`}
             >
               <Download className="h-4 w-4" aria-hidden="true" />
               Download Poster

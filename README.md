@@ -1,6 +1,6 @@
 # 🐾 MEOWTRIX
 
-### Feline Overlord Tracker
+### Pet Overlord Tracker
 
 > *Your overlord is out there. We will find them.*
 
@@ -24,7 +24,7 @@
 
 ## 📡 Mission Briefing
 
-MEOWTRIX is a real-time intelligence platform for tracking and recovering lost feline overlords. Powered by AI vision, predictive heatmaps, and escalating search protocols — wrapped in a spy-agency command-center aesthetic.
+MEOWTRIX is a real-time intelligence platform for tracking and recovering lost pet overlords — cats and dogs alike. Powered by AI vision, predictive heatmaps, and escalating search protocols — wrapped in a spy-agency command-center aesthetic.
 
 <div align="center">
 <img src="https://media.giphy.com/media/VbnUQpnihPSIgIXuZv/giphy.gif" width="400" alt="Surveillance Active">

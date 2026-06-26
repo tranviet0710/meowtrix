@@ -23,10 +23,11 @@ export type RegistrationInput = z.infer<typeof registrationSchema>;
 
 // --- Lost Overlord form schema ---
 export const overlordFormSchema = z.object({
-  cat_name: z
+  pet_name: z
     .string()
-    .min(1, 'Cat name is required')
-    .max(50, 'Cat name must be at most 50 characters'),
+    .min(1, 'Pet name is required')
+    .max(50, 'Pet name must be at most 50 characters'),
+  pet_type: z.enum(['cat', 'dog'], { required_error: 'Pet type is required' }),
   description: z
     .string()
     .max(500, 'Description must be at most 500 characters')
@@ -76,6 +77,7 @@ export type OverlordFormInput = z.infer<typeof overlordFormSchema>;
 
 // --- Spotted Agent form schema ---
 export const agentFormSchema = z.object({
+  pet_type: z.enum(['cat', 'dog'], { required_error: 'Pet type is required' }),
   description: z
     .string()
     .max(500, 'Description must be at most 500 characters')

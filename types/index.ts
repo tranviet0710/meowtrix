@@ -2,13 +2,15 @@
 
 // --- Status unions ---
 
+export type PetType = 'cat' | 'dog';
+
 export type OverlordStatus = 'active' | 'resolved';
 
 export type AgentStatus = 'active' | 'resolved';
 
 export type TaggingStatus = 'pending' | 'complete' | 'incomplete' | 'manual_review';
 
-export type PatternType = 'solid' | 'tabby' | 'calico' | 'bicolor' | 'tortoiseshell' | 'pointed' | 'tuxedo';
+export type PatternType = 'solid' | 'tabby' | 'calico' | 'bicolor' | 'tortoiseshell' | 'pointed' | 'tuxedo' | 'merle' | 'brindle' | 'spotted' | 'sable' | 'harlequin';
 
 export type FurLength = 'short' | 'medium' | 'long';
 
@@ -52,7 +54,8 @@ export interface TraitTags {
 export interface Overlord {
   id: string;
   owner_id: string;
-  cat_name: string;
+  pet_name: string;
+  pet_type: PetType;
   description: string;
   last_seen_lat: number;
   last_seen_lng: number;
@@ -72,6 +75,7 @@ export interface Overlord {
 export interface Agent {
   id: string;
   reporter_id: string;
+  pet_type: PetType;
   description: string;
   sighting_lat: number;
   sighting_lng: number;

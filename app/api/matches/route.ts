@@ -36,7 +36,8 @@ export async function GET() {
         *,
         overlords:overlord_id (
           id,
-          cat_name,
+          pet_name,
+          pet_type,
           photos,
           last_seen_lat,
           last_seen_lng,

@@ -21,6 +21,7 @@ import { patternTypeArb, furLengthArb } from "@/tests/helpers/arbitraries";
 
 const VALID_PATTERN_TYPES: PatternType[] = [
   "solid", "tabby", "calico", "bicolor", "tortoiseshell", "pointed", "tuxedo",
+  "merle", "brindle", "spotted", "sable", "harlequin",
 ];
 
 const VALID_FUR_LENGTHS: FurLength[] = ["short", "medium", "long"];

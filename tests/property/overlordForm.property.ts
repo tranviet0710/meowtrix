@@ -3,9 +3,9 @@
  *
  * **Validates: Requirements 2.1, 2.6**
  *
- * Req 2.1: Cat name (1-50 chars), description (0-500 chars), last-seen timestamp
+ * Req 2.1: Pet name (1-50 chars), description (0-500 chars), last-seen timestamp
  *          not future and not >30 days ago, last-seen location, verification fields
- * Req 2.6: Validate cat name, at least one photo, last-seen location, and timestamp
+ * Req 2.6: Validate pet name, at least one photo, last-seen location, and timestamp
  *          within allowed range; display inline error for fields that fail
  */
 import { describe, it, expect } from 'vitest';
@@ -14,14 +14,17 @@ import { overlordFormSchema } from '@/lib/validators';
 
 // --- Generators ---
 
-/** Valid cat name (1-50 characters, non-empty printable strings) */
-const validCatNameArb = fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0);
+/** Valid pet name (1-50 characters, non-empty printable strings) */
+const validPetNameArb = fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0);
 
-/** Invalid cat name: empty string */
-const emptyCatNameArb = fc.constant('');
+/** Invalid pet name: empty string */
+const emptyPetNameArb = fc.constant('');
 
-/** Invalid cat name: >50 characters */
-const tooLongCatNameArb = fc.string({ minLength: 51, maxLength: 200 });
+/** Invalid pet name: >50 characters */
+const tooLongPetNameArb = fc.string({ minLength: 51, maxLength: 200 });
+
+/** Valid pet type */
+const validPetTypeArb = fc.constantFrom('cat', 'dog') as fc.Arbitrary<'cat' | 'dog'>;
 
 /** Valid description (0-500 chars) */
 const validDescriptionArb = fc.string({ minLength: 0, maxLength: 500 });
@@ -70,7 +73,8 @@ const tooLongVerificationFieldArb = fc.string({ minLength: 201, maxLength: 500 }
 
 /** Generate a complete valid overlord form input */
 const validOverlordFormArb = fc.record({
-  cat_name: validCatNameArb,
+  pet_name: validPetNameArb,
+  pet_type: validPetTypeArb,
   description: validDescriptionArb,
   last_seen_lat: validLatArb,
   last_seen_lng: validLngArb,
@@ -81,7 +85,7 @@ const validOverlordFormArb = fc.record({
 });
 
 describe('Property 1: Overlord form validation', () => {
-  it('valid cat name (1-50 chars), valid timestamp, valid location, valid verification fields → passes', () => {
+  it('valid pet name (1-50 chars), valid timestamp, valid location, valid verification fields → passes', () => {
     fc.assert(
       fc.property(validOverlordFormArb, (input) => {
         const result = overlordFormSchema.safeParse(input);
@@ -91,9 +95,10 @@ describe('Property 1: Overlord form validation', () => {
     );
   });
 
-  it('empty cat name → fails', () => {
+  it('empty pet name → fails', () => {
     const invalidArb = fc.record({
-      cat_name: emptyCatNameArb,
+      pet_name: emptyPetNameArb,
+      pet_type: validPetTypeArb,
       description: validDescriptionArb,
       last_seen_lat: validLatArb,
       last_seen_lng: validLngArb,
@@ -112,9 +117,10 @@ describe('Property 1: Overlord form validation', () => {
     );
   });
 
-  it('cat name >50 chars → fails', () => {
+  it('pet name >50 chars → fails', () => {
     const invalidArb = fc.record({
-      cat_name: tooLongCatNameArb,
+      pet_name: tooLongPetNameArb,
+      pet_type: validPetTypeArb,
       description: validDescriptionArb,
       last_seen_lat: validLatArb,
       last_seen_lng: validLngArb,
@@ -135,7 +141,8 @@ describe('Property 1: Overlord form validation', () => {
 
   it('future timestamp → fails', () => {
     const invalidArb = fc.record({
-      cat_name: validCatNameArb,
+      pet_name: validPetNameArb,
+      pet_type: validPetTypeArb,
       description: validDescriptionArb,
       last_seen_lat: validLatArb,
       last_seen_lng: validLngArb,
@@ -156,7 +163,8 @@ describe('Property 1: Overlord form validation', () => {
 
   it('timestamp >30 days ago → fails', () => {
     const invalidArb = fc.record({
-      cat_name: validCatNameArb,
+      pet_name: validPetNameArb,
+      pet_type: validPetTypeArb,
       description: validDescriptionArb,
       last_seen_lat: validLatArb,
       last_seen_lng: validLngArb,
@@ -177,7 +185,8 @@ describe('Property 1: Overlord form validation', () => {
 
   it('empty verification fields → fails', () => {
     const invalidArb = fc.record({
-      cat_name: validCatNameArb,
+      pet_name: validPetNameArb,
+      pet_type: validPetTypeArb,
       description: validDescriptionArb,
       last_seen_lat: validLatArb,
       last_seen_lng: validLngArb,
@@ -198,7 +207,8 @@ describe('Property 1: Overlord form validation', () => {
 
   it('verification field >200 chars → fails', () => {
     const invalidArb = fc.record({
-      cat_name: validCatNameArb,
+      pet_name: validPetNameArb,
+      pet_type: validPetTypeArb,
       description: validDescriptionArb,
       last_seen_lat: validLatArb,
       last_seen_lng: validLngArb,
@@ -219,7 +229,8 @@ describe('Property 1: Overlord form validation', () => {
 
   it('description >500 chars → fails', () => {
     const invalidArb = fc.record({
-      cat_name: validCatNameArb,
+      pet_name: validPetNameArb,
+      pet_type: validPetTypeArb,
       description: tooLongDescriptionArb,
       last_seen_lat: validLatArb,
       last_seen_lng: validLngArb,

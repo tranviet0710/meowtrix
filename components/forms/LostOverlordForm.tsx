@@ -25,7 +25,8 @@ const MapPicker = dynamic(() => import("@/components/map/MapPicker"), {
 });
 
 interface FieldErrors {
-  cat_name?: string;
+  pet_name?: string;
+  pet_type?: string;
   description?: string;
   last_seen_at?: string;
   location?: string;
@@ -39,7 +40,8 @@ export function LostOverlordForm() {
   const router = useRouter();
 
   // Form field state
-  const [catName, setCatName] = React.useState("");
+  const [petName, setPetName] = React.useState("");
+  const [petType, setPetType] = React.useState<"cat" | "dog">("cat");
   const [description, setDescription] = React.useState("");
   const [lastSeenAt, setLastSeenAt] = React.useState("");
   const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
@@ -58,7 +60,8 @@ export function LostOverlordForm() {
 
     // Validate using Zod schema
     const result = overlordFormSchema.safeParse({
-      cat_name: catName,
+      pet_name: petName,
+      pet_type: petType,
       description,
       last_seen_lat: location?.lat,
       last_seen_lng: location?.lng,
@@ -70,8 +73,8 @@ export function LostOverlordForm() {
 
     if (!result.success) {
       const flat = result.error.flatten();
-      if (flat.fieldErrors.cat_name) {
-        errors.cat_name = flat.fieldErrors.cat_name[0];
+      if (flat.fieldErrors.pet_name) {
+        errors.pet_name = flat.fieldErrors.pet_name[0];
       }
       if (flat.fieldErrors.description) {
         errors.description = flat.fieldErrors.description[0];
@@ -119,7 +122,8 @@ export function LostOverlordForm() {
 
     try {
       const payload = {
-        cat_name: catName.trim(),
+        pet_name: petName.trim(),
+        pet_type: petType,
         description: description.trim(),
         last_seen_lat: location!.lat,
         last_seen_lng: location!.lng,
@@ -145,7 +149,8 @@ export function LostOverlordForm() {
       }
 
       // Success: clear form and navigate to the new record
-      setCatName("");
+      setPetName("");
+      setPetType("cat");
       setDescription("");
       setLastSeenAt("");
       setLocation(null);
@@ -184,27 +189,60 @@ export function LostOverlordForm() {
         </div>
       )}
 
-      {/* Cat Name */}
+      {/* Pet Type Selector */}
       <div className="space-y-2">
-        <Label htmlFor="cat-name">
+        <Label>
+          Pet Type <span className="text-danger">*</span>
+        </Label>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setPetType("cat")}
+            className={cn(
+              "flex-1 rounded-[2px] border px-4 py-3 text-sm font-medium transition-colors",
+              petType === "cat"
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-border text-text-secondary hover:border-text-secondary"
+            )}
+          >
+            🐱 Cat
+          </button>
+          <button
+            type="button"
+            onClick={() => setPetType("dog")}
+            className={cn(
+              "flex-1 rounded-[2px] border px-4 py-3 text-sm font-medium transition-colors",
+              petType === "dog"
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-border text-text-secondary hover:border-text-secondary"
+            )}
+          >
+            🐶 Dog
+          </button>
+        </div>
+      </div>
+
+      {/* Pet Name */}
+      <div className="space-y-2">
+        <Label htmlFor="pet-name">
           Overlord Codename <span className="text-danger">*</span>
         </Label>
         <Input
-          id="cat-name"
-          placeholder="e.g., Agent Whiskers"
-          value={catName}
+          id="pet-name"
+          placeholder={petType === "cat" ? "e.g., Agent Whiskers" : "e.g., Commander Barkley"}
+          value={petName}
           onChange={(e) => {
-            setCatName(e.target.value);
-            if (fieldErrors.cat_name) {
-              setFieldErrors((prev) => ({ ...prev, cat_name: undefined }));
+            setPetName(e.target.value);
+            if (fieldErrors.pet_name) {
+              setFieldErrors((prev) => ({ ...prev, pet_name: undefined }));
             }
           }}
           maxLength={50}
-          aria-invalid={!!fieldErrors.cat_name}
-          aria-describedby={fieldErrors.cat_name ? "cat-name-error" : undefined}
-          className={cn(fieldErrors.cat_name && "border-danger")}
+          aria-invalid={!!fieldErrors.pet_name}
+          aria-describedby={fieldErrors.pet_name ? "pet-name-error" : undefined}
+          className={cn(fieldErrors.pet_name && "border-danger")}
         />
-        <InlineError id="cat-name-error" message={fieldErrors.cat_name} />
+        <InlineError id="pet-name-error" message={fieldErrors.pet_name} />
         <p className="text-xs text-text-secondary">1–50 characters</p>
       </div>
 
@@ -320,7 +358,7 @@ export function LostOverlordForm() {
         {/* Verification Name */}
         <div className="space-y-2">
           <Label htmlFor="verification-name">
-            Cat&apos;s True Name <span className="text-danger">*</span>
+            Pet&apos;s True Name <span className="text-danger">*</span>
           </Label>
           <Input
             id="verification-name"

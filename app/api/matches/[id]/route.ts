@@ -39,7 +39,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         overlords:overlord_id (
           id,
           owner_id,
-          cat_name,
+          pet_name,
+          pet_type,
           description,
           last_seen_lat,
           last_seen_lng,

@@ -85,7 +85,7 @@ export default function LocationConsentPage() {
           Location Consent
         </CardTitle>
         <CardDescription className="mt-2 max-w-sm mx-auto">
-          MEOWTRIX uses your residential location to alert you when cats go
+          MEOWTRIX uses your residential location to alert you when pets go
           missing nearby. Without this, you won&apos;t receive proximity
           notifications.
         </CardDescription>
@@ -105,7 +105,7 @@ export default function LocationConsentPage() {
               Enable nearby alerts
             </Label>
             <p className="text-xs text-text-secondary">
-              Receive notifications about missing cats in your area
+              Receive notifications about missing pets in your area
             </p>
           </div>
           <Switch

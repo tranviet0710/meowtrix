@@ -58,7 +58,7 @@ export async function notifyNearbyInformants(
   // Fetch Overlord details for the notification content
   const { data: overlord, error: overlordError } = await supabase
     .from('overlords')
-    .select('id, cat_name, photos, last_seen_lat, last_seen_lng, owner_id')
+    .select('id, pet_name, pet_type, photos, last_seen_lat, last_seen_lng, owner_id')
     .eq('id', overlordId)
     .single();
 
@@ -79,7 +79,7 @@ export async function notifyNearbyInformants(
     (n) => n.recipient_id
   );
 
-  // Always exclude the owner from receiving notifications about their own cat
+  // Always exclude the owner from receiving notifications about their own pet
   const excludeIds = Array.from(
     new Set([...previouslyNotifiedIds, overlord.owner_id])
   );
@@ -105,11 +105,12 @@ export async function notifyNearbyInformants(
   const notifications = nearbyInformants.map((informant) => ({
     recipient_id: informant.id,
     type: 'escalation' as const,
-    title: `🚨 Missing Cat Alert: ${overlord.cat_name}`,
-    body: `A cat named "${overlord.cat_name}" was reported missing ${(informant.distance_meters / 1000).toFixed(1)}km from your area. Keep an eye out!`,
+    title: `🚨 Missing Pet Alert: ${overlord.pet_name}`,
+    body: `A ${overlord.pet_type ?? 'pet'} named "${overlord.pet_name}" was reported missing ${(informant.distance_meters / 1000).toFixed(1)}km from your area. Keep an eye out!`,
     metadata: {
       overlord_id: overlordId,
-      cat_name: overlord.cat_name,
+      pet_name: overlord.pet_name,
+      pet_type: overlord.pet_type,
       photo_thumbnail: photoThumbnail,
       last_seen_lat: overlord.last_seen_lat,
       last_seen_lng: overlord.last_seen_lng,
@@ -143,10 +144,10 @@ export async function sendSearchConcludedNotification(
 ): Promise<void> {
   const supabase = getSupabaseClient();
 
-  // Fetch Overlord to get owner_id and cat_name
+  // Fetch Overlord to get owner_id and pet_name
   const { data: overlord, error: overlordError } = await supabase
     .from('overlords')
-    .select('owner_id, cat_name')
+    .select('owner_id, pet_name')
     .eq('id', overlordId)
     .single();
 
@@ -159,11 +160,11 @@ export async function sendSearchConcludedNotification(
   const { error: insertError } = await supabase.from('notifications').insert({
     recipient_id: overlord.owner_id,
     type: 'search_concluded',
-    title: `Search Protocol Concluded: ${overlord.cat_name}`,
-    body: `The 14-day automated search period for "${overlord.cat_name}" has concluded. You can still check for manual match suggestions on the dashboard.`,
+    title: `Search Protocol Concluded: ${overlord.pet_name}`,
+    body: `The 14-day automated search period for "${overlord.pet_name}" has concluded. You can still check for manual match suggestions on the dashboard.`,
     metadata: {
       overlord_id: overlordId,
-      cat_name: overlord.cat_name,
+      pet_name: overlord.pet_name,
     },
     read: false,
   });

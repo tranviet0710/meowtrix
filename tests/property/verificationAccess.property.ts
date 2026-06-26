@@ -51,7 +51,7 @@ const nonVerificationFieldArb = fc
 const overlordRecordArb = fc.record({
   id: uuidArb,
   owner_id: uuidArb,
-  cat_name: fc.string({ minLength: 1, maxLength: 50 }),
+  pet_name: fc.string({ minLength: 1, maxLength: 50 }),
   description: fc.string({ maxLength: 500 }),
   last_seen_lat: fc.double({ min: -90, max: 90, noNaN: true }),
   last_seen_lng: fc.double({ min: -180, max: 180, noNaN: true }),
