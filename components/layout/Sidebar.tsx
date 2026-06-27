@@ -2,13 +2,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Map, AlertTriangle, Eye, Shuffle, Trophy, User, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { Map, AlertTriangle, Eye, Shuffle, Trophy, User, Settings, LogOut, Sun, Moon, FileText } from "lucide-react";
 import { useState } from "react";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 interface NavItem { label: string; href: string; icon: React.ComponentType<{ className?: string }>; }
 
 const navItems: NavItem[] = [
   { label: "Map", href: "/dashboard", icon: Map },
+  { label: "Reports", href: "/reports", icon: FileText },
   { label: "Report Lost", href: "/report-lost", icon: AlertTriangle },
   { label: "Report Found", href: "/report-found", icon: Eye },
   { label: "Matches", href: "/matches", icon: Shuffle },
@@ -44,6 +46,9 @@ export function Sidebar() {
           Meowtrix
         </span>
         <span className="ml-2 text-brutal-pink text-xs font-bold uppercase">HQ</span>
+        <div className="ml-auto">
+          <NotificationBell />
+        </div>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto" aria-label="Main navigation">

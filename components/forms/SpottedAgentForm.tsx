@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { agentFormSchema } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhotoUploader } from "@/components/forms/PhotoUploader";
 
@@ -27,6 +28,7 @@ interface FieldErrors {
   description?: string;
   location?: string;
   photos?: string;
+  sighted_at?: string;
 }
 
 export function SpottedAgentForm() {
@@ -37,6 +39,7 @@ export function SpottedAgentForm() {
   const [description, setDescription] = React.useState("");
   const [location, setLocation] = React.useState<{ lat: number; lng: number } | null>(null);
   const [photos, setPhotos] = React.useState<string[]>([]);
+  const [sightedAt, setSightedAt] = React.useState("");
 
   // UI state
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
@@ -52,6 +55,7 @@ export function SpottedAgentForm() {
       description,
       sighting_lat: location?.lat,
       sighting_lng: location?.lng,
+      sighted_at: sightedAt || undefined,
     });
 
     if (!result.success) {
@@ -61,6 +65,9 @@ export function SpottedAgentForm() {
       }
       if (flat.fieldErrors.sighting_lat || flat.fieldErrors.sighting_lng) {
         errors.location = "Sighting location is required — place a pin on the map";
+      }
+      if (flat.fieldErrors.sighted_at) {
+        errors.sighted_at = flat.fieldErrors.sighted_at[0];
       }
     }
 
@@ -94,6 +101,7 @@ export function SpottedAgentForm() {
         description: description.trim(),
         sighting_lat: location!.lat,
         sighting_lng: location!.lng,
+        sighted_at: sightedAt ? new Date(sightedAt).toISOString() : undefined,
         photos,
       };
 
@@ -116,6 +124,7 @@ export function SpottedAgentForm() {
       setDescription("");
       setLocation(null);
       setPhotos([]);
+      setSightedAt("");
       setFieldErrors({});
       setSubmitError("");
 
@@ -254,10 +263,29 @@ export function SpottedAgentForm() {
         </p>
       </div>
 
-      {/* Timestamp info */}
-      <div className="rounded-[2px] border border-border/50 bg-card/30 px-4 py-3">
-        <p className="text-xs font-mono text-text-secondary">
-          ⏱ SIGHTING TIMESTAMP: Auto-generated at moment of submission
+      {/* Sighting Timestamp */}
+      <div className="space-y-2">
+        <Label htmlFor="sighted-at">
+          Sighting Time
+        </Label>
+        <Input
+          id="sighted-at"
+          type="datetime-local"
+          value={sightedAt}
+          onChange={(e) => {
+            setSightedAt(e.target.value);
+            if (fieldErrors.sighted_at) {
+              setFieldErrors((prev) => ({ ...prev, sighted_at: undefined }));
+            }
+          }}
+          max={new Date().toISOString().slice(0, 16)}
+          aria-invalid={!!fieldErrors.sighted_at}
+          aria-describedby={fieldErrors.sighted_at ? "sighted-at-error" : undefined}
+          className={cn(fieldErrors.sighted_at && "border-danger")}
+        />
+        <InlineError id="sighted-at-error" message={fieldErrors.sighted_at} />
+        <p className="text-xs text-text-secondary">
+          When did you spot the Agent? Leave empty for current time.
         </p>
       </div>
 

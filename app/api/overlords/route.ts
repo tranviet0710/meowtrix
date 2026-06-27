@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { overlordFormSchema } from "@/lib/validators";
+import { extractTraitsFromImage } from "@/lib/gemini";
+import { triggerMatchEvaluation } from "@/lib/matchTrigger";
 import { Connection, Client } from "@temporalio/client";
 
 const TASK_QUEUE = "meowtrix-search-protocol";
@@ -112,20 +114,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fire-and-forget: Trigger Vision Service for each photo
-    const baseUrl = request.nextUrl.origin;
+    // Trigger Vision Service directly for each photo
     for (const photoUrl of photos) {
-      fetch(`${baseUrl}/api/vision/process`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          record_id: overlord.id,
-          record_type: "overlord",
-          photo_url: photoUrl,
-        }),
-      }).catch(() => {
-        // Fire-and-forget — vision failures are non-blocking
-      });
+      try {
+        const traitTags = await extractTraitsFromImage(photoUrl);
+        if (traitTags) {
+          await serviceClient
+            .from("overlords")
+            .update({ trait_tags: traitTags, tagging_status: "complete" })
+            .eq("id", overlord.id);
+
+          // Trigger match evaluation
+          await triggerMatchEvaluation(serviceClient, overlord.id, "overlord");
+          break; // One successful tag is enough
+        }
+      } catch {
+        // Vision failures are non-blocking
+      }
     }
 
     // Start Search Protocol (Temporal workflow) if configured
@@ -157,6 +162,38 @@ export async function POST(request: NextRequest) {
           `[Overlord POST] Failed to start Search Protocol for ${overlord.id}`
         );
       }
+    }
+
+    // Notify nearby informants who have location consent about the missing pet
+    try {
+      const RADIUS_DEG = 0.045; // ~5km
+      const { data: nearbyInformants } = await serviceClient
+        .from("informants")
+        .select("id")
+        .eq("location_consent", true)
+        .neq("id", user.id)
+        .gte("residential_lat", last_seen_lat - RADIUS_DEG)
+        .lte("residential_lat", last_seen_lat + RADIUS_DEG)
+        .gte("residential_lng", last_seen_lng - RADIUS_DEG)
+        .lte("residential_lng", last_seen_lng + RADIUS_DEG);
+
+      if (nearbyInformants && nearbyInformants.length > 0) {
+        const notifications = nearbyInformants.map((informant) => ({
+          recipient_id: informant.id,
+          type: "lost_nearby",
+          title: "Lost Pet Nearby!",
+          body: `"${pet_name}" (${pet_type}) was reported missing near your area. Keep an eye out!`,
+          metadata: {
+            overlord_id: overlord.id,
+            photo_thumbnail: photos[0] ?? null,
+          },
+          read: false,
+        }));
+
+        await serviceClient.from("notifications").insert(notifications);
+      }
+    } catch {
+      // Non-blocking
     }
 
     // Return the created record without verification fields

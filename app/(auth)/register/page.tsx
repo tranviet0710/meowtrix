@@ -63,8 +63,8 @@ export default function RegisterPage() {
         return;
       }
 
-      // On success, redirect to location consent step
-      router.push("/register/location-consent");
+      // On success, redirect directly to dashboard (location is optional via settings)
+      router.push("/dashboard");
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);

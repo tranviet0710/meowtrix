@@ -3,6 +3,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { agentFormSchema } from "@/lib/validators";
+import { extractTraitsFromImage } from "@/lib/gemini";
+import { triggerMatchEvaluation } from "@/lib/matchTrigger";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * POST /api/agents
@@ -10,9 +13,9 @@ import { agentFormSchema } from "@/lib/validators";
  * Creates a new Agent (spotted pet) record.
  * - Validates input with agentFormSchema
  * - Sets reporter_id from authenticated user
- * - Sets sighted_at to the system-generated timestamp (moment of submission)
- * - Triggers Vision Service for uploaded photos (fire-and-forget)
- * - Match Engine is triggered from the vision route after tagging completes
+ * - Triggers Vision Service directly (not via HTTP)
+ * - Match Engine is triggered after tagging completes
+ * - Sends notifications to nearby overlord owners
  * - Returns created Agent
  */
 export async function POST(request: NextRequest) {
@@ -58,8 +61,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // System-generated sighting timestamp (moment of submission)
-    const sighted_at = new Date().toISOString();
+    // Use user-provided sighting time or fallback to current timestamp
+    const sighted_at = body.sighted_at
+      ? new Date(body.sighted_at).toISOString()
+      : new Date().toISOString();
 
     // Create the Agent record using the service role client
     const serviceClient = await createServiceRoleClient();
@@ -89,21 +94,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fire-and-forget: Trigger Vision Service for each photo
-    // Match Engine will be triggered from the vision route after tagging completes
-    const baseUrl = request.nextUrl.origin;
-    for (const photoUrl of photos) {
-      fetch(`${baseUrl}/api/vision/process`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          record_id: agent.id,
-          record_type: "agent",
-          photo_url: photoUrl,
-        }),
-      }).catch(() => {
-        // Fire-and-forget — vision failures are non-blocking
-      });
+    // Notify nearby overlord owners that a pet was spotted in their area
+    try {
+      await notifyNearbyOverlordOwners(serviceClient, agent.id, pet_type, sighting_lat, sighting_lng, photos[0] ?? null);
+    } catch {
+      // Non-blocking — notification failure doesn't affect agent creation
+    }
+
+    // Process vision + matching directly (no HTTP call to self)
+    // Run in background-like manner but awaited to ensure it completes
+    try {
+      for (const photoUrl of photos) {
+        const traitTags = await extractTraitsFromImage(photoUrl);
+
+        if (traitTags) {
+          await serviceClient
+            .from("agents")
+            .update({ trait_tags: traitTags, tagging_status: "complete" })
+            .eq("id", agent.id);
+
+          // Trigger match evaluation
+          await triggerMatchEvaluation(serviceClient, agent.id, "agent");
+          break; // One successful tag is enough to trigger matching
+        }
+      }
+    } catch {
+      // Vision/matching failures are non-blocking — agent record is still created
+      console.error(`[Agent POST] Vision/matching failed for agent ${agent.id}`);
     }
 
     return NextResponse.json({ agent }, { status: 201 });
@@ -114,6 +131,50 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Notify owners of active overlords near the sighting location.
+ * Sends a notification to anyone who has a lost pet within ~5km of the spotted agent.
+ */
+async function notifyNearbyOverlordOwners(
+  supabase: SupabaseClient,
+  agentId: string,
+  petType: string,
+  sightingLat: number,
+  sightingLng: number,
+  photoUrl: string | null
+) {
+  // Rough bounding box: ~5km radius (0.045 degrees ≈ 5km)
+  const RADIUS_DEG = 0.045;
+
+  const { data: nearbyOverlords } = await supabase
+    .from("overlords")
+    .select("id, owner_id, pet_name, pet_type")
+    .eq("status", "active")
+    .eq("pet_type", petType)
+    .gte("last_seen_lat", sightingLat - RADIUS_DEG)
+    .lte("last_seen_lat", sightingLat + RADIUS_DEG)
+    .gte("last_seen_lng", sightingLng - RADIUS_DEG)
+    .lte("last_seen_lng", sightingLng + RADIUS_DEG);
+
+  if (!nearbyOverlords || nearbyOverlords.length === 0) return;
+
+  // Send notification to each overlord owner
+  const notifications = nearbyOverlords.map((overlord) => ({
+    recipient_id: overlord.owner_id,
+    type: "nearby_sighting",
+    title: "Nearby Sighting Reported!",
+    body: `A ${petType} was spotted near where "${overlord.pet_name}" was last seen. Check it out!`,
+    metadata: {
+      agent_id: agentId,
+      overlord_id: overlord.id,
+      photo_thumbnail: photoUrl,
+    },
+    read: false,
+  }));
+
+  await supabase.from("notifications").insert(notifications);
 }
 
 /**

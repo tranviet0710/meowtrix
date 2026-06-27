@@ -2,7 +2,7 @@
 // Requirements: 11.1, 11.6, 11.7
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabaseServer";
+import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 
 export interface DashboardStats {
   total_overlords: number;
@@ -62,21 +62,31 @@ export async function GET() {
       );
     }
 
+    // Update the current user's last_active_at timestamp (ignore if column doesn't exist yet)
+    const serviceClient = await createServiceRoleClient();
+    try {
+      await serviceClient
+        .from("informants")
+        .update({ last_active_at: new Date().toISOString() })
+        .eq("id", user.id);
+    } catch {
+      // Column might not exist yet if migration hasn't been applied
+    }
+
     // Fetch informants online (active session within last 5 minutes)
-    // We approximate this by counting informants who were recently active.
-    // Since Supabase doesn't expose session presence directly, we count
-    // total informants as a fallback metric.
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { count: informantsOnline, error: onlineError } = await supabase
+    let onlineCount = 0;
+
+    const { count: informantsOnline, error: onlineError } = await serviceClient
       .from("informants")
       .select("*", { count: "exact", head: true })
       .gte("last_active_at", fiveMinutesAgo);
 
-    // If the last_active_at column doesn't exist, fall back to total count
-    let onlineCount = informantsOnline ?? 0;
-    if (onlineError) {
-      // Fallback: count all informants as "registered"
-      const { count: totalInformants } = await supabase
+    if (!onlineError && informantsOnline !== null) {
+      onlineCount = informantsOnline;
+    } else {
+      // Fallback: count all informants if column doesn't exist
+      const { count: totalInformants } = await serviceClient
         .from("informants")
         .select("*", { count: "exact", head: true });
       onlineCount = totalInformants ?? 0;

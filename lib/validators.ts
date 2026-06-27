@@ -84,6 +84,35 @@ export const agentFormSchema = z.object({
     .default(''),
   sighting_lat: z.number({ required_error: 'Sighting location is required' }),
   sighting_lng: z.number({ required_error: 'Sighting location is required' }),
+  sighted_at: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        return !isNaN(date.getTime());
+      },
+      { message: 'Invalid timestamp' }
+    )
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        return date <= new Date();
+      },
+      { message: 'Sighting time cannot be in the future' }
+    )
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const date = new Date(val);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return date >= thirtyDaysAgo;
+      },
+      { message: 'Sighting time cannot be more than 30 days ago' }
+    ),
 });
 
 export type AgentFormInput = z.infer<typeof agentFormSchema>;

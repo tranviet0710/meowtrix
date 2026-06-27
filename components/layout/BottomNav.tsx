@@ -2,15 +2,15 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Map, AlertTriangle, Eye, Shuffle, Trophy, LogOut, Sun, Moon } from "lucide-react";
+import { Map, AlertTriangle, Eye, Shuffle, LogOut, Sun, Moon, FileText } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ComponentType<{ className?: string }>; }
 const navItems: NavItem[] = [
   { label: "Map", href: "/dashboard", icon: Map },
+  { label: "Reports", href: "/reports", icon: FileText },
   { label: "Lost", href: "/report-lost", icon: AlertTriangle },
   { label: "Found", href: "/report-found", icon: Eye },
   { label: "Matches", href: "/matches", icon: Shuffle },
-  { label: "Rank", href: "/leaderboard", icon: Trophy },
 ];
 
 export function BottomNav() {
