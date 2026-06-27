@@ -69,8 +69,8 @@ export default function LeaderboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 border-[3px] border-[#FFDE4D] bg-[#FFDE4D]/10 shadow-[3px_3px_0px_#FFDE4D]">
-            <Trophy className="w-5 h-5 text-[#FFDE4D]" />
+          <div className="flex items-center justify-center w-10 h-10 border-[3px] border-sidebar-active bg-sidebar-active/10 shadow-[3px_3px_0px_var(--color-sidebar-active)]">
+            <Trophy className="w-5 h-5 text-sidebar-active" />
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-[family-name:var(--font-space-grotesk)] font-bold text-text-primary uppercase tracking-wide">
@@ -85,7 +85,7 @@ export default function LeaderboardPage() {
       </div>
 
       {/* Content area */}
-      <div className="border-[3px] border-[#FFDE4D] bg-card shadow-[4px_4px_0px_#FFDE4D] overflow-hidden">
+      <div className="border-[3px] border-sidebar-active bg-card shadow-[4px_4px_0px_var(--color-sidebar-active)] overflow-hidden">
         {/* Loading state */}
         {isLoading && (
           <div className="p-8">
@@ -124,7 +124,7 @@ export default function LeaderboardPage() {
         {/* Empty state */}
         {!isLoading && !error && entries.length === 0 && (
           <div className="p-12 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 border-[3px] border-[#FFDE4D]/30 bg-[#FFDE4D]/5 shadow-[3px_3px_0px] shadow-accent/20 mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 border-[3px] border-sidebar-active/30 bg-sidebar-active/5 shadow-[3px_3px_0px] shadow-accent/20 mb-6">
               <Trophy className="w-8 h-8 text-text-secondary" />
             </div>
             <h2 className="text-lg font-[family-name:var(--font-space-grotesk)] font-bold text-text-primary mb-2 uppercase">
@@ -147,7 +147,7 @@ export default function LeaderboardPage() {
 
             {/* Pagination */}
             {pagination && pagination.total_pages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t-[3px] border-[#FFDE4D]">
+              <div className="flex items-center justify-between px-4 py-3 border-t-[3px] border-sidebar-active">
                 <span className="text-xs font-mono font-bold text-text-secondary uppercase">
                   Page {pagination.page}/{pagination.total_pages} — {pagination.total_entries} Informants
                 </span>
@@ -156,7 +156,7 @@ export default function LeaderboardPage() {
                     type="button"
                     onClick={handlePreviousPage}
                     disabled={!pagination.has_previous}
-                    className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 border-[2px] border-[#FFDE4D] text-text-secondary shadow-[2px_2px_0px_#FFDE4D] transition-all hover:text-[#FFDE4D] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 border-[2px] border-sidebar-active text-text-secondary shadow-[2px_2px_0px_var(--color-sidebar-active)] transition-all hover:text-sidebar-active active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Previous page"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -165,7 +165,7 @@ export default function LeaderboardPage() {
                     type="button"
                     onClick={handleNextPage}
                     disabled={!pagination.has_next}
-                    className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 border-[2px] border-[#FFDE4D] text-text-secondary shadow-[2px_2px_0px_#FFDE4D] transition-all hover:text-[#FFDE4D] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 border-[2px] border-sidebar-active text-text-secondary shadow-[2px_2px_0px_var(--color-sidebar-active)] transition-all hover:text-sidebar-active active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Next page"
                   >
                     <ChevronRight className="w-4 h-4" />

@@ -7,7 +7,7 @@ export default function AuthLayout({
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
       {/* MEOWTRIX Logo / Title */}
       <div className="mb-8 text-center">
-        <h1 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-wider text-[#FFDE4D] uppercase">
+        <h1 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-wider text-sidebar-active uppercase">
           Meowtrix
         </h1>
         <p className="mt-2 text-sm font-bold uppercase text-text-secondary tracking-wide">

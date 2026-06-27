@@ -126,21 +126,21 @@ export function StatGrid() {
         value={state.stats?.total_overlords ?? null}
         icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
         isLoading={state.isLoading && !state.stats}
-        accentClass="bg-[#FF6B97]/10 text-[#FF6B97]"
+        accentClass="bg-brutal-pink/10 text-brutal-pink"
       />
       <StatCard
         label="Active Searches"
         value={state.stats?.active_searches ?? null}
         icon={<Search className="h-5 w-5" aria-hidden="true" />}
         isLoading={state.isLoading && !state.stats}
-        accentClass="bg-[#FF9F1C]/10 text-[#FF9F1C]"
+        accentClass="bg-brutal-orange/10 text-brutal-orange"
       />
       <StatCard
         label="Informants Online"
         value={state.stats?.informants_online ?? null}
         icon={<Users className="h-5 w-5" aria-hidden="true" />}
         isLoading={state.isLoading && !state.stats}
-        accentClass="bg-[#51E5A5]/10 text-[#51E5A5]"
+        accentClass="bg-brutal-mint/10 text-brutal-mint"
       />
     </div>
   );

@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Map, AlertTriangle, Eye, Shuffle, Trophy, User, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { Map, AlertTriangle, Eye, Shuffle, Trophy, User, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { useState } from "react";
 
 interface NavItem { label: string; href: string; icon: React.ComponentType<{ className?: string }>; }
 
@@ -17,13 +19,31 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      const res = await fetch("/api/auth/signout", { method: "POST" });
+      if (res.redirected) {
+        router.push("/login");
+      } else {
+        router.push("/login");
+      }
+    } catch {
+      router.push("/login");
+    }
+  }
+
   return (
-    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-[#1A1A2E] border-r-[3px] border-[#FFDE4D]">
-      <div className="flex items-center h-16 px-5 border-b-[3px] border-[#FFDE4D]">
-        <span className="font-[family-name:var(--font-space-grotesk)] text-[#FFDE4D] font-bold text-lg uppercase tracking-wider">
+    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-sidebar-bg border-r-[3px] border-sidebar-border">
+      <div className="flex items-center h-16 px-5 border-b-[3px] border-sidebar-border">
+        <span className="font-[family-name:var(--font-space-grotesk)] text-sidebar-active font-bold text-lg uppercase tracking-wider">
           Meowtrix
         </span>
-        <span className="ml-2 text-[#FF6B97] text-xs font-bold uppercase">HQ</span>
+        <span className="ml-2 text-brutal-pink text-xs font-bold uppercase">HQ</span>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto" aria-label="Main navigation">
@@ -37,8 +57,8 @@ export function Sidebar() {
               aria-current={isActive ? "page" : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 text-sm font-bold uppercase tracking-wide border-[2px] transition-all duration-100
                 ${isActive
-                  ? "border-[#FFDE4D] bg-[#FFDE4D]/10 text-[#FFDE4D] shadow-[3px_3px_0px_#FFDE4D]"
-                  : "border-transparent text-text-secondary hover:border-[#51E5A5] hover:text-[#51E5A5] hover:shadow-[3px_3px_0px_#51E5A5]"
+                  ? "border-sidebar-active bg-sidebar-active/10 text-sidebar-active shadow-[3px_3px_0px_var(--color-sidebar-active)]"
+                  : "border-transparent text-sidebar-text hover:border-brutal-mint hover:text-brutal-mint hover:shadow-[3px_3px_0px_var(--color-brutal-mint)]"
                 }`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
@@ -48,10 +68,33 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-5 py-4 border-t-[3px] border-[#FFDE4D]">
-        <p className="text-xs font-mono font-bold uppercase text-text-secondary">
-          Status: <span className="text-[#51E5A5]">● Online</span>
-        </p>
+      <div className="px-3 py-3 border-t-[3px] border-sidebar-border space-y-2">
+        {/* Theme toggle */}
+        <button
+          type="button"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-bold uppercase tracking-wide border-[2px] border-transparent text-sidebar-text hover:border-brutal-orange hover:text-brutal-orange hover:shadow-[3px_3px_0px_var(--color-brutal-orange)] transition-all duration-100"
+          aria-label="Toggle theme"
+        >
+          {theme === "dark" ? (
+            <Sun className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+          ) : (
+            <Moon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+          )}
+          <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+        </button>
+
+        {/* Logout button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-bold uppercase tracking-wide border-[2px] border-transparent text-sidebar-text hover:border-destructive hover:text-destructive hover:shadow-[3px_3px_0px_var(--color-destructive)] transition-all duration-100 disabled:opacity-50"
+          aria-label="Sign out"
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+          <span>{isLoggingOut ? "Signing out..." : "Log Out"}</span>
+        </button>
       </div>
     </aside>
   );

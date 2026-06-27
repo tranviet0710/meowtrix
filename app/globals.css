@@ -29,6 +29,11 @@
   --color-brutal-orange: #FF9F1C;
   --color-brutal-pink: #FF6B97;
   --color-brutal-mint: #51E5A5;
+  --color-sidebar-bg: #1A1A2E;
+  --color-sidebar-border: #FFDE4D;
+  --color-sidebar-text: #8892B0;
+  --color-sidebar-active: #FFDE4D;
+  --color-nav-bg: #1A1A2E;
   --radius-sm: 0px;
   --radius-md: 0px;
   --radius-lg: 0px;
@@ -40,27 +45,65 @@
   --border-brutal: 3px solid currentColor;
 }
 
+/* ===== LIGHT THEME (hackthekitty inspired) ===== */
+html.light {
+  --color-background: #FFF9F0;
+  --color-card: #FFFFFF;
+  --color-accent: #FF9F1C;
+  --color-accent-hover: #E88B00;
+  --color-secondary: #6B7280;
+  --color-success: #22C55E;
+  --color-danger: #EF4444;
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #6B7280;
+  --color-border: #E5E7EB;
+  --color-foreground: #1F2937;
+  --color-muted: #F3F4F6;
+  --color-muted-foreground: #6B7280;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #1F2937;
+  --color-card-foreground: #1F2937;
+  --color-primary: #FF9F1C;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary-foreground: #1F2937;
+  --color-accent-foreground: #FFFFFF;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-input: #E5E7EB;
+  --color-ring: #FF9F1C;
+  --color-brutal-yellow: #FFDE4D;
+  --color-brutal-orange: #FF9F1C;
+  --color-brutal-pink: #FF6B97;
+  --color-brutal-mint: #10B981;
+  --color-sidebar-bg: #FFFFFF;
+  --color-sidebar-border: #FF9F1C;
+  --color-sidebar-text: #6B7280;
+  --color-sidebar-active: #FF9F1C;
+  --color-nav-bg: #FFFFFF;
+  --shadow-brutal: 4px 4px 0px rgba(0, 0, 0, 0.15);
+}
+
 html, body { overflow-x: hidden; max-width: 100vw; }
 body { background-color: var(--color-background); color: var(--color-text-primary); font-family: var(--font-sans); font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-text-size-adjust: 100%; }
 @media (max-width: 767px) { body { font-size: 16px; } }
-*:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.2); }
-::selection { background-color: rgba(255, 204, 0, 0.3); color: var(--color-text-primary); }
+*:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(255, 159, 28, 0.2); }
+::selection { background-color: rgba(255, 159, 28, 0.3); color: var(--color-text-primary); }
 
 .brutal-card {
   border: 3px solid currentColor;
-  box-shadow: 4px 4px 0px #000;
+  box-shadow: var(--shadow-brutal);
   background-color: var(--color-card);
 }
 
 .brutal-btn {
   border: 3px solid currentColor;
-  box-shadow: 4px 4px 0px #000;
+  box-shadow: var(--shadow-brutal);
   transition: transform 0.1s, box-shadow 0.1s;
   cursor: pointer;
 }
 .brutal-btn:active {
   transform: translate(4px, 4px);
-  box-shadow: 0px 0px 0px #000;
+  box-shadow: 0px 0px 0px transparent;
 }
 
 @keyframes shrink-width { from { width: 100%; } to { width: 0%; } }

@@ -14,10 +14,10 @@ export function StatCard({
   value,
   icon,
   isLoading,
-  accentClass = "bg-[#FFDE4D]/10 text-[#FFDE4D]",
+  accentClass = "bg-brutal-yellow/10 text-brutal-yellow",
 }: StatCardProps) {
   return (
-    <div className="flex items-center gap-4 border-[3px] border-[#FFDE4D] bg-[#1A1A2E] p-4 shadow-[4px_4px_0px_#FFDE4D] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#FFDE4D]">
+    <div className="flex items-center gap-4 border-[3px] border-sidebar-active bg-card p-4 shadow-[4px_4px_0px_var(--color-sidebar-active)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_var(--color-sidebar-active)]">
       <div
         className={`flex h-12 w-12 flex-shrink-0 items-center justify-center border-[2px] border-current ${accentClass}`}
       >
