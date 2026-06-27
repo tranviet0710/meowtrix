@@ -89,14 +89,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 10. Get public URL
-    const { data: urlData } = serviceClient.storage
+    // 10. Get a signed URL (bucket is private, so public URLs won't work)
+    // Use a long-lived signed URL (1 year) since these are stored in the DB
+    const { data: signedUrlData, error: signedUrlError } = await serviceClient.storage
       .from('cat-photos')
-      .getPublicUrl(storagePath);
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365); // 1 year
+
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      // Fallback: construct the public URL (may work if bucket is later made public)
+      const { data: urlData } = serviceClient.storage
+        .from('cat-photos')
+        .getPublicUrl(storagePath);
+
+      return NextResponse.json({
+        success: true,
+        url: urlData.publicUrl,
+        width: optimized.width,
+        height: optimized.height,
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      url: urlData.publicUrl,
+      url: signedUrlData.signedUrl,
       width: optimized.width,
       height: optimized.height,
     });

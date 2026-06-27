@@ -55,9 +55,14 @@ export async function POST(request: NextRequest) {
     );
 
     // Sign up the user via Supabase Auth
+    // Note: emailRedirectTo is omitted and we pass data options to skip
+    // confirmation email where possible (reduces rate-limit risk on free tier)
     const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
       email,
       password,
+      options: {
+        data: { display_name },
+      },
     });
 
     if (authError) {
@@ -66,6 +71,18 @@ export async function POST(request: NextRequest) {
         status: authError.status,
         code: authError.code,
       });
+
+      // Handle email rate limit exceeded
+      if (
+        authError.status === 429 ||
+        authError.code === 'over_email_send_rate_limit' ||
+        authError.message.toLowerCase().includes('rate limit')
+      ) {
+        return NextResponse.json(
+          { success: false, error: 'Too many sign-up attempts. Please wait a few minutes and try again.' },
+          { status: 429 }
+        );
+      }
 
       // Supabase returns a specific message when the email is already in use
       if (

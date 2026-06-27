@@ -1,5 +1,6 @@
 "use client";
 import { StatGrid } from "@/components/dashboard/StatGrid";
+import { MyReports } from "@/components/dashboard/MyReports";
 import { MapViewDynamic } from "@/components/map/MapViewDynamic";
 
 export default function DashboardPage() {
@@ -15,6 +16,8 @@ export default function DashboardPage() {
       </header>
 
       <StatGrid />
+
+      <MyReports />
 
       <section
         className="relative flex-1 overflow-hidden border-[3px] border-sidebar-active shadow-[4px_4px_0px_var(--color-sidebar-active)] min-h-[50vh] md:min-h-[60vh]"

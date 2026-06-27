@@ -202,6 +202,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const ownerId = searchParams.get("owner_id");
+    const mine = searchParams.get("mine");
 
     // Select all columns except verification fields
     let query = supabase
@@ -215,7 +216,10 @@ export async function GET(request: NextRequest) {
       query = query.eq("status", status);
     }
 
-    if (ownerId) {
+    // If mine=true, filter to current user's reports only
+    if (mine === "true") {
+      query = query.eq("owner_id", user.id);
+    } else if (ownerId) {
       query = query.eq("owner_id", ownerId);
     }
 
