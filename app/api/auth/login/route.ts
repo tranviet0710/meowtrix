@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
 
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
+      console.error('[Login] Validation failed:', JSON.stringify(parsed.error.errors, null, 2));
       return NextResponse.json(
         { success: false, error: "Invalid credentials" },
         { status: 400 }
@@ -29,6 +30,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
+      console.error('[Login] Auth error:', { message: error.message, status: error.status, code: error.code });
+
       // Distinguish server/lockout errors from credential failures,
       // but NEVER reveal whether the email or password was wrong (Req 1.6).
       if (error.status === 429) {
@@ -53,7 +56,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error('[Login] Unexpected error:', error);
     return NextResponse.json(
       { success: false, error: "An unexpected error occurred. Please try again." },
       { status: 500 }

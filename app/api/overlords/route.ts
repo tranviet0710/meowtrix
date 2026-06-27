@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     // Validate with Zod schema
     const parsed = overlordFormSchema.safeParse(body);
     if (!parsed.success) {
+      console.error('[Overlord POST] Validation failed:', JSON.stringify(parsed.error.flatten(), null, 2));
       return NextResponse.json(
         { error: "Validation failed", details: parsed.error.flatten() },
         { status: 400 }

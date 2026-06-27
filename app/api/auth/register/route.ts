@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
     const parsed = registrationSchema.safeParse(body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0]?.message ?? 'Invalid input';
+      console.error('[Register] Validation failed:', JSON.stringify(parsed.error.errors, null, 2));
+      console.error('[Register] Request body received:', JSON.stringify(body, null, 2));
       return NextResponse.json(
         { success: false, error: firstError },
         { status: 400 }
@@ -59,6 +61,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
+      console.error('[Register] Supabase Auth error:', {
+        message: authError.message,
+        status: authError.status,
+        code: authError.code,
+      });
+
       // Supabase returns a specific message when the email is already in use
       if (
         authError.message.toLowerCase().includes('already registered') ||

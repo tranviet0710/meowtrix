@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
     const parsed = locationConsentSchema.safeParse(body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0]?.message ?? 'Invalid input';
+      console.error('[Register/Location] Validation failed:', JSON.stringify(parsed.error.errors, null, 2));
       return NextResponse.json(
         { success: false, error: firstError },
         { status: 400 }

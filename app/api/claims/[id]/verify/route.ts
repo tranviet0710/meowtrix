@@ -44,6 +44,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const parseResult = claimAnswersSchema.safeParse(body);
 
     if (!parseResult.success) {
+      console.error('[Claims Verify] Validation failed:', JSON.stringify(parseResult.error.flatten(), null, 2));
       return NextResponse.json(
         {
           error: "Validation failed",
