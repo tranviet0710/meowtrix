@@ -1,22 +1,23 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold uppercase tracking-wide transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 rounded-none",
   {
     variants: {
       variant: {
         default:
-          "bg-accent text-primary-foreground shadow-sm hover:bg-accent-hover",
+          "border-3 border-accent bg-accent text-primary-foreground shadow-[4px_4px_0px_0px] shadow-accent/60 hover:brightness-110 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
+        brutal:
+          "border-3 border-accent bg-accent text-primary-foreground shadow-[4px_4px_0px_0px] shadow-accent/60 hover:brightness-110 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
         destructive:
-          "bg-danger text-destructive-foreground shadow-sm hover:bg-danger/90",
+          "border-3 border-danger bg-danger text-destructive-foreground shadow-[4px_4px_0px_0px] shadow-danger/60 hover:brightness-110 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
         outline:
-          "border border-border bg-transparent text-text-primary shadow-sm hover:bg-card hover:text-accent",
+          "border-3 border-accent bg-transparent text-text-primary shadow-[4px_4px_0px_0px] shadow-accent/40 hover:bg-accent/10 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
         secondary:
-          "bg-card text-secondary-foreground shadow-sm hover:bg-card/80",
+          "border-3 border-border bg-card text-secondary-foreground shadow-[4px_4px_0px_0px] shadow-border hover:bg-card/80 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
         ghost: "hover:bg-card hover:text-accent",
         link: "text-accent underline-offset-4 hover:underline",
       },
@@ -27,10 +28,7 @@ const buttonVariants = cva(
         icon: "h-9 w-9",
       },
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+    defaultVariants: { variant: "default", size: "default" },
   }
 );
 
@@ -53,5 +51,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 Button.displayName = "Button";
-
 export { Button, buttonVariants };

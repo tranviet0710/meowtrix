@@ -7,10 +7,10 @@ export default function AuthLayout({
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
       {/* MEOWTRIX Logo / Title */}
       <div className="mb-8 text-center">
-        <h1 className="font-mono text-3xl font-bold tracking-wider text-accent">
-          MEOWTRIX
+        <h1 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-wider text-[#FFDE4D] uppercase">
+          Meowtrix
         </h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-2 text-sm font-bold uppercase text-text-secondary tracking-wide">
           Feline &amp; Canine Overlord Tracker
         </p>
       </div>
@@ -21,7 +21,7 @@ export default function AuthLayout({
       </div>
 
       {/* Footer branding */}
-      <p className="mt-8 text-xs text-text-secondary">
+      <p className="mt-8 text-xs font-mono font-bold uppercase text-text-secondary tracking-wider">
         Secure transmission channel — Classified HQ access
       </p>
     </div>
