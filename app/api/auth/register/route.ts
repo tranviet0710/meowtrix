@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
         total_points: 0,
         successful_matches: 0,
         is_seed: false,
+        last_active_at: new Date().toISOString(),
       });
 
     if (insertError) {

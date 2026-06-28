@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +15,12 @@ import {
 } from "@/components/ui/card";
 
 export default function RegisterPage() {
-  const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -63,12 +61,48 @@ export default function RegisterPage() {
         return;
       }
 
-      // On success, redirect directly to dashboard (location is optional via settings)
-      router.push("/dashboard");
+      // Show success state with email confirmation instructions
+      setSuccess(true);
+      setLoading(false);
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }
+  }
+
+  // Show success screen after registration
+  if (success) {
+    return (
+      <Card className="border-border bg-card">
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl text-text-primary">
+            Registration Complete
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+            <span className="text-3xl">📧</span>
+          </div>
+          <div className="text-center space-y-2">
+            <p className="text-sm text-text-primary font-medium">
+              Check your email to activate your account
+            </p>
+            <p className="text-xs text-text-secondary">
+              We sent a confirmation link to <span className="font-mono text-accent">{email}</span>.
+              Click the link to verify your account before signing in.
+            </p>
+          </div>
+          <div className="mt-2 rounded-[2px] border border-accent/30 bg-accent/5 px-4 py-3 text-xs text-text-secondary">
+            <p>Didn&apos;t get the email? Check your spam folder or try registering again in a few minutes.</p>
+          </div>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <Link href="/login" className="text-sm text-accent hover:underline">
+            Go to Sign In
+          </Link>
+        </CardFooter>
+      </Card>
+    );
   }
 
   return (
