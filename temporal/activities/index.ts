@@ -3,3 +3,4 @@
 export { isOverlordResolved, notifyNearbyInformants, sendSearchConcludedNotification } from './sendNotification';
 export { generateMissingPoster } from './generatePoster';
 export { findNearbyInformants } from './findNearbyInformants';
+export { isMatchStillClaimed, sendClaimReminderNotifications } from './claimReminder';

@@ -25,7 +25,7 @@ async function run(): Promise<void> {
 
   const worker = await Worker.create({
     connection,
-    workflowsPath: require.resolve('./workflows/searchProtocol'),
+    workflowsPath: require.resolve('./workflows'),
     activities,
     taskQueue: TASK_QUEUE,
   });

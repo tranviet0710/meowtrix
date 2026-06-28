@@ -37,6 +37,23 @@ export interface SearchProtocolActivities {
 }
 
 /**
+ * Activity interface for the Claim Reminder workflow.
+ */
+export interface ClaimReminderActivities {
+  /**
+   * Check if a match suggestion is still in "claimed" state.
+   * Returns false if it's been resolved or reverted to pending.
+   */
+  isMatchStillClaimed(matchId: string): Promise<boolean>;
+
+  /**
+   * Send reminder notifications and emails to both parties
+   * (overlord owner and agent reporter) for an unclosed claim.
+   */
+  sendClaimReminderNotifications(matchId: string): Promise<void>;
+}
+
+/**
  * Information about a nearby informant eligible for notifications.
  */
 export interface NearbyInformant {
