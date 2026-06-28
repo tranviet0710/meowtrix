@@ -166,6 +166,7 @@ export const settingsSchema = z.object({
   location_consent: z.boolean(),
   residential_lat: z.number().nullable().optional(),
   residential_lng: z.number().nullable().optional(),
+  residential_area: z.string().max(200).nullable().optional(),
 }).refine(
   (data) => {
     // If consent is true, lat/lng must be provided

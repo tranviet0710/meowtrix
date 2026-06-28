@@ -62,6 +62,8 @@ export interface Overlord {
   description: string;
   last_seen_lat: number;
   last_seen_lng: number;
+  /** Human-readable place label (e.g. "Silom, Bangkok"). Null for legacy rows. */
+  last_seen_address: string | null;
   last_seen_at: string;
   status: OverlordStatus;
   photos: string[];
@@ -82,6 +84,8 @@ export interface Agent {
   description: string;
   sighting_lat: number;
   sighting_lng: number;
+  /** Human-readable place label (e.g. "Chatuchak, Bangkok"). Null for legacy rows. */
+  sighting_address: string | null;
   sighted_at: string;
   status: AgentStatus;
   photos: string[];
@@ -139,4 +143,8 @@ export interface LeaderboardEntry {
   total_points: number;
   successful_matches: number;
   first_match_at: string | null;
+  /** Email with the local-part masked (e.g. "j***@example.com"). */
+  email_masked: string | null;
+  /** Human-readable residential area, or null when the user opted out. */
+  residential_area: string | null;
 }

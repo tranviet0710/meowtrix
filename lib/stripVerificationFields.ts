@@ -1,7 +1,5 @@
 // lib/stripVerificationFields.ts — Utility to remove verification fields from Overlord records
 
-import type { Overlord } from '@/types';
-
 /** The three verification fields that must never be exposed to non-owners */
 export const VERIFICATION_FIELDS = [
   'verification_name',
