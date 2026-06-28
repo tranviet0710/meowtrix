@@ -28,10 +28,12 @@ interface SendEmailOptions {
  * Send a single email via Resend.
  * Throws on failure so callers can handle retries.
  */
-export async function sendEmail({ to, subject, html }: SendEmailOptions): Promise<void> {
+export async function sendEmail({ to, subject, html }: SendEmailOptions): Promise<{ id: string | null }> {
   const resend = getResend();
 
-  const { error } = await resend.emails.send({
+  console.log(`[Email] Sending to "${to}" from "${FROM_ADDRESS}" — subject: "${subject}"`);
+
+  const { data, error } = await resend.emails.send({
     from: `MEOWTRIX HQ <${FROM_ADDRESS}>`,
     to,
     subject,
@@ -39,13 +41,29 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
   });
 
   if (error) {
-    throw new Error(`Resend error: ${error.message}`);
+    console.error(`[Email] Resend rejected send to "${to}":`, error);
+    throw new Error(`Resend error sending to ${to}: ${error.message}`);
   }
+
+  console.log(`[Email] Resend accepted send to "${to}" — id: ${data?.id ?? "unknown"}`);
+  return { id: data?.id ?? null };
+}
+
+/** Result of a single claim-email send attempt. */
+export interface ClaimEmailSendResult {
+  recipient: string;
+  role: "overlord_owner" | "agent_reporter";
+  status: "sent" | "failed";
+  messageId?: string;
+  error?: string;
 }
 
 /**
  * Send the claim notification email to both parties (lost reporter & found reporter).
  * Shares each other's email for scheduling a meetup.
+ *
+ * Each recipient is attempted independently — a failure to one party never blocks the other.
+ * Returns per-recipient status so callers can surface delivery issues.
  */
 export async function sendClaimEmails(params: {
   overlordOwnerEmail: string;
@@ -55,13 +73,13 @@ export async function sendClaimEmails(params: {
   petName: string;
   matchId: string;
   matchScore: number;
-}): Promise<void> {
+}): Promise<ClaimEmailSendResult[]> {
   const { overlordOwnerEmail, overlordOwnerName, agentReporterEmail, agentReporterName, petName, matchId, matchScore } = params;
 
   const matchUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://meowtrix.io"}/matches/${matchId}`;
 
   // Email to the lost reporter (overlord owner)
-  await sendEmail({
+  const overlordEmailPromise = sendEmail({
     to: overlordOwnerEmail,
     subject: `🎯 Claim Initiated — ${petName} may have been found!`,
     html: `
@@ -100,7 +118,7 @@ export async function sendClaimEmails(params: {
   });
 
   // Email to the found reporter (agent reporter)
-  await sendEmail({
+  const agentEmailPromise = sendEmail({
     to: agentReporterEmail,
     subject: `🎯 Someone is claiming the pet you found — ${petName}!`,
     html: `
@@ -136,6 +154,59 @@ export async function sendClaimEmails(params: {
       </div>
     `,
   });
+
+  // Run both sends independently so one failure can't block the other
+  const [overlordResult, agentResult] = await Promise.allSettled([
+    overlordEmailPromise,
+    agentEmailPromise,
+  ]);
+
+  const results: ClaimEmailSendResult[] = [
+    overlordResult.status === "fulfilled"
+      ? {
+          recipient: overlordOwnerEmail,
+          role: "overlord_owner",
+          status: "sent",
+          messageId: overlordResult.value.id ?? undefined,
+        }
+      : {
+          recipient: overlordOwnerEmail,
+          role: "overlord_owner",
+          status: "failed",
+          error:
+            overlordResult.reason instanceof Error
+              ? overlordResult.reason.message
+              : String(overlordResult.reason),
+        },
+    agentResult.status === "fulfilled"
+      ? {
+          recipient: agentReporterEmail,
+          role: "agent_reporter",
+          status: "sent",
+          messageId: agentResult.value.id ?? undefined,
+        }
+      : {
+          recipient: agentReporterEmail,
+          role: "agent_reporter",
+          status: "failed",
+          error:
+            agentResult.reason instanceof Error
+              ? agentResult.reason.message
+              : String(agentResult.reason),
+        },
+  ];
+
+  const failed = results.filter((r) => r.status === "failed");
+  if (failed.length > 0) {
+    console.error(
+      `[Email] sendClaimEmails: ${failed.length}/${results.length} send(s) failed`,
+      failed
+    );
+  } else {
+    console.log(`[Email] sendClaimEmails: all ${results.length} send(s) accepted by Resend`);
+  }
+
+  return results;
 }
 
 /**

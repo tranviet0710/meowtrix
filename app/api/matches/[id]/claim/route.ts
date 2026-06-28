@@ -2,8 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
-import { sendClaimEmails } from "@/lib/email";
-import { Connection, Client } from "@temporalio/client";
+import { sendClaimEmails, sendEmail, type ClaimEmailSendResult } from "@/lib/email";
+import { Connection, Client, WorkflowExecutionAlreadyStartedError } from "@temporalio/client";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -112,44 +112,79 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .eq("id", matchId);
 
     // Fetch informant details for both parties
-    const { data: ownerInfo } = await serviceClient
+    const { data: ownerInfo, error: ownerInfoError } = await serviceClient
       .from("informants")
       .select("id, email, display_name")
       .eq("id", overlord.owner_id)
       .single();
 
-    const { data: reporterInfo } = await serviceClient
+    const { data: reporterInfo, error: reporterInfoError } = await serviceClient
       .from("informants")
       .select("id, email, display_name")
       .eq("id", agent.reporter_id)
       .single();
 
-    // Send in-app notifications to both parties
-    if (ownerInfo && reporterInfo) {
-      const notifications = [
-        {
-          recipient_id: ownerInfo.id,
-          type: "claim_initiated",
-          title: `🎯 Claim Initiated — ${overlord.pet_name}`,
-          body: `You've claimed a match for ${overlord.pet_name}. The finder (${reporterInfo.display_name}) has been notified. Check your email for their contact details to schedule a meetup.`,
-          metadata: { match_id: matchId, overlord_id: overlord.id },
-          read: false,
-        },
-        {
-          recipient_id: reporterInfo.id,
-          type: "claim_initiated",
-          title: `🎯 Someone claimed the pet you found!`,
-          body: `The owner of ${overlord.pet_name} (${ownerInfo.display_name}) has initiated a claim. Check your email for their contact details to schedule a meetup.`,
-          metadata: { match_id: matchId, agent_id: agent.id },
-          read: false,
-        },
-      ];
+    if (!ownerInfo) {
+      console.error(
+        `[Claim ${matchId}] Owner informant row missing for owner_id=${overlord.owner_id}`,
+        ownerInfoError
+      );
+    }
+    if (!reporterInfo) {
+      console.error(
+        `[Claim ${matchId}] Reporter informant row missing for reporter_id=${agent.reporter_id}`,
+        reporterInfoError
+      );
+    }
 
-      await serviceClient.from("notifications").insert(notifications);
+    let emailResults: ClaimEmailSendResult[] = [];
 
-      // Send claim emails to both parties (non-blocking — don't fail claim on email error)
+    // Insert in-app notifications and send emails per-recipient independently.
+    // If one informant row is missing (data integrity issue), we still notify
+    // the side we *do* have info for instead of skipping both.
+    const notificationsToInsert: Array<Record<string, unknown>> = [];
+
+    if (ownerInfo) {
+      const finderName = reporterInfo?.display_name ?? "an informant";
+      notificationsToInsert.push({
+        recipient_id: ownerInfo.id,
+        type: "claim_initiated",
+        title: `🎯 Claim Initiated — ${overlord.pet_name}`,
+        body: `You've claimed a match for ${overlord.pet_name}. The finder (${finderName}) has been notified. Check your email for their contact details to schedule a meetup.`,
+        metadata: { match_id: matchId, overlord_id: overlord.id },
+        read: false,
+      });
+    }
+    if (reporterInfo) {
+      notificationsToInsert.push({
+        recipient_id: reporterInfo.id,
+        type: "claim_initiated",
+        title: `🎯 Someone claimed the pet you found!`,
+        body: `The owner of ${overlord.pet_name}${ownerInfo ? ` (${ownerInfo.display_name})` : ""} has initiated a claim. Check your email for their contact details to schedule a meetup.`,
+        metadata: { match_id: matchId, agent_id: agent.id },
+        read: false,
+      });
+    }
+
+    if (notificationsToInsert.length > 0) {
+      const { error: notifError } = await serviceClient
+        .from("notifications")
+        .insert(notificationsToInsert);
+      if (notifError) {
+        console.error(`[Claim ${matchId}] Failed to insert notifications:`, notifError);
+      }
+    }
+
+    // Send claim emails. When both sides are available, use the joint helper
+    // so each email contains the other party's contact info. When only one side
+    // is available (data integrity issue), send a degraded single-recipient
+    // notice so the claim is at least surfaced via email.
+    if (ownerInfo?.email && reporterInfo?.email) {
       try {
-        await sendClaimEmails({
+        console.log(
+          `[Claim ${matchId}] Dispatching claim emails to owner=${ownerInfo.email} and reporter=${reporterInfo.email}`
+        );
+        emailResults = await sendClaimEmails({
           overlordOwnerEmail: ownerInfo.email,
           overlordOwnerName: ownerInfo.display_name,
           agentReporterEmail: reporterInfo.email,
@@ -158,9 +193,86 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           matchId,
           matchScore: match.overall_score,
         });
+        const failed = emailResults.filter((r) => r.status === "failed");
+        if (failed.length > 0) {
+          console.error(
+            `[Claim ${matchId}] ${failed.length}/${emailResults.length} claim email(s) failed:`,
+            failed
+          );
+        }
       } catch (emailError) {
-        console.error("[Claim] Failed to send claim emails:", emailError);
-        // Continue — in-app notifications were still sent
+        console.error(
+          `[Claim ${matchId}] Unexpected error from sendClaimEmails:`,
+          emailError
+        );
+      }
+    } else {
+      console.warn(
+        `[Claim ${matchId}] Partial informant data — sending degraded single-recipient notice(s)`,
+        {
+          haveOwnerEmail: !!ownerInfo?.email,
+          haveReporterEmail: !!reporterInfo?.email,
+        }
+      );
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://meowtrix.io";
+      const matchUrl = `${appUrl}/matches/${matchId}`;
+
+      // Tell whoever we can reach that the claim was initiated, even if the
+      // other party's contact is unavailable.
+      const recipients: Array<{
+        email: string;
+        name: string;
+        role: ClaimEmailSendResult["role"];
+      }> = [];
+      if (ownerInfo?.email) {
+        recipients.push({
+          email: ownerInfo.email,
+          name: ownerInfo.display_name,
+          role: "overlord_owner",
+        });
+      }
+      if (reporterInfo?.email) {
+        recipients.push({
+          email: reporterInfo.email,
+          name: reporterInfo.display_name,
+          role: "agent_reporter",
+        });
+      }
+
+      for (const r of recipients) {
+        try {
+          const { id } = await sendEmail({
+            to: r.email,
+            subject: `🎯 Claim Initiated — ${overlord.pet_name}`,
+            html: `
+              <div style="font-family: monospace; background: #0A0A0F; color: #E6E6E6; padding: 32px; max-width: 600px;">
+                <h1 style="color: #FFCC00; font-size: 18px; text-transform: uppercase; letter-spacing: 2px;">⚡ CLAIM INITIATED</h1>
+                <p>Hello, <strong>${r.name}</strong>!</p>
+                <p>A claim has been initiated on the match for <strong style="color: #FFCC00;">${overlord.pet_name}</strong>.</p>
+                <p style="color: #FF4444;">The other party's contact information is currently unavailable. Please coordinate via the match page until this is resolved.</p>
+                <p style="margin-top: 24px;">
+                  <a href="${matchUrl}" style="display: inline-block; background: #FFCC00; color: #0A0A0F; padding: 12px 24px; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">View Match Details</a>
+                </p>
+              </div>
+            `,
+          });
+          emailResults.push({
+            recipient: r.email,
+            role: r.role,
+            status: "sent",
+            messageId: id ?? undefined,
+          });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.error(`[Claim ${matchId}] Degraded send to ${r.email} failed:`, message);
+          emailResults.push({
+            recipient: r.email,
+            role: r.role,
+            status: "failed",
+            error: message,
+          });
+        }
       }
     }
 
@@ -176,14 +288,30 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         workflowId: `claim-reminder-${matchId}`,
       });
     } catch (temporalError) {
-      // Log but don't block the claim — reminder is non-critical
-      console.error("[Claim] Failed to start reminder workflow:", temporalError);
+      if (temporalError instanceof WorkflowExecutionAlreadyStartedError) {
+        // Expected when the same match is claimed again — the reminder is already scheduled.
+        console.log(
+          `[Claim ${matchId}] Reminder workflow already running for this match; skipping start.`
+        );
+      } else {
+        // Log but don't block the claim — reminder is non-critical
+        console.error(`[Claim ${matchId}] Failed to start reminder workflow:`, temporalError);
+      }
     }
+
+    const sentCount = emailResults.filter((r) => r.status === "sent").length;
+    const failedCount = emailResults.filter((r) => r.status === "failed").length;
 
     return NextResponse.json(
       {
         success: true,
-        message: "Claim initiated. Both parties have been notified via email.",
+        message:
+          sentCount > 0 && failedCount === 0
+            ? "Claim initiated. Both parties have been notified via email."
+            : sentCount > 0
+            ? `Claim initiated. ${sentCount} of ${sentCount + failedCount} email(s) were delivered.`
+            : "Claim initiated, but no emails could be sent. Check the in-app inbox.",
+        emails: emailResults,
       },
       { status: 201 }
     );
