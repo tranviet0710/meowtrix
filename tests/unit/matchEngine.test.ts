@@ -43,6 +43,7 @@ function makeOverlord(overrides: Partial<Overlord> = {}): Overlord {
     poster_url: null,
     is_seed: false,
     created_at: '2024-01-01T10:00:00Z',
+    last_seen_address: null,
     ...overrides,
   };
 }
@@ -62,6 +63,7 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
     tagging_status: 'complete',
     is_seed: false,
     created_at: '2024-01-02T14:00:00Z',
+    sighting_address: null,
     ...overrides,
   };
 }
