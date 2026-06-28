@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, Shield, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import { overlordFormSchema, type OverlordFormInput } from "@/lib/validators";
+import { overlordFormSchema } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhotoUploader } from "@/components/forms/PhotoUploader";
+import { SuccessToast } from "@/components/ui/SuccessToast";
+import { useSuccessToast } from "@/hooks/useSuccessToast";
 
 const MapPicker = dynamic(() => import("@/components/map/MapPicker"), {
   ssr: false,
@@ -38,6 +40,7 @@ interface FieldErrors {
 
 export function LostOverlordForm() {
   const router = useRouter();
+  const { toast, showToast, dismissToast } = useSuccessToast();
 
   // Form field state
   const [petName, setPetName] = React.useState("");
@@ -160,12 +163,19 @@ export function LostOverlordForm() {
       setVerificationTrait("");
       setFieldErrors({});
 
+      showToast(
+        "REPORT DEPLOYED",
+        "Missing Overlord alert filed successfully. Our network is now scanning."
+      );
+
       const overlordId = data.overlord?.id;
-      if (overlordId) {
-        router.push(`/overlords/${overlordId}`);
-      } else {
-        router.push("/dashboard");
-      }
+      setTimeout(() => {
+        if (overlordId) {
+          router.push(`/overlords/${overlordId}`);
+        } else {
+          router.push("/dashboard");
+        }
+      }, 1500);
     } catch {
       setSubmitError("Network error — check your connection and try again.");
       setIsSubmitting(false);
@@ -181,6 +191,14 @@ export function LostOverlordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+      {/* Success toast */}
+      <SuccessToast
+        visible={toast.visible}
+        title={toast.title}
+        body={toast.body}
+        onDismiss={dismissToast}
+      />
+
       {/* Global submit error */}
       {submitError && (
         <div className="flex items-start gap-2 rounded-[2px] border border-danger/50 bg-danger/10 px-4 py-3 text-sm text-danger">
