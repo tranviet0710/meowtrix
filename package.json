@@ -22,6 +22,7 @@
     "@temporalio/client": "1.11.7",
     "@temporalio/worker": "1.11.7",
     "@temporalio/workflow": "1.11.7",
+    "@types/three": "0.185.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "leaflet": "1.9.4",
@@ -35,6 +36,7 @@
     "resend": "4.5.1",
     "sharp": "0.34.5",
     "tailwind-merge": "3.3.0",
+    "three": "0.185.0",
     "zod": "3.23.8"
   },
   "devDependencies": {

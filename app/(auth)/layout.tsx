@@ -1,10 +1,23 @@
 import Image from "next/image";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabaseServer";
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // If the visitor already has an active session, skip the login/register
+  // screens entirely and drop them at HQ.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
       {/* MEOWTRIX Logo / Title */}
