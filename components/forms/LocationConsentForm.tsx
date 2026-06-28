@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { MapPin } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,14 +21,19 @@ interface LocationConsentFormProps {
   initialConsent: boolean;
   initialLat: number | null;
   initialLng: number | null;
+  /** Initial human-readable area string (server-resolved). */
+  initialArea?: string;
 }
 
 /**
  * LocationConsentForm — Manages location consent toggle and map picker
  * for the settings page.
  *
- * When toggled ON: displays the map picker for coordinate selection.
- * When toggled OFF: clears coordinates to null.
+ * When toggled ON: displays the map picker for coordinate selection. On save,
+ * the server reverse-geocodes the coordinates into a human-readable label
+ * (e.g. "Silom, Bangkok, Thailand") and stores it on the informant row.
+ *
+ * When toggled OFF: clears coordinates and area to empty.
  *
  * Requirements: 1.2, 1.11, 1.12
  */
@@ -35,8 +41,10 @@ export function LocationConsentForm({
   initialConsent,
   initialLat,
   initialLng,
+  initialArea = "",
 }: LocationConsentFormProps) {
   const [consent, setConsent] = useState(initialConsent);
+  const [area, setArea] = useState(initialArea);
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
     lng: number;
@@ -54,12 +62,14 @@ export function LocationConsentForm({
     setError("");
     setSuccess("");
     // When toggling off, we don't clear selectedLocation immediately
-    // so the user can toggle back on without losing the pin
+    // so the user can toggle back on without losing the pin.
   }, []);
 
   const handleLocationSelect = useCallback(
     (location: { lat: number; lng: number }) => {
       setSelectedLocation(location);
+      // Reset the cached area label so the server re-resolves on save.
+      setArea("");
       setError("");
       setSuccess("");
     },
@@ -95,6 +105,10 @@ export function LocationConsentForm({
         return;
       }
 
+      // Reflect the server-resolved area in the UI immediately.
+      if (typeof data.residential_area === "string") {
+        setArea(data.residential_area);
+      }
       setSuccess("Settings updated successfully.");
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -156,9 +170,17 @@ export function LocationConsentForm({
             selectedLocation={selectedLocation}
           />
           {selectedLocation && (
-            <p className="text-xs font-mono text-text-secondary">
-              📍 {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
-            </p>
+            <div className="flex flex-col gap-1 text-xs">
+              {area && (
+                <p className="flex items-center gap-1.5 text-text-primary">
+                  <MapPin className="h-3 w-3 text-accent" aria-hidden="true" />
+                  {area}
+                </p>
+              )}
+              <p className="font-mono text-text-secondary">
+                📍 {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
+              </p>
+            </div>
           )}
         </div>
       )}
@@ -169,15 +191,6 @@ export function LocationConsentForm({
           <p className="text-xs text-text-secondary leading-relaxed">
             ⚠ You will not receive alerts about missing cats in your area.
             You can enable this at any time.
-          </p>
-        </div>
-      )}
-
-      {/* Current location preview when consent is ON and location is set */}
-      {consent && initialLat != null && initialLng != null && !hasChanges && (
-        <div className="rounded-[2px] border border-accent/20 bg-accent/5 px-4 py-3">
-          <p className="text-xs font-mono text-text-secondary">
-            CURRENT LOCATION: {initialLat.toFixed(5)}, {initialLng.toFixed(5)}
           </p>
         </div>
       )}

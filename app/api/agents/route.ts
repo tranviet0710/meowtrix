@@ -5,6 +5,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { agentFormSchema } from "@/lib/validators";
 import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
+import { reverseGeocode } from "@/lib/geocoding";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -69,6 +70,10 @@ export async function POST(request: NextRequest) {
     // Create the Agent record using the service role client
     const serviceClient = await createServiceRoleClient();
 
+    // Reverse-geocode sighting coordinates into a human-readable label
+    // (best-effort — falls back to null if the geocoder is unreachable).
+    const sighting_address = await reverseGeocode(sighting_lat, sighting_lng);
+
     const { data: agent, error: insertError } = await serviceClient
       .from("agents")
       .insert({
@@ -77,6 +82,7 @@ export async function POST(request: NextRequest) {
         description,
         sighting_lat,
         sighting_lng,
+        sighting_address,
         sighted_at,
         status: "active",
         photos,
@@ -214,6 +220,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const reporterId = searchParams.get("reporter_id");
+    const mine = searchParams.get("mine");
+    const petType = searchParams.get("pet_type");
+    const since = searchParams.get("since"); // ISO datetime — sighted_at >= since
 
     let query = supabase
       .from("agents")
@@ -224,7 +233,20 @@ export async function GET(request: NextRequest) {
       query = query.eq("status", status);
     }
 
-    if (reporterId) {
+    if (petType === "cat" || petType === "dog") {
+      query = query.eq("pet_type", petType);
+    }
+
+    if (since) {
+      const sinceDate = new Date(since);
+      if (!Number.isNaN(sinceDate.getTime())) {
+        query = query.gte("sighted_at", sinceDate.toISOString());
+      }
+    }
+
+    if (mine === "true") {
+      query = query.eq("reporter_id", user.id);
+    } else if (reporterId) {
       query = query.eq("reporter_id", reporterId);
     }
 

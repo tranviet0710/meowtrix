@@ -28,6 +28,7 @@ interface AgentDetail {
   description: string;
   sighting_lat: number;
   sighting_lng: number;
+  sighting_address: string | null;
   sighted_at: string;
   status: "active" | "resolved";
   photos: string[];
@@ -234,9 +235,20 @@ export default function AgentDetailPage() {
               Sighting Location
             </span>
           </div>
-          <p className="font-mono text-sm text-text-primary">
-            {agent.sighting_lat.toFixed(5)}, {agent.sighting_lng.toFixed(5)}
-          </p>
+          {agent.sighting_address ? (
+            <>
+              <p className="text-sm text-text-primary leading-snug">
+                {agent.sighting_address}
+              </p>
+              <p className="font-mono text-[11px] text-text-secondary mt-1">
+                {agent.sighting_lat.toFixed(5)}, {agent.sighting_lng.toFixed(5)}
+              </p>
+            </>
+          ) : (
+            <p className="font-mono text-sm text-text-primary">
+              {agent.sighting_lat.toFixed(5)}, {agent.sighting_lng.toFixed(5)}
+            </p>
+          )}
         </div>
 
         {/* Timestamp */}

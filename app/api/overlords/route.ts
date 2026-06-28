@@ -5,6 +5,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { overlordFormSchema } from "@/lib/validators";
 import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
+import { reverseGeocode } from "@/lib/geocoding";
 import { Connection, Client } from "@temporalio/client";
 
 const TASK_QUEUE = "meowtrix-search-protocol";
@@ -83,6 +84,10 @@ export async function POST(request: NextRequest) {
     // potential RLS issues with returning the full record
     const serviceClient = await createServiceRoleClient();
 
+    // Reverse-geocode last-seen coordinates into a human-readable label
+    // (best-effort — fall back to null if the geocoder is unreachable).
+    const last_seen_address = await reverseGeocode(last_seen_lat, last_seen_lng);
+
     const { data: overlord, error: insertError } = await serviceClient
       .from("overlords")
       .insert({
@@ -92,6 +97,7 @@ export async function POST(request: NextRequest) {
         description,
         last_seen_lat,
         last_seen_lng,
+        last_seen_address,
         last_seen_at,
         status: "active",
         photos,
@@ -253,17 +259,30 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const ownerId = searchParams.get("owner_id");
     const mine = searchParams.get("mine");
+    const petType = searchParams.get("pet_type");
+    const since = searchParams.get("since"); // ISO datetime — last_seen_at >= since
 
     // Select all columns except verification fields
     let query = supabase
       .from("overlords")
       .select(
-        "id, owner_id, pet_name, pet_type, description, last_seen_lat, last_seen_lng, last_seen_at, status, photos, trait_tags, tagging_status, poster_url, temporal_workflow_id, is_seed, created_at"
+        "id, owner_id, pet_name, pet_type, description, last_seen_lat, last_seen_lng, last_seen_address, last_seen_at, status, photos, trait_tags, tagging_status, poster_url, temporal_workflow_id, is_seed, created_at"
       )
       .order("created_at", { ascending: false });
 
     if (status && (status === "active" || status === "resolved")) {
       query = query.eq("status", status);
+    }
+
+    if (petType === "cat" || petType === "dog") {
+      query = query.eq("pet_type", petType);
+    }
+
+    if (since) {
+      const sinceDate = new Date(since);
+      if (!Number.isNaN(sinceDate.getTime())) {
+        query = query.gte("last_seen_at", sinceDate.toISOString());
+      }
     }
 
     // If mine=true, filter to current user's reports only

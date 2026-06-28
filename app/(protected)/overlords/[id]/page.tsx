@@ -30,6 +30,7 @@ interface OverlordDetail {
   description: string;
   last_seen_lat: number;
   last_seen_lng: number;
+  last_seen_address: string | null;
   last_seen_at: string;
   status: "active" | "resolved";
   photos: string[];
@@ -238,9 +239,20 @@ export default function OverlordDetailPage() {
               Last Known Position
             </span>
           </div>
-          <p className="font-mono text-sm text-text-primary">
-            {overlord.last_seen_lat.toFixed(5)}, {overlord.last_seen_lng.toFixed(5)}
-          </p>
+          {overlord.last_seen_address ? (
+            <>
+              <p className="text-sm text-text-primary leading-snug">
+                {overlord.last_seen_address}
+              </p>
+              <p className="font-mono text-[11px] text-text-secondary mt-1">
+                {overlord.last_seen_lat.toFixed(5)}, {overlord.last_seen_lng.toFixed(5)}
+              </p>
+            </>
+          ) : (
+            <p className="font-mono text-sm text-text-primary">
+              {overlord.last_seen_lat.toFixed(5)}, {overlord.last_seen_lng.toFixed(5)}
+            </p>
+          )}
         </div>
 
         {/* Timestamp */}
