@@ -21,8 +21,11 @@ export type ClaimStatus = 'pending' | 'verified' | 'rejected' | 'locked';
 export type NotificationType =
   | 'match_alert'
   | 'escalation'
+  | 'claim_initiated'
   | 'claim_verified'
   | 'claim_rejected'
+  | 'claim_reminder'
+  | 'claim_reverted'
   | 'overlord_resolved'
   | 'search_concluded';
 
