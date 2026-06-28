@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Clock, MapPin } from "lucide-react";
+import { AlertTriangle, Clock } from "lucide-react";
 
 interface OverlordSummary {
   id: string;
