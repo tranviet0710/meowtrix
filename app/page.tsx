@@ -3,6 +3,7 @@ import { LandingNav } from "@/components/landing/LandingNav";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { StatsBanner } from "@/components/landing/StatsBanner";
 import { MissionSection } from "@/components/landing/MissionSection";
+import { MascotsGallery } from "@/components/landing/MascotsGallery";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { FaqSection } from "@/components/landing/FaqSection";
@@ -25,6 +26,7 @@ export default async function Home() {
         <HeroSection isAuthenticated={isAuthenticated} />
         <StatsBanner />
         <MissionSection />
+        <MascotsGallery />
         <FeaturesSection />
         <HowItWorksSection isAuthenticated={isAuthenticated} />
         <FaqSection />

@@ -1,3 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
+// Mascot gif is a lightweight Giphy embed; using <img> avoids configuring
+// next/image remote patterns just for a decorative thumbnail.
 import Link from "next/link";
 import { ArrowRight, Radio, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +53,24 @@ export function HeroSection({ isAuthenticated }: HeroSectionProps) {
         <p className="mt-4 max-w-2xl font-[family-name:var(--font-space-grotesk)] text-lg font-bold uppercase tracking-wider text-text-secondary sm:text-xl">
           The World&apos;s First Feline &amp; Canine Overlord Tracker
         </p>
+
+        {/* Friendly mascot — adds a little warmth to the spy aesthetic */}
+        <div className="mt-8 inline-flex items-center gap-3 border border-accent/30 bg-card/70 py-2 pl-2 pr-4 backdrop-blur-sm">
+          <img
+            src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif"
+            alt="Cat agent watching over HQ"
+            loading="eager"
+            className="h-10 w-10 border border-accent/40 object-cover sm:h-12 sm:w-12"
+          />
+          <div className="text-left">
+            <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-accent">
+              Field Comms · Live
+            </div>
+            <div className="text-xs font-semibold text-text-primary sm:text-sm">
+              &ldquo;We&apos;ve got eyes on every block. Stay pawsitive.&rdquo;
+            </div>
+          </div>
+        </div>
 
         {/* Mission lede */}
         <p className="mt-8 max-w-2xl text-balance text-base leading-relaxed text-text-primary/85 sm:text-lg">
