@@ -97,8 +97,11 @@ export async function POST(request: NextRequest) {
     // Notify nearby overlord owners that a pet was spotted in their area
     try {
       await notifyNearbyOverlordOwners(serviceClient, agent.id, pet_type, sighting_lat, sighting_lng, photos[0] ?? null);
-    } catch {
+    } catch (notifyError) {
       // Non-blocking — notification failure doesn't affect agent creation
+      const errMsg = notifyError instanceof Error ? notifyError.message : String(notifyError);
+      const errStack = notifyError instanceof Error ? notifyError.stack : undefined;
+      console.error(`[Agent POST] Notification failed for agent ${agent.id}: ${errMsg}`, errStack);
     }
 
     // Process vision + matching directly (no HTTP call to self)
@@ -108,19 +111,27 @@ export async function POST(request: NextRequest) {
         const traitTags = await extractTraitsFromImage(photoUrl);
 
         if (traitTags) {
-          await serviceClient
+          const { error: updateError } = await serviceClient
             .from("agents")
             .update({ trait_tags: traitTags, tagging_status: "complete" })
             .eq("id", agent.id);
 
+          if (updateError) {
+            console.error(`[Agent POST] Failed to update trait_tags for agent ${agent.id}: ${updateError.message}`, updateError);
+          }
+
           // Trigger match evaluation
           await triggerMatchEvaluation(serviceClient, agent.id, "agent");
           break; // One successful tag is enough to trigger matching
+        } else {
+          console.warn(`[Agent POST] extractTraitsFromImage returned null for agent ${agent.id}, photo: ${photoUrl}`);
         }
       }
-    } catch {
+    } catch (visionError) {
       // Vision/matching failures are non-blocking — agent record is still created
-      console.error(`[Agent POST] Vision/matching failed for agent ${agent.id}`);
+      const errMsg = visionError instanceof Error ? visionError.message : String(visionError);
+      const errStack = visionError instanceof Error ? visionError.stack : undefined;
+      console.error(`[Agent POST] Vision/matching failed for agent ${agent.id}: ${errMsg}`, errStack);
     }
 
     return NextResponse.json({ agent }, { status: 201 });

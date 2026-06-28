@@ -119,17 +119,26 @@ export async function POST(request: NextRequest) {
       try {
         const traitTags = await extractTraitsFromImage(photoUrl);
         if (traitTags) {
-          await serviceClient
+          const { error: updateError } = await serviceClient
             .from("overlords")
             .update({ trait_tags: traitTags, tagging_status: "complete" })
             .eq("id", overlord.id);
 
+          if (updateError) {
+            console.error(`[Overlord POST] Failed to update trait_tags for overlord ${overlord.id}: ${updateError.message}`, updateError);
+          }
+
           // Trigger match evaluation
           await triggerMatchEvaluation(serviceClient, overlord.id, "overlord");
           break; // One successful tag is enough
+        } else {
+          console.warn(`[Overlord POST] extractTraitsFromImage returned null for overlord ${overlord.id}, photo: ${photoUrl}`);
         }
-      } catch {
+      } catch (visionError) {
         // Vision failures are non-blocking
+        const errMsg = visionError instanceof Error ? visionError.message : String(visionError);
+        const errStack = visionError instanceof Error ? visionError.stack : undefined;
+        console.error(`[Overlord POST] Vision/matching failed for overlord ${overlord.id}, photo: ${photoUrl}: ${errMsg}`, errStack);
       }
     }
 
@@ -156,10 +165,12 @@ export async function POST(request: NextRequest) {
           .from("overlords")
           .update({ temporal_workflow_id: workflowId })
           .eq("id", overlord.id);
-      } catch {
+      } catch (temporalError) {
         // Temporal not available — non-fatal, continue without workflow
+        const errMsg = temporalError instanceof Error ? temporalError.message : String(temporalError);
+        const errStack = temporalError instanceof Error ? temporalError.stack : undefined;
         console.error(
-          `[Overlord POST] Failed to start Search Protocol for ${overlord.id}`
+          `[Overlord POST] Failed to start Search Protocol for ${overlord.id}: ${errMsg}`, errStack
         );
       }
     }
@@ -192,8 +203,10 @@ export async function POST(request: NextRequest) {
 
         await serviceClient.from("notifications").insert(notifications);
       }
-    } catch {
+    } catch (notifyError) {
       // Non-blocking
+      const errMsg = notifyError instanceof Error ? notifyError.message : String(notifyError);
+      console.error(`[Overlord POST] Nearby notification failed for overlord ${overlord.id}: ${errMsg}`);
     }
 
     // Return the created record without verification fields

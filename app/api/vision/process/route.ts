@@ -41,12 +41,16 @@ export async function POST(request: NextRequest) {
       if (result === null) {
         // Response was incomplete (missing required fields)
         taggingStatus = "incomplete";
+        console.warn(`[Vision] extractTraitsFromImage returned null (incomplete response) for ${body.record_type} ${body.record_id}, photo: ${body.photo_url}`);
       } else {
         traitTags = result;
         taggingStatus = "complete";
       }
-    } catch {
+    } catch (extractError) {
       // Both attempts failed — mark for manual review
+      const errMsg = extractError instanceof Error ? extractError.message : String(extractError);
+      const errStack = extractError instanceof Error ? extractError.stack : undefined;
+      console.error(`[Vision] extractTraitsFromImage failed for ${body.record_type} ${body.record_id}, photo: ${body.photo_url}: ${errMsg}`, errStack);
       taggingStatus = "manual_review";
     }
 
@@ -75,9 +79,12 @@ export async function POST(request: NextRequest) {
     if (taggingStatus === "complete" && traitTags) {
       try {
         await triggerMatchEvaluation(supabase, body.record_id, body.record_type);
-      } catch {
+      } catch (matchError) {
         // Match evaluation failure should not fail the vision processing response
         // It will be retried when the record is re-evaluated
+        const errMsg = matchError instanceof Error ? matchError.message : String(matchError);
+        const errStack = matchError instanceof Error ? matchError.stack : undefined;
+        console.error(`[Vision] triggerMatchEvaluation failed for ${body.record_type} ${body.record_id}: ${errMsg}`, errStack);
       }
     }
 

@@ -157,8 +157,9 @@ export async function PATCH(
             record_type: "overlord",
             photo_url: photoUrl,
           }),
-        }).catch(() => {
-          // Fire-and-forget
+        }).catch((fetchErr) => {
+          const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          console.error(`[Overlord PATCH] Vision process fetch failed for overlord ${id}, photo: ${photoUrl}: ${errMsg}`);
         });
       }
     }
@@ -206,10 +207,12 @@ export async function PATCH(
       const resolvedAgentId = body.resolved_agent_id ?? null;
       try {
         await executeResolutionFlow(serviceClient, id, resolvedAgentId);
-      } catch {
+      } catch (resolutionError) {
         // Resolution flow errors are non-fatal — the status update already succeeded
+        const errMsg = resolutionError instanceof Error ? resolutionError.message : String(resolutionError);
+        const errStack = resolutionError instanceof Error ? resolutionError.stack : undefined;
         console.error(
-          `[Overlord PATCH] Resolution flow failed for ${id}`
+          `[Overlord PATCH] Resolution flow failed for ${id}: ${errMsg}`, errStack
         );
       }
     }

@@ -51,6 +51,9 @@ async function enforceMaxSuggestionsPerOverlord(
     .order("overall_score", { ascending: true });
 
   if (error || !existing) {
+    if (error) {
+      console.error(`[MatchTrigger] enforceMaxSuggestionsPerOverlord query failed for overlord ${overlordId}: ${error.message}`, error);
+    }
     return true; // Allow insertion if we can't verify
   }
 
@@ -85,6 +88,7 @@ async function isDuplicate(
     .limit(1);
 
   if (error) {
+    console.error(`[MatchTrigger] isDuplicate query failed for overlord ${overlordId}, agent ${agentId}: ${error.message}`, error);
     return false;
   }
 
@@ -107,7 +111,13 @@ async function evaluateAgentAgainstOverlords(
     .eq("tagging_status", "complete")
     .not("trait_tags", "is", null);
 
-  if (error || !overlords || overlords.length === 0) {
+  if (error) {
+    console.error(`[MatchTrigger] evaluateAgentAgainstOverlords query failed for agent ${agent.id}: ${error.message}`, error);
+    return;
+  }
+
+  if (!overlords || overlords.length === 0) {
+    console.log(`[MatchTrigger] No active overlords with complete trait tags found for agent ${agent.id}`);
     return;
   }
 
@@ -132,7 +142,13 @@ async function evaluateOverlordAgainstAgents(
     .eq("tagging_status", "complete")
     .not("trait_tags", "is", null);
 
-  if (error || !agents || agents.length === 0) {
+  if (error) {
+    console.error(`[MatchTrigger] evaluateOverlordAgainstAgents query failed for overlord ${overlord.id}: ${error.message}`, error);
+    return;
+  }
+
+  if (!agents || agents.length === 0) {
+    console.log(`[MatchTrigger] No active agents with complete trait tags found for overlord ${overlord.id}`);
     return;
   }
 
@@ -196,6 +212,7 @@ async function processMatchPair(
     .single();
 
   if (insertError || !insertedMatch) {
+    console.error(`[MatchTrigger] Failed to insert match_suggestion for overlord ${overlord.id} + agent ${agent.id}: ${insertError?.message ?? "No data returned"}`, insertError);
     return;
   }
 
@@ -247,11 +264,13 @@ export async function triggerMatchEvaluation(
       .single();
 
     if (error || !agent) {
+      console.error(`[MatchTrigger] triggerMatchEvaluation failed to fetch agent ${recordId}: ${error?.message ?? "No data returned"}`, error);
       return;
     }
 
     // Skip records without complete trait tags
     if (agent.tagging_status !== "complete" || !agent.trait_tags) {
+      console.warn(`[MatchTrigger] Agent ${recordId} skipped: tagging_status=${agent.tagging_status}, trait_tags=${agent.trait_tags ? "present" : "null"}`);
       return;
     }
 
@@ -265,11 +284,13 @@ export async function triggerMatchEvaluation(
       .single();
 
     if (error || !overlord) {
+      console.error(`[MatchTrigger] triggerMatchEvaluation failed to fetch overlord ${recordId}: ${error?.message ?? "No data returned"}`, error);
       return;
     }
 
     // Skip records without complete trait tags
     if (overlord.tagging_status !== "complete" || !overlord.trait_tags) {
+      console.warn(`[MatchTrigger] Overlord ${recordId} skipped: tagging_status=${overlord.tagging_status}, trait_tags=${overlord.trait_tags ? "present" : "null"}`);
       return;
     }
 

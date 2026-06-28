@@ -306,8 +306,10 @@ export async function optimizeImage(
     ]);
 
     return result;
-  } catch {
+  } catch (optimizeError) {
     // On any error or timeout, return original unchanged
+    const errMsg = optimizeError instanceof Error ? optimizeError.message : String(optimizeError);
+    console.error(`[ImageOptimizer] Optimization failed, returning original: ${errMsg}`);
     const metadata = await sharp(input).metadata().catch(() => null);
 
     return {

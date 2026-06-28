@@ -39,10 +39,11 @@ export async function executeResolutionFlow(
         .from("overlords")
         .update({ temporal_workflow_id: null })
         .eq("id", overlordId);
-    } catch {
+    } catch (temporalError) {
       // Workflow may already be completed or cancelled — non-fatal
+      const errMsg = temporalError instanceof Error ? temporalError.message : String(temporalError);
       console.error(
-        `Failed to cancel Temporal workflow for Overlord ${overlordId}`
+        `Failed to cancel Temporal workflow for Overlord ${overlordId}: ${errMsg}`
       );
     }
   }

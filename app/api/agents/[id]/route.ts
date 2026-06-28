@@ -145,8 +145,9 @@ export async function PATCH(
             record_type: "agent",
             photo_url: photoUrl,
           }),
-        }).catch(() => {
-          // Fire-and-forget
+        }).catch((fetchErr) => {
+          const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          console.error(`[Agent PATCH] Vision process fetch failed for agent ${id}, photo: ${photoUrl}: ${errMsg}`);
         });
       }
     }

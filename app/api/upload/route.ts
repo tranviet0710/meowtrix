@@ -115,9 +115,12 @@ export async function POST(request: NextRequest) {
       width: optimized.width,
       height: optimized.height,
     });
-  } catch {
+  } catch (uploadError) {
+    const errMsg = uploadError instanceof Error ? uploadError.message : String(uploadError);
+    const errStack = uploadError instanceof Error ? uploadError.stack : undefined;
+    console.error(`[Upload] Internal server error: ${errMsg}`, errStack);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: `Internal server error: ${errMsg}` },
       { status: 500 }
     );
   }

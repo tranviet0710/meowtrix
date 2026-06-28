@@ -84,7 +84,9 @@ export function parseGeminiResponse(text: string): TraitTags | null {
     };
 
     return traitTags;
-  } catch {
+  } catch (parseError) {
+    const errMsg = parseError instanceof Error ? parseError.message : String(parseError);
+    console.error(`[Gemini] parseGeminiResponse failed: ${errMsg}. Raw text (first 500 chars): ${text.slice(0, 500)}`);
     return null;
   }
 }
@@ -276,7 +278,7 @@ async function callGeminiWithTimeout(imageUrl: string): Promise<string> {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const { base64, mimeType } = await fetchImageAsBase64(imageUrl);
 
