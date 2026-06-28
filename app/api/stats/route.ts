@@ -4,6 +4,9 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 
+// Ensure this route is always dynamic (never cached at build time)
+export const dynamic = "force-dynamic";
+
 export interface DashboardStats {
   total_overlords: number;
   active_searches: number;
@@ -62,34 +65,30 @@ export async function GET() {
       );
     }
 
-    // Update the current user's last_active_at timestamp (ignore if column doesn't exist yet)
+    // Update the current user's last_active_at timestamp
     const serviceClient = await createServiceRoleClient();
-    try {
-      await serviceClient
-        .from("informants")
-        .update({ last_active_at: new Date().toISOString() })
-        .eq("id", user.id);
-    } catch {
-      // Column might not exist yet if migration hasn't been applied
-    }
-
-    // Fetch informants online (active session within last 5 minutes)
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    let onlineCount = 0;
-
-    const { count: informantsOnline, error: onlineError } = await serviceClient
+    await serviceClient
       .from("informants")
-      .select("*", { count: "exact", head: true })
-      .gte("last_active_at", fiveMinutesAgo);
+      .update({ last_active_at: new Date().toISOString() })
+      .eq("id", user.id);
 
-    if (!onlineError && informantsOnline !== null) {
-      onlineCount = informantsOnline;
-    } else {
-      // Fallback: count all informants if column doesn't exist
-      const { count: totalInformants } = await serviceClient
+    // Fetch informants online (active within last 5 minutes)
+    // Use Supabase's server-side time calculation to avoid client/server clock skew
+    const { data: rpcResult, error: onlineError } = await serviceClient
+      .rpc("count_online_informants", { minutes_ago: 5 });
+
+    // Fallback: if RPC doesn't exist, use client-side time calculation
+    let onlineCount: number;
+    if (onlineError || rpcResult === null || rpcResult === undefined) {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { count, error: fallbackError } = await serviceClient
         .from("informants")
-        .select("*", { count: "exact", head: true });
-      onlineCount = totalInformants ?? 0;
+        .select("*", { count: "exact", head: true })
+        .gte("last_active_at", fiveMinutesAgo);
+
+      onlineCount = (!fallbackError && count !== null) ? count : 1;
+    } else {
+      onlineCount = typeof rpcResult === "number" ? rpcResult : 1;
     }
 
     const stats: DashboardStats = {
@@ -98,7 +97,9 @@ export async function GET() {
       informants_online: onlineCount,
     };
 
-    return NextResponse.json(stats);
+    return NextResponse.json(stats, {
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
