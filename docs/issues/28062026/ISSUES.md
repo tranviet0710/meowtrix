@@ -1,13 +1,11 @@
 BUGS:
-- remove location asking when user register
 - number of informants online is not updated
-- allow user to input the time they spot the pet (current auto generated momment)
-- user can not see current lost and found reports
-- when report found submit, no AI matching actions occur
+- user can not claim his cat in matches page
 
 IMPROVEMENTS:
-- allow input address on map
-- to user who register the notification, they will receive notifications in real-time when report found submitted (allow they pick their pets in timely-manner)
+- after user register successfully, tell them to go to email to activate the account. If account is not activated, show user "clear message" instead of "Invalid credentials"  
+- notification: lost & found report submitted, the ui ux should works well
 
 TO DO:
+- login with google, facebook
 - update to send emails by gmail account
