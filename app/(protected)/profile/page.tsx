@@ -220,11 +220,13 @@ export default function ProfilePage() {
           {/* Location Consent */}
           <div className="bg-card p-4 flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5 text-secondary" aria-hidden="true" />
-            <span className="font-mono text-sm font-bold text-text-primary">
-              {profile.location_consent ? "ACTIVE" : "INACTIVE"}
+            <span className="font-mono text-sm font-bold text-text-primary text-center px-2 break-words">
+              {profile.location_consent
+                ? profile.residential_area || "ACTIVE"
+                : "INACTIVE"}
             </span>
             <span className="text-xs text-text-secondary uppercase tracking-wider">
-              Proximity Alerts
+              {profile.location_consent ? "Region" : "Proximity Alerts"}
             </span>
           </div>
 

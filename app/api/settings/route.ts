@@ -3,12 +3,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
 import { settingsSchema } from "@/lib/validators";
+import { reverseGeocode } from "@/lib/geocoding";
 
 /**
  * GET /api/settings
  *
  * Returns the authenticated Informant's current settings including
- * location consent status and coordinates.
+ * location consent status, coordinates, and human-readable residential area.
  *
  * Requirements: 1.11, 1.12
  */
@@ -30,7 +31,9 @@ export async function GET() {
 
     const { data: informant, error: fetchError } = await supabase
       .from("informants")
-      .select("location_consent, residential_lat, residential_lng, display_name, email")
+      .select(
+        "location_consent, residential_lat, residential_lng, residential_area, display_name, email"
+      )
       .eq("id", user.id)
       .single();
 
@@ -45,6 +48,7 @@ export async function GET() {
       location_consent: informant.location_consent ?? false,
       residential_lat: informant.residential_lat ?? null,
       residential_lng: informant.residential_lng ?? null,
+      residential_area: informant.residential_area ?? "",
       display_name: informant.display_name ?? "",
       email: informant.email ?? "",
     });
@@ -60,14 +64,15 @@ export async function GET() {
 /**
  * PATCH /api/settings
  *
- * Updates the authenticated Informant's settings. Supports toggling
- * location consent and updating residential coordinates.
+ * Updates the authenticated Informant's settings. Supports toggling location
+ * consent and updating residential coordinates. When the caller doesn't
+ * supply a `residential_area` label, we reverse-geocode the coordinates so
+ * the profile and leaderboard show a place name instead of raw lat/lng.
  *
  * Validation rules:
  * - If location_consent = true, residential_lat and residential_lng must be
  *   provided and valid (lat: -90 to 90, lng: -180 to 180).
- * - If location_consent = false, coordinates are cleared to null regardless
- *   of any values provided.
+ * - If location_consent = false, coordinates and area are cleared.
  *
  * Requirements: 1.2, 1.11, 1.12
  */
@@ -100,7 +105,12 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const { location_consent, residential_lat, residential_lng } = parsed.data;
+    const {
+      location_consent,
+      residential_lat,
+      residential_lng,
+      residential_area: providedArea,
+    } = parsed.data;
 
     // Validate coordinate ranges when consent is enabled
     if (location_consent) {
@@ -119,17 +129,31 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    // Build update payload
+    // Resolve the human-readable area label.
+    //   - Consent ON:  use what the client passed; otherwise reverse-geocode.
+    //   - Consent OFF: always clear to empty string (DB column is NOT NULL).
+    let residentialArea: string;
+    if (!location_consent) {
+      residentialArea = "";
+    } else if (providedArea && providedArea.trim().length > 0) {
+      residentialArea = providedArea.trim();
+    } else {
+      const label = await reverseGeocode(residential_lat!, residential_lng!);
+      residentialArea = label ?? "";
+    }
+
     const updatePayload = location_consent
       ? {
           location_consent: true,
           residential_lat,
           residential_lng,
+          residential_area: residentialArea,
         }
       : {
           location_consent: false,
           residential_lat: null,
           residential_lng: null,
+          residential_area: "",
         };
 
     const { error: updateError } = await supabase
@@ -149,6 +173,7 @@ export async function PATCH(request: NextRequest) {
       location_consent: updatePayload.location_consent,
       residential_lat: updatePayload.residential_lat,
       residential_lng: updatePayload.residential_lng,
+      residential_area: updatePayload.residential_area,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

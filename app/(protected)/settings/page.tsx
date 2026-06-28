@@ -8,6 +8,7 @@ interface SettingsData {
   location_consent: boolean;
   residential_lat: number | null;
   residential_lng: number | null;
+  residential_area: string;
   display_name: string;
   email: string;
 }
@@ -111,6 +112,7 @@ export default function SettingsPage() {
                 initialConsent={settings.location_consent}
                 initialLat={settings.residential_lat}
                 initialLng={settings.residential_lng}
+                initialArea={settings.residential_area}
               />
             </div>
           </section>
