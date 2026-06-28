@@ -21,6 +21,31 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+  const [resendError, setResendError] = useState("");
+
+  async function handleResend() {
+    if (!email) return;
+    setResendState("sending");
+    setResendError("");
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResendError(data.error || "Couldn't resend right now.");
+        setResendState("idle");
+        return;
+      }
+      setResendState("sent");
+    } catch {
+      setResendError("Network error.");
+      setResendState("idle");
+    }
+  }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -92,8 +117,24 @@ export default function RegisterPage() {
               Click the link to verify your account before signing in.
             </p>
           </div>
-          <div className="mt-2 rounded-[2px] border border-accent/30 bg-accent/5 px-4 py-3 text-xs text-text-secondary">
-            <p>Didn&apos;t get the email? Check your spam folder or try registering again in a few minutes.</p>
+          <div className="mt-2 w-full rounded-[2px] border border-accent/30 bg-accent/5 px-4 py-3 text-xs text-text-secondary">
+            <p className="mb-2">Didn&apos;t get the email? Check your spam folder or resend it below.</p>
+            {resendState === "sent" ? (
+              <p className="font-mono text-success">✓ Activation email resent.</p>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResend}
+                disabled={resendState === "sending"}
+              >
+                {resendState === "sending" ? "Sending..." : "Resend activation email"}
+              </Button>
+            )}
+            {resendError && (
+              <p className="mt-2 text-danger">{resendError}</p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="justify-center">
