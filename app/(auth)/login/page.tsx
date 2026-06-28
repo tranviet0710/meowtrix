@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { MailWarning } from "lucide-react";
 import { createClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,11 +41,18 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(errorParam || "");
+  /** When set, the user is blocked because their account is not yet activated. */
+  const [needsActivation, setNeedsActivation] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
+  const [resendError, setResendError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setNeedsActivation(false);
+    setResendState("idle");
+    setResendError("");
     setLoading(true);
 
     try {
@@ -57,7 +65,12 @@ function LoginForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Authentication failed");
+        if (data.code === "email_not_confirmed") {
+          setNeedsActivation(true);
+          setError("");
+        } else {
+          setError(data.error || "Authentication failed");
+        }
         setLoading(false);
         return;
       }
@@ -66,6 +79,32 @@ function LoginForm() {
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
+    }
+  }
+
+  async function handleResendConfirmation() {
+    if (!email) {
+      setResendError("Enter your email above first.");
+      return;
+    }
+    setResendState("sending");
+    setResendError("");
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResendError(data.error || "Couldn't resend the email. Try again in a moment.");
+        setResendState("idle");
+        return;
+      }
+      setResendState("sent");
+    } catch {
+      setResendError("Network error. Try again.");
+      setResendState("idle");
     }
   }
 
@@ -96,7 +135,42 @@ function LoginForm() {
       </CardHeader>
 
       <CardContent>
-        {error && (
+        {/* Activation-required banner */}
+        {needsActivation && (
+          <div className="mb-4 rounded-[2px] border border-accent/40 bg-accent/5 p-4 text-sm" role="alert">
+            <div className="flex items-start gap-2">
+              <MailWarning className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+              <div className="space-y-2">
+                <p className="font-medium text-text-primary">Account not activated yet</p>
+                <p className="text-xs leading-relaxed text-text-secondary">
+                  We sent a confirmation link to <span className="font-mono text-accent">{email}</span>.
+                  Click it before signing in. Didn&apos;t get it? Check spam, or resend below.
+                </p>
+                {resendState === "sent" ? (
+                  <p className="font-mono text-xs text-success">
+                    ✓ New activation link dispatched. Allow up to a minute to arrive.
+                  </p>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendConfirmation}
+                    disabled={resendState === "sending"}
+                  >
+                    {resendState === "sending" ? "Sending..." : "Resend activation email"}
+                  </Button>
+                )}
+                {resendError && (
+                  <p className="text-xs text-danger">{resendError}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Generic auth error */}
+        {error && !needsActivation && (
           <div className="mb-4 rounded-[2px] border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-danger">
             {error}
           </div>

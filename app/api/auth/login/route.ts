@@ -48,13 +48,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Distinguish unconfirmed email from wrong credentials
+      // Distinguish unconfirmed email from wrong credentials.
+      // Supabase reports this in several ways depending on version; check all.
+      const lowerMsg = error.message?.toLowerCase() ?? "";
       if (
-        error.message?.toLowerCase().includes("email not confirmed") ||
+        lowerMsg.includes("email not confirmed") ||
+        lowerMsg.includes("not confirmed") ||
+        lowerMsg.includes("not verified") ||
         error.code === "email_not_confirmed"
       ) {
         return NextResponse.json(
-          { success: false, error: "Your account has not been activated yet. Please check your email for a confirmation link." },
+          {
+            success: false,
+            code: "email_not_confirmed",
+            error:
+              "Your account has not been activated yet. Check your inbox for the confirmation link, or request a new one below.",
+          },
           { status: 403 }
         );
       }
