@@ -138,10 +138,16 @@ export function ToastQueue() {
         return "🎯";
       case "escalation":
         return "🚨";
+      case "claim_initiated":
+        return "📧";
       case "claim_verified":
         return "✅";
       case "claim_rejected":
         return "❌";
+      case "claim_reminder":
+        return "⏰";
+      case "claim_reverted":
+        return "↩️";
       case "overlord_resolved":
         return "🏠";
       case "search_concluded":
@@ -157,10 +163,16 @@ export function ToastQueue() {
         return "MATCH DETECTED";
       case "escalation":
         return "ALERT ESCALATION";
+      case "claim_initiated":
+        return "CLAIM INITIATED";
       case "claim_verified":
         return "CLAIM VERIFIED";
       case "claim_rejected":
         return "CLAIM DENIED";
+      case "claim_reminder":
+        return "ACTION REQUIRED";
+      case "claim_reverted":
+        return "CLAIM REVERTED";
       case "overlord_resolved":
         return "OVERLORD SECURED";
       case "search_concluded":

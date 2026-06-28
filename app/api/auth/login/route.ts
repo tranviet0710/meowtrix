@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabaseServer";
+import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -48,11 +48,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Distinguish unconfirmed email from wrong credentials
+      if (
+        error.message?.toLowerCase().includes("email not confirmed") ||
+        error.code === "email_not_confirmed"
+      ) {
+        return NextResponse.json(
+          { success: false, error: "Your account has not been activated yet. Please check your email for a confirmation link." },
+          { status: 403 }
+        );
+      }
+
       // Generic error for invalid email/password — no hints
       return NextResponse.json(
         { success: false, error: "Invalid credentials" },
         { status: 401 }
       );
+    }
+
+    // Update last_active_at on successful login so user appears online immediately
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const serviceClient = await createServiceRoleClient();
+        await serviceClient
+          .from("informants")
+          .update({ last_active_at: new Date().toISOString() })
+          .eq("id", user.id);
+      }
+    } catch {
+      // Non-blocking — presence update failure doesn't affect login
     }
 
     return NextResponse.json({ success: true });
