@@ -17,9 +17,50 @@ export interface MatchScoreResult {
 }
 
 /**
+ * Color similarity groups for fuzzy matching.
+ * Colors in the same group get a partial score instead of 0.
+ */
+const COLOR_SIMILARITY_GROUPS: Record<string, string[]> = {
+  light: ['white', 'cream', 'ivory', 'beige', 'light grey', 'silver', 'fawn'],
+  grey: ['grey', 'gray', 'silver', 'blue', 'charcoal', 'slate'],
+  brown: ['brown', 'chocolate', 'tan', 'fawn', 'liver', 'chestnut'],
+  orange: ['orange', 'ginger', 'red', 'rust', 'cinnamon', 'apricot', 'cream'],
+  black: ['black', 'dark', 'ebony'],
+  golden: ['golden', 'yellow', 'buff', 'cream', 'apricot', 'fawn'],
+};
+
+/**
+ * Calculate fuzzy color similarity between two color strings.
+ * - Exact match: 100
+ * - Same color group: 60
+ * - One color appears as substring in the other: 50
+ * - Cross-reference (one's primary = other's secondary): 40
+ * - No match: 0
+ */
+function calculateColorSimilarity(color1: string, color2: string): number {
+  const c1 = color1.toLowerCase().trim();
+  const c2 = color2.toLowerCase().trim();
+
+  // Exact match
+  if (c1 === c2) return 100;
+
+  // Substring match (e.g., "light grey" contains "grey")
+  if (c1.includes(c2) || c2.includes(c1)) return 70;
+
+  // Same color group
+  for (const group of Object.values(COLOR_SIMILARITY_GROUPS)) {
+    const c1InGroup = group.some((g) => c1.includes(g) || g.includes(c1));
+    const c2InGroup = group.some((g) => c2.includes(g) || g.includes(c2));
+    if (c1InGroup && c2InGroup) return 60;
+  }
+
+  return 0;
+}
+
+/**
  * Calculate the visual similarity between two sets of trait tags.
- * Compares primary_color, secondary_color, and pattern_type fields.
- * Exact matches score 100 per field; average across fields.
+ * Uses fuzzy color matching and cross-color comparison for robustness
+ * against AI vision inconsistencies.
  *
  * @param tags1 - First set of trait tags (or null)
  * @param tags2 - Second set of trait tags (or null)
@@ -33,34 +74,77 @@ export function calculateVisualSimilarity(
     return 0;
   }
 
-  const fields: Array<{ field: keyof TraitTags; score: number }> = [];
+  // Primary color comparison (fuzzy)
+  const primaryScore = calculateColorSimilarity(
+    tags1.primary_color,
+    tags2.primary_color
+  );
 
-  // Primary color comparison (exact match)
-  fields.push({
-    field: 'primary_color',
-    score: tags1.primary_color.toLowerCase() === tags2.primary_color.toLowerCase() ? 100 : 0,
-  });
-
-  // Secondary color comparison (exact match, both null = match)
-  const sec1 = tags1.secondary_color?.toLowerCase() ?? null;
-  const sec2 = tags2.secondary_color?.toLowerCase() ?? null;
+  // Secondary color comparison (fuzzy, both null = match)
+  const sec1 = tags1.secondary_color?.toLowerCase().trim() ?? null;
+  const sec2 = tags2.secondary_color?.toLowerCase().trim() ?? null;
+  let secondaryScore: number;
   if (sec1 === null && sec2 === null) {
-    fields.push({ field: 'secondary_color', score: 100 });
-  } else if (sec1 !== null && sec2 !== null && sec1 === sec2) {
-    fields.push({ field: 'secondary_color', score: 100 });
+    secondaryScore = 100;
+  } else if (sec1 !== null && sec2 !== null) {
+    secondaryScore = calculateColorSimilarity(sec1, sec2);
   } else {
-    fields.push({ field: 'secondary_color', score: 0 });
+    secondaryScore = 0;
   }
 
-  // Pattern type comparison (exact match)
-  fields.push({
-    field: 'pattern_type',
-    score: tags1.pattern_type === tags2.pattern_type ? 100 : 0,
-  });
+  // Cross-color comparison: check if colors are swapped between primary/secondary
+  // (AI vision often swaps which color is "primary" vs "secondary")
+  let crossColorBonus = 0;
+  if (primaryScore < 60 && secondaryScore < 60) {
+    const crossScore1 = sec1
+      ? calculateColorSimilarity(tags1.primary_color, sec1)
+      : 0;
+    const crossScore2 = sec2
+      ? calculateColorSimilarity(tags2.primary_color, sec2)
+      : 0;
+    // Check if tag1.primary matches tag2.secondary and vice versa
+    const primaryVsSec2 = sec2
+      ? calculateColorSimilarity(tags1.primary_color, sec2)
+      : 0;
+    const primaryVsSec1 = sec1
+      ? calculateColorSimilarity(tags2.primary_color, sec1)
+      : 0;
 
-  // Average across all compared fields
-  const total = fields.reduce((sum, f) => sum + f.score, 0);
-  return total / fields.length;
+    if (primaryVsSec2 >= 60 && primaryVsSec1 >= 60) {
+      // Colors are swapped — give partial credit
+      crossColorBonus = 40;
+    } else if (primaryVsSec2 >= 60 || primaryVsSec1 >= 60 || crossScore1 >= 60 || crossScore2 >= 60) {
+      crossColorBonus = 25;
+    }
+  }
+
+  // Pattern type comparison — related patterns get partial score
+  let patternScore: number;
+  if (tags1.pattern_type === tags2.pattern_type) {
+    patternScore = 100;
+  } else {
+    // Similar pattern groups
+    const multicolorPatterns = ['bicolor', 'calico', 'spotted', 'harlequin', 'merle'];
+    const solidLikePatterns = ['solid', 'sable'];
+    const stripedPatterns = ['tabby', 'brindle'];
+
+    const p1 = tags1.pattern_type;
+    const p2 = tags2.pattern_type;
+
+    const bothMulticolor = multicolorPatterns.includes(p1) && multicolorPatterns.includes(p2);
+    const bothSolid = solidLikePatterns.includes(p1) && solidLikePatterns.includes(p2);
+    const bothStriped = stripedPatterns.includes(p1) && stripedPatterns.includes(p2);
+
+    if (bothMulticolor || bothSolid || bothStriped) {
+      patternScore = 50;
+    } else {
+      patternScore = 0;
+    }
+  }
+
+  // Weighted average with cross-color bonus
+  const baseScore = (primaryScore * 0.35 + secondaryScore * 0.30 + patternScore * 0.35);
+  return Math.min(100, baseScore + crossColorBonus);
 }
 
 /**
@@ -126,8 +210,8 @@ export function calculateTextSimilarity(text1: string, text2: string): number {
 
 /**
  * Calculate similarity score for other fields (breed_estimate and fur_length).
- * - breed_estimate: exact match = 100, partial match (substring) = 50, no match = 0
- * - fur_length: exact match = 100, else 0
+ * - breed_estimate: exact match = 100, partial match (word overlap) = 60, substring = 50, no match = 0
+ * - fur_length: exact match = 100, one step away = 40, else 0
  * Average of the two.
  *
  * @param tags1 - First set of trait tags (or null)
@@ -142,7 +226,7 @@ export function calculateOtherFieldsScore(
     return 0;
   }
 
-  // Breed estimate scoring
+  // Breed estimate scoring — more lenient with word overlap
   let breedScore = 0;
   const breed1 = tags1.breed_estimate.toLowerCase();
   const breed2 = tags2.breed_estimate.toLowerCase();
@@ -151,10 +235,33 @@ export function calculateOtherFieldsScore(
     breedScore = 100;
   } else if (breed1.includes(breed2) || breed2.includes(breed1)) {
     breedScore = 50;
+  } else {
+    // Word-level overlap (e.g., "Poodle mix" vs "Schnauzer mix" shares "mix")
+    const words1 = new Set(breed1.split(/\s+/).filter((w) => w.length > 2));
+    const words2 = new Set(breed2.split(/\s+/).filter((w) => w.length > 2));
+    let overlap = 0;
+    for (const word of words1) {
+      if (words2.has(word)) overlap++;
+    }
+    const totalUniqueWords = new Set([...words1, ...words2]).size;
+    if (totalUniqueWords > 0 && overlap > 0) {
+      breedScore = Math.round((overlap / totalUniqueWords) * 60);
+    }
   }
 
-  // Fur length scoring
-  const furScore = tags1.fur_length === tags2.fur_length ? 100 : 0;
+  // Fur length scoring — adjacent lengths get partial credit
+  // short <-> medium <-> long
+  const furLengthOrder: Record<string, number> = { short: 0, medium: 1, long: 2 };
+  const fur1 = furLengthOrder[tags1.fur_length] ?? -1;
+  const fur2 = furLengthOrder[tags2.fur_length] ?? -1;
+  let furScore: number;
+  if (fur1 === fur2) {
+    furScore = 100;
+  } else if (Math.abs(fur1 - fur2) === 1) {
+    furScore = 40; // Adjacent (short↔medium, medium↔long)
+  } else {
+    furScore = 0;
+  }
 
   // Average
   return (breedScore + furScore) / 2;
@@ -163,14 +270,17 @@ export function calculateOtherFieldsScore(
 /**
  * Calculate the overall match score between an Overlord and an Agent.
  *
- * Weighted formula:
- * - Visual similarity: 40%
- * - Text description similarity: 25%
- * - Geographical proximity: 25%
+ * Weighted formula (adjusted for AI vision inconsistencies):
+ * - Visual similarity: 30% (reduced — AI tags are unreliable across different photos)
+ * - Text description similarity: 30% (increased — user descriptions are high-signal)
+ * - Geographical proximity: 30% (increased — nearby location is strong evidence)
  * - Other fields (breed, fur): 10%
  *
- * @param overlord - The lost cat record
- * @param agent - The found cat record
+ * When description + proximity are both very high (>= 70), apply a confidence
+ * boost since this strongly suggests same pet despite visual AI differences.
+ *
+ * @param overlord - The lost pet record
+ * @param agent - The found pet record
  * @returns MatchScoreResult with overall and component scores
  */
 export function calculateMatchScore(
@@ -200,25 +310,37 @@ export function calculateMatchScore(
     agent.trait_tags
   );
 
-  const overall_score = Math.round(
-    visualScore * 0.40 +
-    descriptionScore * 0.25 +
-    proximityScore * 0.25 +
-    otherScore * 0.10
-  );
+  // Base weighted score
+  let overall = 
+    visualScore * 0.30 +
+    descriptionScore * 0.30 +
+    proximityScore * 0.30 +
+    otherScore * 0.10;
+
+  // Confidence boost: when both description AND proximity are strong,
+  // it's very likely the same pet even if AI vision tags differ significantly.
+  // This handles cases where the pet looks different (shaved, wet, dirty, etc.)
+  if (descriptionScore >= 70 && proximityScore >= 70) {
+    const boost = Math.min(10, (descriptionScore + proximityScore - 140) * 0.1);
+    overall += boost;
+  }
+
+  const overall_score = Math.min(100, Math.round(overall));
 
   // Determine which traits matched for the matched_traits field
   const matched_traits: string[] = [];
   if (overlord.trait_tags && agent.trait_tags) {
     if (
-      overlord.trait_tags.primary_color.toLowerCase() ===
-      agent.trait_tags.primary_color.toLowerCase()
+      calculateColorSimilarity(
+        overlord.trait_tags.primary_color,
+        agent.trait_tags.primary_color
+      ) >= 60
     ) {
       matched_traits.push('primary_color');
     }
     const sec1 = overlord.trait_tags.secondary_color?.toLowerCase() ?? null;
     const sec2 = agent.trait_tags.secondary_color?.toLowerCase() ?? null;
-    if (sec1 !== null && sec2 !== null && sec1 === sec2) {
+    if (sec1 !== null && sec2 !== null && calculateColorSimilarity(sec1, sec2) >= 60) {
       matched_traits.push('secondary_color');
     } else if (sec1 === null && sec2 === null) {
       matched_traits.push('secondary_color');

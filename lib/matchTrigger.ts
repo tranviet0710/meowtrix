@@ -4,7 +4,7 @@ import { calculateMatchScore } from "@/lib/matchEngine";
 import type { Overlord, Agent } from "@/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 
-const MATCH_THRESHOLD = 60;
+const MATCH_THRESHOLD = 50;
 const MAX_SUGGESTIONS_PER_OVERLORD = 10;
 
 /**
@@ -98,17 +98,19 @@ async function isDuplicate(
 /**
  * Trigger match evaluation for a newly tagged Agent.
  * Compares the Agent against all unresolved Overlords with complete trait tags.
+ * Only matches within the same pet_type (cat↔cat, dog↔dog).
  */
 async function evaluateAgentAgainstOverlords(
   supabase: SupabaseClient,
   agent: Agent
 ): Promise<void> {
-  // Fetch all unresolved overlords with complete trait tags
+  // Fetch all unresolved overlords with complete trait tags, filtered by pet_type
   const { data: overlords, error } = await supabase
     .from("overlords")
     .select("*")
     .eq("status", "active")
     .eq("tagging_status", "complete")
+    .eq("pet_type", agent.pet_type)
     .not("trait_tags", "is", null);
 
   if (error) {
@@ -117,7 +119,7 @@ async function evaluateAgentAgainstOverlords(
   }
 
   if (!overlords || overlords.length === 0) {
-    console.log(`[MatchTrigger] No active overlords with complete trait tags found for agent ${agent.id}`);
+    console.log(`[MatchTrigger] No active overlords with complete trait tags found for agent ${agent.id} (pet_type=${agent.pet_type})`);
     return;
   }
 
@@ -129,17 +131,19 @@ async function evaluateAgentAgainstOverlords(
 /**
  * Trigger match evaluation for a newly tagged Overlord.
  * Compares the Overlord against all unresolved Agents with complete trait tags.
+ * Only matches within the same pet_type (cat↔cat, dog↔dog).
  */
 async function evaluateOverlordAgainstAgents(
   supabase: SupabaseClient,
   overlord: Overlord
 ): Promise<void> {
-  // Fetch all unresolved agents with complete trait tags
+  // Fetch all unresolved agents with complete trait tags, filtered by pet_type
   const { data: agents, error } = await supabase
     .from("agents")
     .select("*")
     .eq("status", "active")
     .eq("tagging_status", "complete")
+    .eq("pet_type", overlord.pet_type)
     .not("trait_tags", "is", null);
 
   if (error) {
@@ -148,7 +152,7 @@ async function evaluateOverlordAgainstAgents(
   }
 
   if (!agents || agents.length === 0) {
-    console.log(`[MatchTrigger] No active agents with complete trait tags found for overlord ${overlord.id}`);
+    console.log(`[MatchTrigger] No active agents with complete trait tags found for overlord ${overlord.id} (pet_type=${overlord.pet_type})`);
     return;
   }
 
