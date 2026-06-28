@@ -123,7 +123,8 @@ export function calculateVisualSimilarity(
   if (tags1.pattern_type === tags2.pattern_type) {
     patternScore = 100;
   } else {
-    // Similar pattern groups
+    // Similar pattern groups — reduced from 50 to 25 because "bicolor" and "spotted"
+    // are visually very different even though both are multi-colored patterns.
     const multicolorPatterns = ['bicolor', 'calico', 'spotted', 'harlequin', 'merle'];
     const solidLikePatterns = ['solid', 'sable'];
     const stripedPatterns = ['tabby', 'brindle'];
@@ -136,7 +137,7 @@ export function calculateVisualSimilarity(
     const bothStriped = stripedPatterns.includes(p1) && stripedPatterns.includes(p2);
 
     if (bothMulticolor || bothSolid || bothStriped) {
-      patternScore = 50;
+      patternScore = 25;
     } else {
       patternScore = 0;
     }
@@ -209,10 +210,13 @@ export function calculateTextSimilarity(text1: string, text2: string): number {
 }
 
 /**
- * Calculate similarity score for other fields (breed_estimate and fur_length).
- * - breed_estimate: exact match = 100, partial match (word overlap) = 60, substring = 50, no match = 0
+ * Calculate similarity score for other fields (breed_estimate, fur_length,
+ * and distinguishing_features).
+ *
+ * - breed_estimate: exact match = 100, partial match (word overlap) = 60,
+ *   substring = 50, explicit mismatch (both have specific breeds that differ) = -20 penalty applied to final score
  * - fur_length: exact match = 100, one step away = 40, else 0
- * Average of the two.
+ * - distinguishing_features: overlap ratio scaled to 100
  *
  * @param tags1 - First set of trait tags (or null)
  * @param tags2 - Second set of trait tags (or null)
@@ -231,14 +235,23 @@ export function calculateOtherFieldsScore(
   const breed1 = tags1.breed_estimate.toLowerCase();
   const breed2 = tags2.breed_estimate.toLowerCase();
 
+  // Words that indicate "we don't know the breed" — don't penalize these
+  const unknownBreedTerms = ['unknown', 'mixed', 'mutt', 'domestic', 'n/a', ''];
+
+  const breed1IsUnknown = unknownBreedTerms.some((term) => breed1 === term || breed1 === `${term} breed`);
+  const breed2IsUnknown = unknownBreedTerms.some((term) => breed2 === term || breed2 === `${term} breed`);
+
   if (breed1 === breed2) {
     breedScore = 100;
   } else if (breed1.includes(breed2) || breed2.includes(breed1)) {
     breedScore = 50;
+  } else if (breed1IsUnknown || breed2IsUnknown) {
+    // One or both breeds are unknown — neutral score, no penalty
+    breedScore = 30;
   } else {
-    // Word-level overlap (e.g., "Poodle mix" vs "Schnauzer mix" shares "mix")
-    const words1 = new Set(breed1.split(/\s+/).filter((w) => w.length > 2));
-    const words2 = new Set(breed2.split(/\s+/).filter((w) => w.length > 2));
+    // Both have specific breeds that differ — check word overlap
+    const words1 = new Set(breed1.split(/\s+/).filter((w) => w.length > 2 && w !== 'mix'));
+    const words2 = new Set(breed2.split(/\s+/).filter((w) => w.length > 2 && w !== 'mix'));
     let overlap = 0;
     for (const word of words1) {
       if (words2.has(word)) overlap++;
@@ -246,6 +259,9 @@ export function calculateOtherFieldsScore(
     const totalUniqueWords = new Set([...words1, ...words2]).size;
     if (totalUniqueWords > 0 && overlap > 0) {
       breedScore = Math.round((overlap / totalUniqueWords) * 60);
+    } else {
+      // Explicit breed mismatch — penalize
+      breedScore = -20;
     }
   }
 
@@ -263,8 +279,33 @@ export function calculateOtherFieldsScore(
     furScore = 0;
   }
 
-  // Average
-  return (breedScore + furScore) / 2;
+  // Distinguishing features comparison — check overlap between feature arrays
+  let featuresScore = 0;
+  const features1 = tags1.distinguishing_features ?? [];
+  const features2 = tags2.distinguishing_features ?? [];
+
+  if (features1.length > 0 && features2.length > 0) {
+    // Fuzzy matching: check if any feature from one set appears as substring in the other
+    let matchCount = 0;
+    for (const f1 of features1) {
+      const f1Lower = f1.toLowerCase();
+      for (const f2 of features2) {
+        const f2Lower = f2.toLowerCase();
+        if (f1Lower === f2Lower || f1Lower.includes(f2Lower) || f2Lower.includes(f1Lower)) {
+          matchCount++;
+          break;
+        }
+      }
+    }
+    const totalFeatures = Math.max(features1.length, features2.length);
+    featuresScore = Math.round((matchCount / totalFeatures) * 100);
+  } else if (features1.length === 0 && features2.length === 0) {
+    featuresScore = 50; // Both have no features — neutral
+  }
+
+  // Weighted average: breed 40%, fur 30%, features 30%
+  const rawScore = breedScore * 0.40 + furScore * 0.30 + featuresScore * 0.30;
+  return Math.max(0, Math.min(100, Math.round(rawScore)));
 }
 
 /**

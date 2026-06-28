@@ -4,7 +4,7 @@ import { calculateMatchScore } from "@/lib/matchEngine";
 import type { Overlord, Agent } from "@/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 
-const MATCH_THRESHOLD = 50;
+const MATCH_THRESHOLD = 60;
 const MAX_SUGGESTIONS_PER_OVERLORD = 10;
 
 /**
