@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ScoreBreakdown } from "@/components/matches/ScoreBreakdown";
 import { AlertTriangle, ArrowLeft, Shield, MapPin, Clock } from "lucide-react";
@@ -74,7 +74,6 @@ const FETCH_TIMEOUT_MS = 10_000;
  */
 export default function MatchDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const matchId = params.id as string;
 
   const [state, setState] = useState<PageState>({
@@ -83,6 +82,19 @@ export default function MatchDetailPage() {
     error: null,
     isClaimLoading: false,
   });
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Fetch current user for claim ownership check
+  useEffect(() => {
+    async function getUser() {
+      const { createClient } = await import("@/lib/supabaseClient");
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+    }
+    getUser();
+  }, []);
 
   const fetchMatch = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -135,6 +147,9 @@ export default function MatchDetailPage() {
     }
   }, [matchId, fetchMatch]);
 
+  const [showClaimPopup, setShowClaimPopup] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
   const handleInitiateClaim = async () => {
     setState((prev) => ({ ...prev, isClaimLoading: true }));
 
@@ -149,9 +164,8 @@ export default function MatchDetailPage() {
         throw new Error(body.error || "Failed to initiate claim");
       }
 
-      const data = await response.json();
-      // Navigate to claim verification — the claim form will handle the rest
-      router.push(`/matches/${matchId}?claim=${data.claim?.id || "initiated"}`);
+      // Show success popup
+      setShowClaimPopup(true);
       // Refresh to show updated status
       fetchMatch();
     } catch (err) {
@@ -164,10 +178,38 @@ export default function MatchDetailPage() {
     }
   };
 
+  const handleClaimAction = async (action: "revert" | "resolve") => {
+    setIsActionLoading(true);
+
+    try {
+      const response = await fetch(`/api/matches/${matchId}/claim`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to ${action} claim`);
+      }
+
+      // Refresh to show updated status
+      fetchMatch();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      setState((prev) => ({
+        ...prev,
+        error: message,
+      }));
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   // Loading state
   if (state.isLoading) {
     return (
-      <div className="flex h-full flex-col gap-4 p-4 md:p-6">
+      <div className="flex flex-col gap-4 p-4 md:p-6 max-w-full">
         <div className="h-8 w-48 animate-pulse rounded-[2px] bg-border" />
         <div className="h-64 animate-pulse rounded-[2px] border border-border bg-card" />
         <div className="h-40 animate-pulse rounded-[2px] border border-border bg-card" />
@@ -178,7 +220,7 @@ export default function MatchDetailPage() {
   // Error state
   if (state.error && !state.match) {
     return (
-      <div className="flex h-full flex-col gap-4 p-4 md:p-6">
+      <div className="flex flex-col gap-4 p-4 md:p-6 max-w-full">
         <Link
           href="/matches"
           className="flex items-center gap-2 text-sm text-text-secondary hover:text-accent"
@@ -210,10 +252,10 @@ export default function MatchDetailPage() {
   const agent = match.agent;
 
   // Determine if user can claim (must be overlord owner + status pending)
-  const canClaim = match.status === "pending";
+  const canClaim = match.status === "pending" && overlord?.owner_id === currentUserId;
 
   return (
-    <div className="flex h-full flex-col gap-4 p-4 md:p-6">
+    <div className="flex flex-col gap-4 p-4 md:p-6 max-w-full">
       {/* Back link */}
       <Link
         href="/matches"
@@ -415,25 +457,25 @@ export default function MatchDetailPage() {
         </section>
       )}
 
-      {/* Claim button */}
+      {/* Claim button — only for overlord owner when status is pending */}
       {canClaim && (
         <section className="rounded-[2px] border border-accent/30 bg-accent/5 p-5">
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+          <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-3">
-              <Shield className="h-6 w-6 text-accent" aria-hidden="true" />
+              <Shield className="h-6 w-6 shrink-0 text-accent" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-text-primary">
-                  Initiate Claim Verification
+                  Initiate Claim
                 </p>
                 <p className="text-xs text-text-secondary">
-                  Prove ownership through security verification protocol
+                  Claim this match and get connected with the finder via email
                 </p>
               </div>
             </div>
             <button
               onClick={handleInitiateClaim}
               disabled={state.isClaimLoading}
-              className="min-h-[44px] min-w-[44px] rounded-[2px] bg-accent px-6 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full sm:w-auto min-h-[44px] rounded-[2px] bg-accent px-6 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Initiate ownership claim on this match"
             >
               {state.isClaimLoading ? "INITIATING..." : "CLAIM OVERLORD"}
@@ -442,17 +484,87 @@ export default function MatchDetailPage() {
         </section>
       )}
 
-      {/* Non-claimable status message */}
-      {!canClaim && match.status !== "pending" && (
-        <section className="rounded-[2px] border border-border bg-card p-4 text-center">
-          <p className="font-mono text-xs text-text-secondary">
-            {match.status === "claimed"
-              ? "CLAIM IN PROGRESS — Verification pending"
-              : match.status === "resolved"
-                ? "MISSION COMPLETE — Overlord recovered"
-                : "CLAIM REJECTED — Verification failed"}
+      {/* Claimed state — show actions for involved parties */}
+      {match.status === "claimed" && (currentUserId === overlord?.owner_id || currentUserId === agent?.reporter_id) && (
+        <section className="rounded-[2px] border border-success/30 bg-success/5 p-5">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <Clock className="h-6 w-6 shrink-0 text-success" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-medium text-text-primary">
+                  CLAIM IN PROGRESS — Verification Pending
+                </p>
+                <p className="text-xs text-text-secondary">
+                  Both parties have been notified via email. Schedule a meetup to verify the pet.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {/* Only overlord owner can resolve */}
+              {currentUserId === overlord?.owner_id && (
+                <button
+                  onClick={() => handleClaimAction("resolve")}
+                  disabled={isActionLoading}
+                  className="min-h-[44px] rounded-[2px] bg-success px-5 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-success/80 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Mark pet as reunited"
+                >
+                  {isActionLoading ? "PROCESSING..." : "✓ MARK RESOLVED"}
+                </button>
+              )}
+
+              {/* Either party can revert */}
+              <button
+                onClick={() => handleClaimAction("revert")}
+                disabled={isActionLoading}
+                className="min-h-[44px] rounded-[2px] border border-danger/50 bg-danger/10 px-5 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-danger transition-colors hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Revert claim — not the right pet"
+              >
+                {isActionLoading ? "PROCESSING..." : "↩ REVERT CLAIM"}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Resolved status */}
+      {match.status === "resolved" && (
+        <section className="rounded-[2px] border border-success/30 bg-success/5 p-4 text-center">
+          <p className="font-mono text-xs text-success">
+            ✓ MISSION COMPLETE — Overlord recovered and reunited
           </p>
         </section>
+      )}
+
+      {/* Claim popup — shown after successful claim initiation */}
+      {showClaimPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-[2px] border border-accent bg-card p-6 shadow-[0_0_30px_rgba(255,204,0,0.2)]">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+                <span className="text-3xl">📧</span>
+              </div>
+              <h2 className="font-mono text-lg font-bold uppercase tracking-wider text-accent">
+                Claim Initiated!
+              </h2>
+              <p className="text-sm text-text-primary">
+                Both you and the finder have been sent an email with each other&apos;s contact information.
+              </p>
+              <p className="text-xs text-text-secondary">
+                Schedule a meetup to verify your pet. Once confirmed, come back here to mark the match as <strong className="text-success">resolved</strong>.
+              </p>
+              <div className="mt-2 rounded-[2px] border border-border bg-background p-3 text-xs text-text-secondary">
+                <p>⏰ If no action is taken within 24 hours, both parties will receive a reminder.</p>
+              </div>
+              <button
+                onClick={() => setShowClaimPopup(false)}
+                className="mt-2 min-h-[44px] w-full rounded-[2px] bg-accent px-6 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-accent-hover"
+              >
+                GOT IT
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Error banner */}
