@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Map, AlertTriangle, Eye, Shuffle, Trophy, User, Settings, LogOut, Sun, Moon, FileText } from "lucide-react";
@@ -42,6 +43,7 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-sidebar-bg border-r-[3px] border-sidebar-border">
       <div className="flex items-center h-16 px-5 border-b-[3px] border-sidebar-border">
+        <Image src="/logo/logo.png" alt="Meowtrix logo" width={28} height={28} className="mr-2" />
         <span className="font-[family-name:var(--font-space-grotesk)] text-sidebar-active font-bold text-lg uppercase tracking-wider">
           Meowtrix
         </span>
