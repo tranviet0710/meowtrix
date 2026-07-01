@@ -23,6 +23,7 @@
     "@temporalio/worker": "1.11.7",
     "@temporalio/workflow": "1.11.7",
     "@types/three": "0.185.0",
+    "@vercel/analytics": "^1.4.1",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "leaflet": "1.9.4",
