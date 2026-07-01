@@ -1,7 +1,7 @@
 "use client";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { MyReports } from "@/components/dashboard/MyReports";
-import { MapViewDynamic } from "@/components/map/MapViewDynamic";
+import { OperationsMap } from "@/components/dashboard/OperationsMap";
 
 export default function DashboardPage() {
   return (
@@ -28,7 +28,7 @@ export default function DashboardPage() {
             Live Operations Map
           </span>
         </div>
-        <MapViewDynamic className="h-full w-full" />
+        <OperationsMap />
       </section>
     </div>
   );

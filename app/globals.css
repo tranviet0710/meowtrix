@@ -45,43 +45,10 @@
   --border-brutal: 3px solid currentColor;
 }
 
-/* ===== LIGHT THEME (hackthekitty inspired) ===== */
-html.light {
-  --color-background: #FFF9F0;
-  --color-card: #FFFFFF;
-  --color-accent: #FF9F1C;
-  --color-accent-hover: #E88B00;
-  --color-secondary: #6B7280;
-  --color-success: #22C55E;
-  --color-danger: #EF4444;
-  --color-text-primary: #1F2937;
-  --color-text-secondary: #6B7280;
-  --color-border: #E5E7EB;
-  --color-foreground: #1F2937;
-  --color-muted: #F3F4F6;
-  --color-muted-foreground: #6B7280;
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: #1F2937;
-  --color-card-foreground: #1F2937;
-  --color-primary: #FF9F1C;
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary-foreground: #1F2937;
-  --color-accent-foreground: #FFFFFF;
-  --color-destructive: #EF4444;
-  --color-destructive-foreground: #FFFFFF;
-  --color-input: #E5E7EB;
-  --color-ring: #FF9F1C;
-  --color-brutal-yellow: #FFDE4D;
-  --color-brutal-orange: #FF9F1C;
-  --color-brutal-pink: #FF6B97;
-  --color-brutal-mint: #10B981;
-  --color-sidebar-bg: #FFFFFF;
-  --color-sidebar-border: #FF9F1C;
-  --color-sidebar-text: #6B7280;
-  --color-sidebar-active: #FF9F1C;
-  --color-nav-bg: #FFFFFF;
-  --shadow-brutal: 4px 4px 0px rgba(0, 0, 0, 0.15);
-}
+/*
+ * NOTE: Meowtrix is dark-mode only (see .kiro/steering/design.md).
+ * Do not add a light theme block or `html.light { ... }` overrides here.
+ */
 
 html, body { overflow-x: hidden; max-width: 100vw; }
 body { background-color: var(--color-background); color: var(--color-text-primary); font-family: var(--font-sans); font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-text-size-adjust: 100%; }

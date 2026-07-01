@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabaseServer';
 import { registrationSchema } from '@/lib/validators';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { sendConfirmationEmail } from '@/lib/email';
 
 /**
  * POST /api/auth/register
  *
- * Registers a new Informant with email/password via Supabase Auth,
- * then creates a corresponding row in the `informants` table.
+ * Registers a new Informant with email/password using the Supabase Admin API
+ * (`auth.admin.generateLink({ type: 'signup', ... })`). This:
+ *   1. Creates the auth user in Supabase without sending Supabase's default
+ *      confirmation email.
+ *   2. Returns an `action_link` we deliver ourselves via Resend using the
+ *      cat-themed template in `lib/email.ts`.
+ *   3. Lets us insert the corresponding `informants` row synchronously.
  *
  * Request body: { email, password, display_name }
- * Response: { success: true, user: { id, email } } or { success: false, error: string }
+ * Response: { success: true, user: { id, email } } or { success: false, error }
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate input using the registration schema
     const parsed = registrationSchema.safeParse(body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0]?.message ?? 'Invalid input';
       console.error('[Register] Validation failed:', JSON.stringify(parsed.error.errors, null, 2));
-      console.error('[Register] Request body received:', JSON.stringify(body, null, 2));
       return NextResponse.json(
         { success: false, error: firstError },
         { status: 400 }
@@ -31,52 +33,41 @@ export async function POST(request: NextRequest) {
 
     const { email, password, display_name } = parsed.data;
 
-    // Create Supabase Auth client for sign-up (uses anon key for auth operations)
-    const cookieStore = await cookies();
-    const supabaseAuth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Ignored in read-only contexts
-            }
-          },
+    // Service-role client bypasses RLS and grants admin auth access.
+    const serviceClient = await createServiceRoleClient();
+
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ??
+      'http://localhost:3000';
+    const redirectTo = `${appUrl}/api/auth/callback?next=/dashboard`;
+
+    // Create the user AND get back a signup confirmation action link.
+    // admin.generateLink does not trigger Supabase's built-in mailer,
+    // so we're free to send the Resend email ourselves below.
+    const { data: linkData, error: linkError } =
+      await serviceClient.auth.admin.generateLink({
+        type: 'signup',
+        email,
+        password,
+        options: {
+          data: { display_name },
+          redirectTo,
         },
-      }
-    );
-
-    // Sign up the user via Supabase Auth
-    // Note: emailRedirectTo is omitted and we pass data options to skip
-    // confirmation email where possible (reduces rate-limit risk on free tier)
-    const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name },
-      },
-    });
-
-    if (authError) {
-      console.error('[Register] Supabase Auth error:', {
-        message: authError.message,
-        status: authError.status,
-        code: authError.code,
       });
 
-      // Handle email rate limit exceeded
+    if (linkError || !linkData?.user) {
+      console.error('[Register] generateLink error:', {
+        message: linkError?.message,
+        status: linkError?.status,
+        code: linkError?.code,
+      });
+
+      const msg = (linkError?.message ?? '').toLowerCase();
+
       if (
-        authError.status === 429 ||
-        authError.code === 'over_email_send_rate_limit' ||
-        authError.message.toLowerCase().includes('rate limit')
+        linkError?.status === 429 ||
+        linkError?.code === 'over_email_send_rate_limit' ||
+        msg.includes('rate limit')
       ) {
         return NextResponse.json(
           { success: false, error: 'Too many sign-up attempts. Please wait a few minutes and try again.' },
@@ -84,11 +75,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Supabase returns a specific message when the email is already in use
       if (
-        authError.message.toLowerCase().includes('already registered') ||
-        authError.message.toLowerCase().includes('already been registered') ||
-        authError.status === 422
+        msg.includes('already registered') ||
+        msg.includes('already been registered') ||
+        msg.includes('user already exists') ||
+        linkError?.status === 422
       ) {
         return NextResponse.json(
           { success: false, error: 'Email already in use' },
@@ -96,27 +87,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Return generic error message (don't reveal specifics per Req 1.6)
       return NextResponse.json(
         { success: false, error: 'Registration failed' },
         { status: 400 }
       );
     }
 
-    if (!authData.user) {
-      return NextResponse.json(
-        { success: false, error: 'Registration failed' },
-        { status: 500 }
-      );
-    }
+    const user = linkData.user;
+    const actionLink = linkData.properties?.action_link;
 
-    // Create the informant row using the service role client (bypasses RLS)
-    const serviceClient = await createServiceRoleClient();
+    // Create the informant row. Duplicate-key errors mean the row already
+    // exists (e.g. retry after partial failure) — treat as success.
     const { error: insertError } = await serviceClient
       .from('informants')
       .insert({
-        id: authData.user.id,
-        email: authData.user.email,
+        id: user.id,
+        email: user.email,
         display_name,
         residential_area: '',
         residential_lat: null,
@@ -128,29 +114,43 @@ export async function POST(request: NextRequest) {
         last_active_at: new Date().toISOString(),
       });
 
-    if (insertError) {
-      // If we can't create the informant row, the registration is incomplete.
-      // We still return the user since the auth account was created.
-      // The informant row can be created again via the location consent step.
-      console.error('Failed to create informant row:', insertError.message);
+    if (insertError && insertError.code !== '23505') {
+      console.error('[Register] Failed to create informant row:', insertError.message);
       return NextResponse.json(
         { success: false, error: 'Registration partially failed. Please try again.' },
         { status: 500 }
       );
     }
 
+    // Fire off the branded confirmation email. A delivery failure here
+    // should not fail the registration — the user can resend from the UI.
+    if (actionLink) {
+      try {
+        await sendConfirmationEmail({
+          to: user.email!,
+          displayName: display_name,
+          actionLink,
+          variant: 'signup',
+        });
+      } catch (mailErr) {
+        console.error('[Register] sendConfirmationEmail failed:', mailErr);
+      }
+    } else {
+      console.warn('[Register] No action_link returned from generateLink; skipping email send');
+    }
+
     return NextResponse.json(
       {
         success: true,
         user: {
-          id: authData.user.id,
-          email: authData.user.email,
+          id: user.id,
+          email: user.email,
         },
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('[Register] Unexpected error:', error);
     return NextResponse.json(
       { success: false, error: 'An unexpected error occurred' },
       { status: 500 }

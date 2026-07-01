@@ -1,21 +1,30 @@
 // app/api/auth/resend-confirmation/route.ts — Resend the email-activation link
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { z } from "zod";
+import { createServiceRoleClient } from "@/lib/supabaseServer";
+import { sendConfirmationEmail } from "@/lib/email";
 
 const bodySchema = z.object({
   email: z.string().email("Invalid email format"),
 });
 
+/** How many users to page through when searching by email. */
+const USER_SEARCH_PER_PAGE = 200;
+/** Max pages to scan before giving up (defensive cap). */
+const USER_SEARCH_MAX_PAGES = 10;
+
 /**
  * POST /api/auth/resend-confirmation
  *
- * Re-sends the Supabase confirmation email so an Informant can activate
- * their account if the original message was lost. Returns the same generic
- * success response whether or not the email exists in the system, to avoid
- * leaking account existence (per Req 1.6 wording).
+ * Re-sends the activation link so an Informant can confirm their account.
+ * Uses `auth.admin.generateLink({ type: 'magiclink' })` — a magic link acts
+ * as an email-confirming login on Supabase, which is what an unconfirmed
+ * signup effectively needs. The link is delivered via Resend using the
+ * cat-themed template.
+ *
+ * Returns the same generic success response whether or not the email exists
+ * to avoid leaking account existence.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -30,46 +39,65 @@ export async function POST(request: NextRequest) {
     }
 
     const { email } = parsed.data;
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Read-only context — safe to ignore.
-            }
-          },
-        },
+    const serviceClient = await createServiceRoleClient();
+
+    // Look up the user so we can personalize the email. If not found or
+    // already confirmed, we still respond with the generic success message.
+    let user: { id: string; email: string; email_confirmed_at?: string | null; user_metadata?: Record<string, unknown> } | null = null;
+    for (let page = 1; page <= USER_SEARCH_MAX_PAGES; page++) {
+      const { data, error } = await serviceClient.auth.admin.listUsers({
+        page,
+        perPage: USER_SEARCH_PER_PAGE,
+      });
+      if (error) {
+        console.error("[ResendConfirmation] listUsers error:", error.message);
+        break;
       }
-    );
+      const match = data.users.find(
+        (u) => u.email?.toLowerCase() === normalizedEmail
+      );
+      if (match) {
+        user = {
+          id: match.id,
+          email: match.email!,
+          email_confirmed_at: match.email_confirmed_at,
+          user_metadata: match.user_metadata,
+        };
+        break;
+      }
+      if (data.users.length < USER_SEARCH_PER_PAGE) break;
+    }
 
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email,
+    const genericResponse = NextResponse.json({
+      success: true,
+      message:
+        "If an unconfirmed account exists for this email, a new activation link is on its way.",
     });
 
-    if (error) {
-      console.error("[ResendConfirmation] Supabase error:", {
-        message: error.message,
-        status: error.status,
-        code: error.code,
+    if (!user) return genericResponse;
+    if (user.email_confirmed_at) return genericResponse; // already confirmed
+
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
+      "http://localhost:3000";
+    const redirectTo = `${appUrl}/api/auth/callback?next=/dashboard`;
+
+    const { data: linkData, error: linkError } =
+      await serviceClient.auth.admin.generateLink({
+        type: "magiclink",
+        email: normalizedEmail,
+        options: { redirectTo },
       });
 
-      // Rate limit feedback is useful to the user.
+    if (linkError || !linkData?.properties?.action_link) {
+      console.error("[ResendConfirmation] generateLink error:", linkError);
+
       if (
-        error.status === 429 ||
-        error.code === "over_email_send_rate_limit" ||
-        error.message?.toLowerCase().includes("rate limit")
+        linkError?.status === 429 ||
+        linkError?.code === "over_email_send_rate_limit" ||
+        linkError?.message?.toLowerCase().includes("rate limit")
       ) {
         return NextResponse.json(
           {
@@ -80,14 +108,30 @@ export async function POST(request: NextRequest) {
           { status: 429 }
         );
       }
-      // Don't reveal whether the email is registered or already confirmed.
+
+      // Keep the generic response so we don't leak that the account exists.
+      return genericResponse;
     }
 
-    return NextResponse.json({
-      success: true,
-      message:
-        "If an unconfirmed account exists for this email, a new activation link is on its way.",
-    });
+    const displayName =
+      (typeof user.user_metadata?.display_name === "string"
+        ? (user.user_metadata.display_name as string)
+        : null) ||
+      user.email.split("@")[0] ||
+      "Informant";
+
+    try {
+      await sendConfirmationEmail({
+        to: user.email,
+        displayName,
+        actionLink: linkData.properties.action_link,
+        variant: "resend",
+      });
+    } catch (mailErr) {
+      console.error("[ResendConfirmation] sendConfirmationEmail failed:", mailErr);
+    }
+
+    return genericResponse;
   } catch (error) {
     console.error("[ResendConfirmation] Unexpected error:", error);
     return NextResponse.json(

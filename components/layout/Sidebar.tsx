@@ -2,8 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Map, AlertTriangle, Eye, Shuffle, Trophy, User, Settings, LogOut, Sun, Moon, FileText } from "lucide-react";
+import { Map, AlertTriangle, Eye, Shuffle, Trophy, User, Settings, LogOut, FileText } from "lucide-react";
 import { useState } from "react";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
@@ -23,7 +22,6 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
@@ -76,21 +74,6 @@ export function Sidebar() {
       </nav>
 
       <div className="px-3 py-3 border-t-[3px] border-sidebar-border space-y-2">
-        {/* Theme toggle */}
-        <button
-          type="button"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-bold uppercase tracking-wide border-[2px] border-transparent text-sidebar-text hover:border-brutal-orange hover:text-brutal-orange hover:shadow-[3px_3px_0px_var(--color-brutal-orange)] transition-all duration-100"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          ) : (
-            <Moon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          )}
-          <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-        </button>
-
         {/* Logout button */}
         <button
           type="button"

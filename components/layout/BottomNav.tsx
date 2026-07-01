@@ -1,8 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Map, AlertTriangle, Eye, Shuffle, LogOut, Sun, Moon, FileText } from "lucide-react";
+import { Map, AlertTriangle, Eye, Shuffle, LogOut, FileText } from "lucide-react";
 
 interface NavItem { label: string; href: string; icon: React.ComponentType<{ className?: string }>; }
 const navItems: NavItem[] = [
@@ -16,7 +15,6 @@ const navItems: NavItem[] = [
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
 
   async function handleLogout() {
     try {
@@ -49,21 +47,6 @@ export function BottomNav() {
             </Link>
           );
         })}
-
-        {/* Theme toggle */}
-        <button
-          type="button"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="relative flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-1 py-1 text-sidebar-text border-2 border-transparent hover:text-brutal-orange transition-all duration-100"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="w-5 h-5" aria-hidden="true" />
-          ) : (
-            <Moon className="w-5 h-5" aria-hidden="true" />
-          )}
-          <span className="text-[10px] mt-0.5 font-bold uppercase leading-tight">Theme</span>
-        </button>
 
         {/* Logout */}
         <button
