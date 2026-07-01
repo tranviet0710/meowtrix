@@ -46,6 +46,15 @@ export function PhotoUploader({
   const [isDragOver, setIsDragOver] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Keep a ref of the latest photo URLs so parallel uploads can append without
+  // racing each other. Every parallel `uploadFile` call would otherwise close
+  // over the same `value` snapshot and stomp each other's `onChange` — only
+  // the last completion would win, silently dropping earlier uploads.
+  const valueRef = React.useRef<string[]>(value);
+  React.useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
   const totalPhotos = value.length + uploadingFiles.filter((f) => f.progress === "uploading").length;
   const canUploadMore = totalPhotos < maxPhotos;
 
@@ -76,7 +85,10 @@ export function PhotoUploader({
           )
         );
 
-        onChange([...value, url]);
+        // Append via the ref so concurrent uploads don't overwrite each other.
+        const nextValue = [...valueRef.current, url];
+        valueRef.current = nextValue;
+        onChange(nextValue);
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Upload failed";
@@ -89,7 +101,7 @@ export function PhotoUploader({
         );
       }
     },
-    [value, onChange]
+    [onChange]
   );
 
   const handleFiles = React.useCallback(

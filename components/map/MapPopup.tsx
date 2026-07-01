@@ -44,12 +44,7 @@ function formatTimestamp(isoString: string): string {
 
 /**
  * MapPopup — Popup content displayed when clicking a map marker.
- *
- * Displays:
- * - Photo thumbnail (80×80px) if available
- * - Name or description text
- * - Locale-formatted timestamp
- * - Type badge (Overlord/Agent)
+ * Warm, rounded card with photo, name, notes, and time.
  */
 export function MapPopup({
   photoUrl,
@@ -58,25 +53,28 @@ export function MapPopup({
   timestamp,
   type,
 }: MapPopupProps) {
-  const typeLabel = type === "overlord" ? "Lost Overlord" : "Spotted Agent";
-  const typeColor = type === "overlord" ? "#FF4444" : "#00FF88";
+  const typeLabel = type === "overlord" ? "Missing" : "Sighting";
+  const badgeClass =
+    type === "overlord"
+      ? "bg-danger/15 text-danger border-danger/40"
+      : "bg-success/15 text-success border-success/40";
   const formattedTime = formatTimestamp(timestamp);
 
   return (
     <Popup>
       <div
         className="flex gap-3 p-1"
-        style={{ minWidth: "200px", maxWidth: "280px" }}
+        style={{ minWidth: "220px", maxWidth: "280px" }}
       >
         {/* Photo thumbnail */}
         {photoUrl && (
           <div
-            className="shrink-0 overflow-hidden rounded-[2px] border border-border"
+            className="shrink-0 overflow-hidden rounded-lg border border-border"
             style={{ width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }}
           >
             <img
               src={photoUrl}
-              alt={name ? `Photo of ${name}` : `${typeLabel} photo`}
+              alt={name ? `Photo of ${name}` : `${typeLabel} pet photo`}
               className="h-full w-full object-cover"
               style={{ width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }}
               loading="lazy"
@@ -88,12 +86,7 @@ export function MapPopup({
         <div className="flex min-w-0 flex-col justify-center gap-1">
           {/* Type badge */}
           <span
-            className="inline-block w-fit rounded-[2px] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-            style={{
-              backgroundColor: `${typeColor}20`,
-              color: typeColor,
-              border: `1px solid ${typeColor}40`,
-            }}
+            className={`inline-block w-fit rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}
           >
             {typeLabel}
           </span>
@@ -101,8 +94,7 @@ export function MapPopup({
           {/* Name */}
           {name && (
             <p
-              className="truncate text-sm font-medium"
-              style={{ color: "#E6E6E6" }}
+              className="truncate text-sm font-semibold text-text-primary"
               title={name}
             >
               {name}
@@ -110,21 +102,9 @@ export function MapPopup({
           )}
 
           {/* Description */}
-          {description && !name && (
+          {description && (
             <p
-              className="line-clamp-2 text-xs"
-              style={{ color: "#8892B0" }}
-              title={description}
-            >
-              {description}
-            </p>
-          )}
-
-          {/* Description shown below name when both exist */}
-          {description && name && (
-            <p
-              className="line-clamp-2 text-xs"
-              style={{ color: "#8892B0" }}
+              className="line-clamp-2 text-xs text-text-secondary"
               title={description}
             >
               {description}
@@ -132,10 +112,7 @@ export function MapPopup({
           )}
 
           {/* Timestamp */}
-          <p
-            className="text-[11px]"
-            style={{ color: "#8892B0", fontFamily: "var(--font-mono)" }}
-          >
+          <p className="text-[11px] text-text-secondary">
             {formattedTime}
           </p>
         </div>
@@ -151,20 +128,21 @@ export interface MapEmptyStateProps {
 }
 
 /**
- * MapEmptyState — Message displayed when no Overlord or Agent records exist.
+ * MapEmptyState — Message displayed when no missing pet records exist.
  */
 export function MapEmptyState({ className = "" }: MapEmptyStateProps) {
   return (
     <div
       className={`absolute inset-0 z-[1000] flex items-center justify-center pointer-events-none ${className}`}
     >
-      <div className="pointer-events-auto rounded-[2px] border border-border bg-card/95 px-6 py-4 text-center shadow-lg backdrop-blur-sm">
-        <div className="mb-2 text-2xl">🐾</div>
-        <p className="text-sm font-medium text-text-primary">
-          No field reports yet
+      <div className="pointer-events-auto rounded-2xl border border-border bg-card/95 px-6 py-4 text-center shadow-[var(--shadow-md)] backdrop-blur-sm">
+        <div className="mb-2 text-3xl">🐾</div>
+        <p className="text-sm font-semibold text-text-primary">
+          No missing pets nearby
         </p>
         <p className="mt-1 text-xs text-text-secondary">
-          Report a lost Overlord or a spotted Agent to see pins on the map.
+          Everything looks quiet right now. Report a missing pet or log a
+          sighting to help your community.
         </p>
       </div>
     </div>

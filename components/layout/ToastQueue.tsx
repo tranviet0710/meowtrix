@@ -160,25 +160,25 @@ export function ToastQueue() {
   const getTransmissionLabel = (type: Notification["type"]) => {
     switch (type) {
       case "match_alert":
-        return "MATCH DETECTED";
+        return "Possible Match";
       case "escalation":
-        return "ALERT ESCALATION";
+        return "Search Update";
       case "claim_initiated":
-        return "CLAIM INITIATED";
+        return "Claim Started";
       case "claim_verified":
-        return "CLAIM VERIFIED";
+        return "Claim Verified";
       case "claim_rejected":
-        return "CLAIM DENIED";
+        return "Claim Declined";
       case "claim_reminder":
-        return "ACTION REQUIRED";
+        return "Action Needed";
       case "claim_reverted":
-        return "CLAIM REVERTED";
+        return "Claim Reverted";
       case "overlord_resolved":
-        return "OVERLORD SECURED";
+        return "Pet Recovered";
       case "search_concluded":
-        return "SEARCH TERMINATED";
+        return "Search Ended";
       default:
-        return "INCOMING TRANSMISSION";
+        return "New Notification";
     }
   };
 
@@ -201,21 +201,23 @@ export function ToastQueue() {
         <div
           key={toast.id}
           className="
+            group
             pointer-events-auto
             bg-card border border-border
-            rounded-sm p-3
-            shadow-[0_0_12px_rgba(255,204,0,0.15)]
+            rounded-xl p-3.5
+            shadow-[var(--shadow-lg)]
             animate-in slide-in-from-right-5 fade-in duration-300
             relative overflow-hidden
           "
           role="alert"
+          title={`${toast.notification.title}\n${toast.notification.body}`}
         >
-          {/* Scan-line top accent */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-80" />
+          {/* Soft top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70" />
 
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-accent">
+            <span className="text-[11px] font-semibold text-primary">
               {getNotificationIcon(toast.notification.type)}{" "}
               {getTransmissionLabel(toast.notification.type)}
             </span>
@@ -234,12 +236,18 @@ export function ToastQueue() {
           </div>
 
           {/* Title */}
-          <p className="text-sm font-semibold text-text-primary truncate">
+          <p
+            className="text-sm font-semibold text-text-primary truncate group-hover:whitespace-normal group-hover:overflow-visible"
+            title={toast.notification.title}
+          >
             {toast.notification.title}
           </p>
 
           {/* Body */}
-          <p className="text-xs text-text-secondary mt-0.5 line-clamp-2">
+          <p
+            className="text-xs text-text-secondary mt-0.5 line-clamp-2 group-hover:line-clamp-none"
+            title={toast.notification.body}
+          >
             {toast.notification.body}
           </p>
 

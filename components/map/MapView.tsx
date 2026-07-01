@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -98,13 +98,25 @@ export function MapView({
     initializeMap();
   }, [initializeMap]);
 
-  // Map ready callback
-  const handleMapCreated = useCallback(
-    (map: L.Map) => {
-      onMapReady?.(map);
-    },
-    [onMapReady]
-  );
+  // Keep onMapReady in a ref so the MapContainer ref callback is stable and
+  // does not re-run on every render. React-Leaflet v5 + React 19 can misbehave
+  // when the ref callback identity changes (double-invoking init, or having a
+  // return value treated as a cleanup fn).
+  const onMapReadyRef = useRef(onMapReady);
+  useEffect(() => {
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
+
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const setMapRef = useCallback((map: L.Map | null) => {
+    if (map && map !== mapInstanceRef.current) {
+      mapInstanceRef.current = map;
+      onMapReadyRef.current?.(map);
+    }
+    // Return undefined explicitly — React 19 treats a returned value as a
+    // cleanup function, which is not what we want here.
+    return undefined;
+  }, []);
 
   // Loading skeleton
   if (isLoading) {
@@ -175,11 +187,7 @@ export function MapView({
       zoomControl={false}
       className={`rounded-[2px] ${className}`}
       style={{ minHeight: "50vh", height: "100%", width: "100%" }}
-      ref={(mapRef) => {
-        if (mapRef) {
-          handleMapCreated(mapRef);
-        }
-      }}
+      ref={setMapRef}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -16,71 +16,76 @@ export function HeroSection({ isAuthenticated }: HeroSectionProps) {
       {/* Three.js animated backdrop */}
       <ThreeBackground />
 
-      {/* Scan-grid overlay */}
+      {/* Soft dot pattern overlay — warmer than a hard scan-grid */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.07]"
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #FFCC00 1px, transparent 1px), linear-gradient(to bottom, #FFCC00 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
+            "radial-gradient(circle, currentColor 1px, transparent 1px)",
+          backgroundSize: "36px 36px",
+          color: "var(--color-primary)",
           maskImage:
             "radial-gradient(ellipse at center, black 30%, transparent 75%)",
         }}
       />
 
-      {/* Vignette */}
+      {/* Vignette — uses background token so it adapts across themes */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(10,10,15,0.85)_85%)]"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 30%, color-mix(in oklab, var(--color-background) 90%, transparent) 85%)",
+        }}
       />
 
       <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-4 py-20 text-center sm:px-6 lg:px-8">
         {/* Eyebrow */}
-        <div className="mb-6 inline-flex items-center gap-2 border border-accent/40 bg-card/60 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-accent backdrop-blur-sm">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-card/70 px-4 py-1.5 text-[11px] font-semibold text-primary backdrop-blur-sm">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
           </span>
-          MEOWTRIX // HQ ONLINE — REUNITING PETS WITH FAMILIES
+          Reuniting pets with families 🐾
         </div>
 
-        {/* Hashtag headline */}
-        <h1 className="font-[family-name:var(--font-space-grotesk)] text-5xl font-black uppercase leading-[0.92] tracking-tight text-text-primary sm:text-7xl md:text-[8rem]">
-          <span className="text-accent">#</span>MEOWTRIX
+        {/* Headline */}
+        <h1 className="font-[family-name:var(--font-space-grotesk)] text-5xl font-black leading-[0.98] tracking-tight text-text-primary sm:text-7xl md:text-[7rem]">
+          <span className="text-primary">Meow</span>trix
         </h1>
 
-        <p className="mt-4 max-w-2xl font-[family-name:var(--font-space-grotesk)] text-lg font-bold uppercase tracking-wider text-text-secondary sm:text-xl">
-          The World&apos;s First Feline &amp; Canine Overlord Tracker
+        <p className="mt-4 max-w-2xl font-[family-name:var(--font-space-grotesk)] text-lg font-semibold text-text-secondary sm:text-2xl">
+          The kind way to find lost cats &amp; dogs
         </p>
 
-        {/* Friendly mascot — adds a little warmth to the spy aesthetic */}
-        <div className="mt-8 inline-flex items-center gap-3 border border-accent/30 bg-card/70 py-2 pl-2 pr-4 backdrop-blur-sm">
+        {/* Friendly mascot card */}
+        <div className="mt-8 inline-flex items-center gap-3 rounded-2xl border border-border bg-card/80 py-2 pl-2 pr-4 shadow-[var(--shadow-soft)] backdrop-blur-sm">
           <img
             src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif"
-            alt="Cat agent watching over HQ"
+            alt="Friendly Meowtrix mascot"
             loading="eager"
-            className="h-10 w-10 border border-accent/40 object-cover sm:h-12 sm:w-12"
+            className="meowtrix-wiggle h-10 w-10 rounded-xl object-cover sm:h-12 sm:w-12"
           />
           <div className="text-left">
-            <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-accent">
-              Field Comms · Live
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+              Live · Community
             </div>
             <div className="text-xs font-semibold text-text-primary sm:text-sm">
-              &ldquo;We&apos;ve got eyes on every block. Stay pawsitive.&rdquo;
+              &ldquo;Everyone helps. Every pet matters.&rdquo;
             </div>
           </div>
         </div>
 
         {/* Mission lede */}
         <p className="mt-8 max-w-2xl text-balance text-base leading-relaxed text-text-primary/85 sm:text-lg">
-          A humanitarian command center for reuniting lost cats and dogs with their families.
-          We combine{" "}
-          <span className="font-semibold text-accent">AI vision</span>,
-          live{" "}
-          <span className="font-semibold text-accent">community sighting maps</span>,
-          and an{" "}
-          <span className="font-semibold text-accent">escalating search protocol</span>
+          A warm, community-powered app for reuniting lost cats and dogs
+          with their families. We use{" "}
+          <span className="font-semibold text-primary">AI photo matching</span>,
+          a{" "}
+          <span className="font-semibold text-primary">live sightings map</span>,
+          and{" "}
+          <span className="font-semibold text-primary">smart alerts to nearby helpers</span>
           {" "}— so no pet has to stay lost.
         </p>
 
@@ -90,7 +95,7 @@ export function HeroSection({ isAuthenticated }: HeroSectionProps) {
             <>
               <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link href="/dashboard">
-                  Go to HQ
+                  Open Meowtrix
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
@@ -102,36 +107,36 @@ export function HeroSection({ isAuthenticated }: HeroSectionProps) {
             <>
               <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link href="/register">
-                  Deploy a Report
+                  Get Started — Free
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-                <Link href="/login">I&apos;m already an Informant</Link>
+                <Link href="/login">I already have an account</Link>
               </Button>
             </>
           )}
         </div>
 
         {/* Trust strip */}
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-bold uppercase tracking-widest text-text-secondary">
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs font-medium text-text-secondary">
           <span className="inline-flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-success" />
             Free for families
           </span>
           <span className="hidden text-border sm:inline">•</span>
           <span className="inline-flex items-center gap-2">
-            <Radio className="h-4 w-4 text-accent" />
+            <Radio className="h-4 w-4 text-primary" />
             Real-time alerts
           </span>
           <span className="hidden text-border sm:inline">•</span>
-          <span className="font-mono">No ads · No data resale</span>
+          <span>No ads · No data resale</span>
         </div>
       </div>
 
       {/* Scroll indicator */}
-      <div className="pointer-events-none absolute bottom-6 left-1/2 z-10 -translate-x-1/2 font-mono text-[10px] font-bold uppercase tracking-widest text-text-secondary opacity-60">
-        ↓ Briefing below
+      <div className="pointer-events-none absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-[10px] font-medium text-text-secondary opacity-70">
+        ↓ Learn more
       </div>
     </section>
   );

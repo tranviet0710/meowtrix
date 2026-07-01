@@ -2,22 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { MapViewDynamic } from "@/components/map/MapViewDynamic";
-import { MapMarker } from "@/components/map/MapMarker";
+import { AvatarMarker } from "@/components/map/AvatarMarker";
 import { MapPopup, MapEmptyState } from "@/components/map/MapPopup";
-import type { Overlord, Agent } from "@/types";
+import type { Overlord } from "@/types";
 
 /**
- * OperationsMap — Dashboard hero map with live pins for active Overlords
- * (lost pets) and Agents (spotted pets).
+ * OperationsMap — Dashboard hero map showing active Overlords (missing pets).
  *
- * - Overlords render as red pulsing pins (danger red #FF4444)
- * - Agents render as green static pins (success green #00FF88)
- * - Empty state overlay shows when no reports exist yet
- * - Errors surface silently — the map itself keeps working
+ * - Each pin is the pet's photo as a circular avatar with a red ring.
+ * - Active Overlords pulse to draw attention.
+ * - Agents (spotted / found sightings) are intentionally NOT rendered here —
+ *   the dashboard focuses on active searches so recovery efforts stay in view.
+ * - Empty state overlay shows when no active reports exist.
  */
 export function OperationsMap() {
   const [overlords, setOverlords] = useState<Overlord[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -25,22 +24,18 @@ export function OperationsMap() {
 
     async function loadPins() {
       try {
-        const [overlordsRes, agentsRes] = await Promise.all([
-          fetch("/api/overlords?status=active", { credentials: "same-origin" }),
-          fetch("/api/agents?status=active", { credentials: "same-origin" }),
-        ]);
-
-        const [overlordsJson, agentsJson] = await Promise.all([
-          overlordsRes.ok ? overlordsRes.json() : { overlords: [] },
-          agentsRes.ok ? agentsRes.json() : { agents: [] },
-        ]);
+        const overlordsRes = await fetch("/api/overlords?status=active", {
+          credentials: "same-origin",
+        });
+        const overlordsJson = overlordsRes.ok
+          ? await overlordsRes.json()
+          : { overlords: [] };
 
         if (cancelled) return;
 
         setOverlords(
           Array.isArray(overlordsJson.overlords) ? overlordsJson.overlords : []
         );
-        setAgents(Array.isArray(agentsJson.agents) ? agentsJson.agents : []);
       } catch (err) {
         console.error("[OperationsMap] Failed to load pins:", err);
       } finally {
@@ -62,26 +57,25 @@ export function OperationsMap() {
       !Number.isNaN(o.last_seen_lat) &&
       !Number.isNaN(o.last_seen_lng)
   );
-  const validAgents = agents.filter(
-    (a) =>
-      typeof a.sighting_lat === "number" &&
-      typeof a.sighting_lng === "number" &&
-      !Number.isNaN(a.sighting_lat) &&
-      !Number.isNaN(a.sighting_lng)
-  );
 
-  const showEmptyState =
-    loaded && validOverlords.length === 0 && validAgents.length === 0;
+  const showEmptyState = loaded && validOverlords.length === 0;
 
   return (
     <>
       <MapViewDynamic className="h-full w-full">
         {validOverlords.map((o) => (
-          <MapMarker
+          <AvatarMarker
             key={`overlord-${o.id}`}
             position={[o.last_seen_lat, o.last_seen_lng]}
             type="overlord"
             status={o.status}
+            photoUrl={o.photos?.[0]}
+            petType={o.pet_type}
+            altLabel={
+              o.pet_name
+                ? `${o.pet_name} — missing ${o.pet_type}`
+                : `Missing ${o.pet_type}`
+            }
           >
             <MapPopup
               photoUrl={o.photos?.[0]}
@@ -90,22 +84,7 @@ export function OperationsMap() {
               timestamp={o.last_seen_at}
               type="overlord"
             />
-          </MapMarker>
-        ))}
-        {validAgents.map((a) => (
-          <MapMarker
-            key={`agent-${a.id}`}
-            position={[a.sighting_lat, a.sighting_lng]}
-            type="agent"
-            status={a.status}
-          >
-            <MapPopup
-              photoUrl={a.photos?.[0]}
-              description={a.description}
-              timestamp={a.sighted_at}
-              type="agent"
-            />
-          </MapMarker>
+          </AvatarMarker>
         ))}
       </MapViewDynamic>
       {showEmptyState && <MapEmptyState />}

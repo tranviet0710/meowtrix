@@ -23,8 +23,7 @@ interface MyReportsState {
 const FETCH_TIMEOUT_MS = 10_000;
 
 /**
- * MyReports — Lists the current user's filed Overlord reports.
- * Shows recent lost-pet reports with status, photo thumbnail, and links to detail.
+ * MyReports — Lists the current user's filed missing-pet reports.
  */
 export function MyReports() {
   const [state, setState] = useState<MyReportsState>({
@@ -80,13 +79,13 @@ export function MyReports() {
   // Loading state
   if (state.isLoading) {
     return (
-      <section className="rounded-[2px] border-[3px] border-sidebar-active bg-card p-4 shadow-[4px_4px_0px_var(--color-sidebar-active)]">
-        <h2 className="mb-3 font-[family-name:var(--font-space-grotesk)] text-sm font-bold uppercase tracking-wider text-sidebar-active">
-          My Filed Reports
+      <section className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+        <h2 className="mb-3 font-semibold text-sm text-text-primary">
+          My Reports
         </h2>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-[2px] bg-border" />
+            <div key={i} className="h-16 animate-pulse rounded-lg bg-border" />
           ))}
         </div>
       </section>
@@ -96,14 +95,14 @@ export function MyReports() {
   // Error state
   if (state.error) {
     return (
-      <section className="rounded-[2px] border-[3px] border-danger bg-card p-4 shadow-[4px_4px_0px_0px] shadow-danger/50">
+      <section className="rounded-xl border border-danger/40 bg-card p-4 shadow-[var(--shadow-soft)]">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-danger" aria-hidden="true" />
           <p className="text-sm text-text-primary">{state.error}</p>
         </div>
         <button
           onClick={fetchReports}
-          className="mt-2 min-h-[44px] rounded-[2px] border-[3px] border-accent bg-accent/10 px-3 py-1.5 text-xs font-bold uppercase text-accent shadow-[3px_3px_0px_0px] shadow-accent/40 transition-all hover:bg-accent/20 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="mt-2 min-h-[40px] rounded-lg border border-primary bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
         >
           Retry
         </button>
@@ -114,32 +113,30 @@ export function MyReports() {
   // Empty state
   if (state.reports.length === 0) {
     return (
-      <section className="rounded-[2px] border-[3px] border-border bg-card p-6 text-center">
-        <h2 className="mb-2 font-[family-name:var(--font-space-grotesk)] text-sm font-bold uppercase tracking-wider text-text-secondary">
-          No Reports Filed
+      <section className="rounded-xl border border-border bg-card p-6 text-center shadow-[var(--shadow-soft)]">
+        <h2 className="mb-2 font-semibold text-sm text-text-primary">
+          No Reports Yet
         </h2>
-        <p className="text-xs text-text-secondary mb-3">
-          You haven&apos;t filed any Overlord reports yet.
+        <p className="text-xs text-text-secondary mb-4">
+          You haven&apos;t reported any missing pets yet.
         </p>
         <Link
           href="/report-lost"
-          className="inline-flex min-h-[44px] items-center rounded-[2px] border-[3px] border-danger bg-danger/10 px-4 py-2 text-sm font-bold uppercase text-danger shadow-[3px_3px_0px_0px] shadow-danger/40 transition-all hover:bg-danger/20 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
+          className="inline-flex min-h-[40px] items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-all hover:-translate-y-0.5"
         >
-          Report Lost Overlord
+          Report a Missing Pet
         </Link>
       </section>
     );
   }
 
   return (
-    <section className="rounded-[2px] border-[3px] border-sidebar-active bg-card p-4 shadow-[4px_4px_0px_var(--color-sidebar-active)]">
+    <section className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-[family-name:var(--font-space-grotesk)] text-sm font-bold uppercase tracking-wider text-sidebar-active">
-          My Filed Reports
-        </h2>
+        <h2 className="font-semibold text-sm text-text-primary">My Reports</h2>
         <Link
           href="/report-lost"
-          className="text-xs font-bold uppercase text-accent hover:underline"
+          className="text-xs font-semibold text-primary hover:underline"
         >
           + New Report
         </Link>
@@ -150,10 +147,10 @@ export function MyReports() {
           <Link
             key={report.id}
             href={`/overlords/${report.id}`}
-            className="flex items-center gap-3 rounded-[2px] border border-border bg-background p-3 transition-colors hover:border-accent/50 hover:bg-accent/5"
+            className="flex items-center gap-3 rounded-lg border border-border bg-background p-3 transition-all hover:border-primary/50 hover:bg-primary/5"
           >
             {/* Thumbnail */}
-            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-[2px] border border-border bg-card">
+            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
               {report.photos[0] ? (
                 <img
                   src={report.photos[0]}
@@ -161,20 +158,20 @@ export function MyReports() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-text-secondary text-xs">
-                  ?
+                <div className="flex h-full w-full items-center justify-center text-text-secondary text-lg">
+                  🐾
                 </div>
               )}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-text-primary truncate">
+              <p className="text-sm font-semibold text-text-primary truncate">
                 {report.pet_name}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
                 <Clock className="h-3 w-3 text-text-secondary" aria-hidden="true" />
-                <span className="text-xs text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary">
                   {new Date(report.created_at).toLocaleDateString(undefined, {
                     dateStyle: "medium",
                   })}
@@ -184,13 +181,13 @@ export function MyReports() {
 
             {/* Status badge */}
             <span
-              className={`flex-shrink-0 rounded-[2px] px-2 py-0.5 font-mono text-[10px] uppercase ${
+              className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
                 report.status === "active"
                   ? "bg-danger/10 text-danger"
                   : "bg-success/10 text-success"
               }`}
             >
-              {report.status === "active" ? "MISSING" : "FOUND"}
+              {report.status === "active" ? "Missing" : "Home"}
             </span>
           </Link>
         ))}

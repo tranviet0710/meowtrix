@@ -278,10 +278,10 @@ export function ClaimVerificationForm({
 
       {/* Attempt counter */}
       {currentFailedAttempts > 0 && (
-        <div className="flex items-center gap-2 rounded-[2px] border border-danger/30 bg-danger/5 px-3 py-2">
+        <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2">
           <AlertCircle className="h-4 w-4 text-danger" aria-hidden="true" />
-          <span className="font-mono text-xs text-danger">
-            {currentFailedAttempts}/{MAX_ATTEMPTS} FAILED ATTEMPTS
+          <span className="text-xs font-semibold text-danger">
+            {currentFailedAttempts} of {MAX_ATTEMPTS} attempts used
           </span>
         </div>
       )}
@@ -299,20 +299,20 @@ export function ClaimVerificationForm({
 
       {/* Verification form */}
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-        {/* Question 1: Cat Name */}
+        {/* Question 1: Pet Name */}
         <div className="space-y-2">
           <Label htmlFor="claim-answer-name">
-            <span className="font-mono text-xs uppercase tracking-wider">
-              Q1: Overlord Codename
+            <span className="text-xs font-semibold">
+              Q1: Pet&apos;s name
             </span>{" "}
             <span className="text-danger">*</span>
           </Label>
           <p className="text-xs text-text-secondary">
-            What is the cat&apos;s name?
+            What&apos;s the pet&apos;s name?
           </p>
           <Input
             id="claim-answer-name"
-            placeholder="Enter the Overlord's true name"
+            placeholder="The name the pet answers to"
             value={answerName}
             onChange={(e) => {
               setAnswerName(e.target.value);
@@ -337,13 +337,13 @@ export function ClaimVerificationForm({
         {/* Question 2: Physical Marking */}
         <div className="space-y-2">
           <Label htmlFor="claim-answer-marking">
-            <span className="font-mono text-xs uppercase tracking-wider">
-              Q2: Distinguishing Marking
+            <span className="text-xs font-semibold">
+              Q2: A unique marking
             </span>{" "}
             <span className="text-danger">*</span>
           </Label>
           <p className="text-xs text-text-secondary">
-            Describe a unique physical marking on the cat
+            Describe a distinctive marking on the pet
           </p>
           <Input
             id="claim-answer-marking"
@@ -378,13 +378,13 @@ export function ClaimVerificationForm({
         {/* Question 3: Behavioral Trait */}
         <div className="space-y-2">
           <Label htmlFor="claim-answer-trait">
-            <span className="font-mono text-xs uppercase tracking-wider">
-              Q3: Behavioral Signature
+            <span className="text-xs font-semibold">
+              Q3: A habit or quirk
             </span>{" "}
             <span className="text-danger">*</span>
           </Label>
           <p className="text-xs text-text-secondary">
-            Describe a unique behavioral trait of the cat
+            Describe something they do that only their family would know
           </p>
           <Input
             id="claim-answer-trait"

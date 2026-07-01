@@ -1,6 +1,11 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Card — soft-rounded surface with a warm border and subtle shadow.
+ * Uses the design tokens defined in globals.css so it adapts to
+ * both light and dark themes automatically.
+ */
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -8,7 +13,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-none border-3 border-accent/50 bg-card text-card-foreground shadow-[4px_4px_0px_0px] shadow-accent/30",
+      "rounded-xl border border-border bg-card text-card-foreground shadow-[var(--shadow-soft)]",
       className
     )}
     {...props}
@@ -34,10 +39,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "font-bold uppercase tracking-wide leading-none",
-      className
-    )}
+    className={cn("font-semibold leading-tight tracking-tight", className)}
     {...props}
   />
 ));

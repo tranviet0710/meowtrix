@@ -164,8 +164,8 @@ export function LostOverlordForm() {
       setFieldErrors({});
 
       showToast(
-        "REPORT DEPLOYED",
-        "Missing Overlord alert filed successfully. Our network is now scanning."
+        "Report posted",
+        "Your missing pet report is live. We'll alert helpers nearby."
       );
 
       const overlordId = data.overlord?.id;
@@ -243,11 +243,11 @@ export function LostOverlordForm() {
       {/* Pet Name */}
       <div className="space-y-2">
         <Label htmlFor="pet-name">
-          Overlord Codename <span className="text-danger">*</span>
+          Pet&apos;s Name <span className="text-danger">*</span>
         </Label>
         <Input
           id="pet-name"
-          placeholder={petType === "cat" ? "e.g., Agent Whiskers" : "e.g., Commander Barkley"}
+          placeholder={petType === "cat" ? "e.g., Whiskers" : "e.g., Buddy"}
           value={petName}
           onChange={(e) => {
             setPetName(e.target.value);
@@ -269,7 +269,7 @@ export function LostOverlordForm() {
         <Label htmlFor="description">Description</Label>
         <textarea
           id="description"
-          placeholder="Notable features, personality, last known behavior..."
+          placeholder="Notable features, personality, last known behavior…"
           value={description}
           onChange={(e) => {
             setDescription(e.target.value);
@@ -295,7 +295,7 @@ export function LostOverlordForm() {
       {/* Photo Upload */}
       <div className="space-y-2">
         <Label>
-          Intelligence Photos <span className="text-danger">*</span>
+          Photos <span className="text-danger">*</span>
         </Label>
         <PhotoUploader
           value={photos}
@@ -315,20 +315,20 @@ export function LostOverlordForm() {
       <div className="space-y-2">
         <Label>
           <span className="flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-accent" />
+            <MapPin className="h-4 w-4 text-primary" />
             Last-Seen Location <span className="text-danger">*</span>
           </span>
         </Label>
         <p className="text-xs text-text-secondary">
-          Drop a pin where the Overlord was last spotted
+          Drop a pin where you last saw your pet
         </p>
         <MapPicker
           onLocationSelect={handleLocationSelect}
           selectedLocation={location}
         />
         {location && (
-          <p className="font-mono text-xs text-success">
-            Coordinates locked: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+          <p className="text-xs text-success">
+            Location saved: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
           </p>
         )}
         <InlineError id="location-error" message={fieldErrors.location} />
@@ -337,7 +337,7 @@ export function LostOverlordForm() {
       {/* Last-Seen Timestamp */}
       <div className="space-y-2">
         <Label htmlFor="last-seen-at">
-          Last-Seen Timestamp <span className="text-danger">*</span>
+          When was your pet last seen? <span className="text-danger">*</span>
         </Label>
         <Input
           id="last-seen-at"
@@ -361,16 +361,16 @@ export function LostOverlordForm() {
       </div>
 
       {/* Verification Questions */}
-      <div className="space-y-4 rounded-[2px] border border-border bg-card/50 p-4">
+      <div className="space-y-4 rounded-xl border border-border bg-muted/40 p-4">
         <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-accent" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-text-primary">
-            Security Verification
+          <Shield className="h-5 w-5 text-primary" />
+          <h3 className="text-sm font-semibold text-text-primary">
+            Ownership Verification
           </h3>
         </div>
         <p className="text-xs text-text-secondary">
-          These answers are used to verify your ownership when someone finds your Overlord.
-          They are never shown to other Informants.
+          These answers help us verify you&apos;re the owner when someone finds
+          your pet. They&apos;re never shown to other users.
         </p>
 
         {/* Verification Name */}
@@ -380,7 +380,7 @@ export function LostOverlordForm() {
           </Label>
           <Input
             id="verification-name"
-            placeholder="The name your Overlord answers to"
+            placeholder="The name your pet answers to"
             value={verificationName}
             onChange={(e) => {
               setVerificationName(e.target.value);
@@ -422,7 +422,7 @@ export function LostOverlordForm() {
         {/* Verification Trait */}
         <div className="space-y-2">
           <Label htmlFor="verification-trait">
-            Behavioral Trait <span className="text-danger">*</span>
+            A Habit or Quirk <span className="text-danger">*</span>
           </Label>
           <Input
             id="verification-trait"
@@ -453,10 +453,10 @@ export function LostOverlordForm() {
         {isSubmitting ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Filing Report...
+            Posting…
           </>
         ) : (
-          "Deploy Missing Overlord Alert"
+          "Post Missing Pet Report"
         )}
       </Button>
     </form>

@@ -3,29 +3,42 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
+/**
+ * Button — Meowtrix soft, warm button primitive.
+ *
+ * Variants:
+ * - default / brutal: solid coral primary
+ * - destructive: solid danger red
+ * - outline: transparent with primary border
+ * - secondary: soft muted background
+ * - ghost / link: text-only variants
+ *
+ * Rounded corners, soft shadows, subtle hover lift. `brutal` is kept as an
+ * alias for `default` so any legacy callers keep working.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold uppercase tracking-wide transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 rounded-none",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 rounded-lg",
   {
     variants: {
       variant: {
         default:
-          "border-3 border-accent bg-accent text-primary-foreground shadow-[4px_4px_0px_0px] shadow-accent/60 hover:brightness-110 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
+          "bg-primary text-primary-foreground shadow-[var(--shadow-primary)] hover:brightness-105 hover:-translate-y-[1px] active:translate-y-0",
         brutal:
-          "border-3 border-accent bg-accent text-primary-foreground shadow-[4px_4px_0px_0px] shadow-accent/60 hover:brightness-110 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
+          "bg-primary text-primary-foreground shadow-[var(--shadow-primary)] hover:brightness-105 hover:-translate-y-[1px] active:translate-y-0",
         destructive:
-          "border-3 border-danger bg-danger text-destructive-foreground shadow-[4px_4px_0px_0px] shadow-danger/60 hover:brightness-110 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
+          "bg-danger text-destructive-foreground shadow-[0_6px_20px_rgba(255,125,125,0.28)] hover:brightness-105 hover:-translate-y-[1px] active:translate-y-0",
         outline:
-          "border-3 border-accent bg-transparent text-text-primary shadow-[4px_4px_0px_0px] shadow-accent/40 hover:bg-accent/10 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
+          "border border-primary/70 bg-transparent text-primary hover:bg-primary/10 hover:-translate-y-[1px] active:translate-y-0",
         secondary:
-          "border-3 border-border bg-card text-secondary-foreground shadow-[4px_4px_0px_0px] shadow-border hover:bg-card/80 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
-        ghost: "hover:bg-card hover:text-accent",
-        link: "text-accent underline-offset-4 hover:underline",
+          "bg-muted text-secondary-foreground border border-border hover:bg-muted/70 hover:-translate-y-[1px] active:translate-y-0",
+        ghost: "hover:bg-muted hover:text-primary",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-8",
-        icon: "h-9 w-9",
+        default: "h-10 px-4 py-2",
+        sm: "h-9 px-3 text-xs",
+        lg: "h-11 px-6",
+        icon: "h-10 w-10",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

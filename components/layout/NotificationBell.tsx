@@ -214,18 +214,18 @@ export function NotificationBell() {
         <div
           ref={panelRef}
           style={getPanelStyle()}
-          className="z-[9999] w-80 max-h-[420px] flex flex-col border-[3px] border-accent bg-card shadow-[4px_4px_0px_var(--color-accent)] animate-in slide-in-from-top-2"
+          className="z-[9999] w-80 max-h-[420px] flex flex-col rounded-xl border border-border bg-card shadow-[var(--shadow-lg)] animate-in slide-in-from-top-2 overflow-hidden"
         >
           {/* Panel header */}
-          <div className="flex items-center justify-between border-b-[2px] border-sidebar-border px-4 py-3">
-            <h3 className="font-[family-name:var(--font-space-grotesk)] text-xs font-bold uppercase tracking-wider text-accent">
-              Incoming Transmissions
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h3 className="font-semibold text-sm text-text-primary">
+              Notifications
             </h3>
             <div className="flex items-center gap-1">
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
-                  className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase text-text-secondary hover:text-accent transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-text-secondary hover:text-primary transition-colors"
                   aria-label="Mark all as read"
                 >
                   <Check className="h-3 w-3" />
@@ -234,7 +234,7 @@ export function NotificationBell() {
               )}
               <button
                 onClick={() => setShowPanel(false)}
-                className="flex items-center justify-center min-w-[28px] min-h-[28px] text-text-secondary hover:text-text-primary transition-colors"
+                className="flex items-center justify-center min-w-[28px] min-h-[28px] text-text-secondary hover:text-text-primary transition-colors rounded-md"
                 aria-label="Close notifications"
               >
                 <X className="h-4 w-4" />
@@ -246,38 +246,48 @@ export function NotificationBell() {
           <div className="flex-1 overflow-y-auto">
             {isLoadingNotifications ? (
               <div className="flex items-center justify-center py-8">
-                <span className="text-xs font-mono uppercase text-text-secondary animate-pulse">
-                  Scanning frequencies...
+                <span className="text-xs text-text-secondary animate-pulse">
+                  Loading…
                 </span>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 px-4">
                 <Bell className="h-8 w-8 text-text-secondary/40 mb-2" />
-                <p className="text-xs font-mono uppercase text-text-secondary text-center">
-                  No transmissions received
+                <p className="text-xs text-text-secondary text-center">
+                  No notifications yet
                 </p>
               </div>
             ) : (
               <ul className="divide-y divide-sidebar-border" role="list" aria-label="Notifications list">
                 {notifications.map((notification) => {
                   const link = getNotificationLink(notification);
+                  const fullTooltip = `${notification.title}\n${notification.body}`;
                   const content = (
-                    <div className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-sidebar-active/5 ${!notification.read ? "bg-accent/5" : ""}`}>
+                    <div
+                      className={`group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-primary/5 ${!notification.read ? "bg-primary/5" : ""}`}
+                      title={fullTooltip}
+                    >
                       {/* Unread indicator */}
                       <div className="pt-1.5 flex-shrink-0">
                         {!notification.read && (
-                          <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                         )}
                         {notification.read && <div className="h-2 w-2" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold uppercase text-text-primary truncate">
+                        <p
+                          className="text-sm font-semibold text-text-primary truncate group-hover:whitespace-normal group-hover:overflow-visible"
+                          title={notification.title}
+                        >
                           {notification.title}
                         </p>
-                        <p className="mt-0.5 text-[11px] text-text-secondary line-clamp-2 leading-relaxed">
+                        <p
+                          className="mt-0.5 text-xs text-text-secondary line-clamp-2 group-hover:line-clamp-none leading-relaxed"
+                          title={notification.body}
+                        >
                           {notification.body}
                         </p>
-                        <p className="mt-1 text-[10px] font-mono text-text-secondary/60">
+                        <p className="mt-1 text-[10px] text-text-secondary/60">
                           {formatTime(notification.created_at)}
                         </p>
                       </div>
@@ -306,14 +316,21 @@ export function NotificationBell() {
       {showPopup && popupNotification && !showPanel && (
         <div
           style={getPanelStyle()}
-          className="z-[9999] w-72 border-[3px] border-accent bg-card p-4 shadow-[4px_4px_0px_var(--color-accent)] animate-in slide-in-from-top-2"
+          className="group z-[9999] w-72 rounded-xl border border-primary/40 bg-card p-4 shadow-[var(--shadow-lg)] animate-in slide-in-from-top-2"
+          title={`${popupNotification.title}\n${popupNotification.body}`}
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold uppercase text-accent">
+              <p
+                className="text-sm font-semibold text-primary"
+                title={popupNotification.title}
+              >
                 {popupNotification.title}
               </p>
-              <p className="mt-1 text-xs text-text-secondary line-clamp-2">
+              <p
+                className="mt-1 text-xs text-text-secondary line-clamp-2 group-hover:line-clamp-none"
+                title={popupNotification.body}
+              >
                 {popupNotification.body}
               </p>
             </div>

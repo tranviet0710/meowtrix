@@ -100,17 +100,17 @@ export function StatGrid() {
   if (state.error && !state.stats) {
     return (
       <div
-        className="flex flex-col items-center gap-3 border-[3px] border-danger bg-card p-6 shadow-[4px_4px_0px_0px] shadow-danger/50"
+        className="flex flex-col items-center gap-3 rounded-xl border border-danger/50 bg-card p-6 shadow-[var(--shadow-soft)]"
         role="alert"
         aria-label="Stats loading error"
       >
-        <div className="flex h-10 w-10 items-center justify-center border-2 border-danger bg-danger/10">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-danger/10">
           <AlertTriangle className="h-5 w-5 text-danger" aria-hidden="true" />
         </div>
-        <p className="text-sm font-bold uppercase text-text-primary">{state.error}</p>
+        <p className="text-sm font-medium text-text-primary">{state.error}</p>
         <button
           onClick={fetchStats}
-          className="min-h-[44px] min-w-[44px] border-[3px] border-accent bg-accent/10 px-4 py-2 text-sm font-bold uppercase text-accent shadow-[3px_3px_0px_0px] shadow-accent/40 transition-all hover:bg-accent/20 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="min-h-[44px] min-w-[44px] rounded-lg border border-primary bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
           aria-label="Retry loading statistics"
         >
           Retry
@@ -122,25 +122,25 @@ export function StatGrid() {
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 auto-rows-auto">
       <StatCard
-        label="Overlords Tracked"
+        label="Pets Tracked"
         value={state.stats?.total_overlords ?? null}
         icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
         isLoading={state.isLoading && !state.stats}
-        accentClass="bg-brutal-pink/10 text-brutal-pink"
+        accentClass="bg-brutal-pink/15 text-brutal-pink"
       />
       <StatCard
         label="Active Searches"
         value={state.stats?.active_searches ?? null}
         icon={<Search className="h-5 w-5" aria-hidden="true" />}
         isLoading={state.isLoading && !state.stats}
-        accentClass="bg-brutal-orange/10 text-brutal-orange"
+        accentClass="bg-brutal-orange/15 text-brutal-orange"
       />
       <StatCard
-        label="Informants Online"
+        label="Helpers Online"
         value={state.stats?.informants_online ?? null}
         icon={<Users className="h-5 w-5" aria-hidden="true" />}
         isLoading={state.isLoading && !state.stats}
-        accentClass="bg-brutal-mint/10 text-brutal-mint"
+        accentClass="bg-brutal-mint/15 text-brutal-mint"
       />
     </div>
   );

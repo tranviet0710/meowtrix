@@ -2,37 +2,37 @@
 // Gifs are remote, lightweight Giphy embeds. Using <img> keeps it simple and
 // avoids configuring remotePatterns in next.config.ts.
 
-const AGENTS = [
+const PETS = [
   {
-    codename: "AGT-001 // BISCUIT",
-    role: "Senior Surveillance Officer",
-    quote: "Spotted suspicious tuna activity in sector 7.",
+    name: "Biscuit",
+    tag: "Reunited in 3 hours",
+    quote: "Found napping under a neighbor's porch. Home for dinner.",
     src: "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
-    alt: "Cat staring intensely at a screen",
-    accent: "accent" as const,
+    alt: "A cat looking curious",
+    accent: "primary" as const,
   },
   {
-    codename: "AGT-007 // MOCHI",
-    role: "Field Operative",
-    quote: "Box secured. Mission accomplished.",
+    name: "Mochi",
+    tag: "Reunited next day",
+    quote: "Someone posted a sighting two blocks away. Match found.",
     src: "https://media.giphy.com/media/VbnUQpnihPSIgIXuZv/giphy.gif",
-    alt: "Cat peeking from behind a corner",
+    alt: "A cat peeking around a corner",
     accent: "success" as const,
   },
   {
-    codename: "AGT-K9 // CHORIZO",
-    role: "Recon & Recovery",
-    quote: "Tail wagging detected. Threat level: friendly.",
+    name: "Chorizo",
+    tag: "Reunited within 6 hours",
+    quote: "A helper spotted a wagging tail down the street.",
     src: "https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif",
-    alt: "Cat looking around suspiciously",
-    accent: "accent" as const,
+    alt: "A cheerful cat",
+    accent: "primary" as const,
   },
   {
-    codename: "AGT-042 // NOODLE",
-    role: "Intelligence Analyst",
-    quote: "Cross-referencing whisker patterns now.",
+    name: "Noodle",
+    tag: "Reunited in 2 days",
+    quote: "AI matched a photo across town. The family cried, in a good way.",
     src: "https://media.giphy.com/media/ICOgUNjpvO0PC/giphy.gif",
-    alt: "Cat investigating a curious object",
+    alt: "A curious cat investigating something",
     accent: "success" as const,
   },
 ];
@@ -40,108 +40,80 @@ const AGENTS = [
 export function MascotsGallery() {
   return (
     <section
-      id="agents"
+      id="pets"
       className="relative scroll-mt-20 border-b border-border bg-card/40"
     >
-      {/* Faint scanline pattern */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.05]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, #FFCC00 0 1px, transparent 1px 6px)",
-        }}
-      />
-
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         {/* Heading */}
         <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
-            <div className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-accent">
-              {"// Field Dossier"}
+            <div className="text-xs font-semibold text-primary">
+              Real reunions
             </div>
-            <h2 className="mt-4 font-[family-name:var(--font-space-grotesk)] text-4xl font-black uppercase leading-[1.05] text-text-primary sm:text-5xl">
-              Meet the agents{" "}
-              <span className="text-accent">on duty.</span>
+            <h2 className="mt-4 font-[family-name:var(--font-space-grotesk)] text-4xl font-black leading-tight tracking-tight text-text-primary sm:text-5xl">
+              Meet the pets{" "}
+              <span className="text-primary">back home.</span>
             </h2>
             <p className="mt-5 text-base leading-relaxed text-text-secondary sm:text-lg">
-              Every reunion starts with a fuzzy face. Here are a few of the
-              furry operatives our informants have brought home.
+              Every reunion starts with a fuzzy face. Here are a few pets our
+              community has helped bring home.
             </p>
           </div>
 
           {/* Live indicator */}
-          <div className="inline-flex items-center gap-2 self-start border border-success/40 bg-background px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-success sm:self-end">
+          <div className="inline-flex items-center gap-2 self-start rounded-full border border-success/40 bg-card px-3 py-1 text-xs font-semibold text-success sm:self-end">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
             </span>
-            Live · 4 agents online
+            4 recent reunions
           </div>
         </div>
 
         {/* Gallery grid */}
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {AGENTS.map((agent) => {
-            const ring =
-              agent.accent === "success"
-                ? "hover:shadow-[0_0_28px_0_rgba(0,255,136,0.25)] hover:border-success/70"
-                : "hover:shadow-[0_0_28px_0_rgba(255,204,0,0.25)] hover:border-accent/70";
-            const dot =
-              agent.accent === "success" ? "bg-success" : "bg-accent";
+          {PETS.map((pet) => {
+            const ringHover =
+              pet.accent === "success"
+                ? "hover:border-success/50"
+                : "hover:border-primary/50";
+            const badgeColor =
+              pet.accent === "success"
+                ? "bg-success/10 text-success"
+                : "bg-primary/10 text-primary";
+
             return (
               <li
-                key={agent.codename}
-                className={`group relative overflow-hidden border border-border bg-background transition-all ${ring}`}
+                key={pet.name}
+                className={`group relative overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] ${ringHover}`}
               >
-                {/* Corner brackets for that surveillance feel */}
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-2 top-2 z-10 h-3 w-3 border-l-2 border-t-2 border-accent/60 transition-colors group-hover:border-accent"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-2 top-2 z-10 h-3 w-3 border-r-2 border-t-2 border-accent/60 transition-colors group-hover:border-accent"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute bottom-2 left-2 z-10 h-3 w-3 border-b-2 border-l-2 border-accent/60 transition-colors group-hover:border-accent"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute bottom-2 right-2 z-10 h-3 w-3 border-b-2 border-r-2 border-accent/60 transition-colors group-hover:border-accent"
-                />
-
-                {/* Gif */}
-                <div className="relative aspect-square overflow-hidden bg-black">
+                {/* Photo */}
+                <div className="relative aspect-square overflow-hidden bg-muted">
                   <img
-                    src={agent.src}
-                    alt={agent.alt}
+                    src={pet.src}
+                    alt={pet.alt}
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  {/* Tinted overlay so the dark theme stays cohesive */}
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(10,10,15,0.55)_100%)]"
-                  />
-                  {/* Rec indicator */}
-                  <div className="absolute right-3 top-3 flex items-center gap-1.5 bg-black/70 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-text-primary backdrop-blur-sm">
-                    <span className={`h-1.5 w-1.5 rounded-full ${dot} animate-pulse`} />
-                    REC
-                  </div>
                 </div>
 
                 {/* Meta */}
                 <div className="border-t border-border p-4">
-                  <div className="font-[family-name:var(--font-jetbrains-mono)] text-[11px] font-bold uppercase tracking-widest text-accent">
-                    {agent.codename}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-semibold text-text-primary">
+                      {pet.name}
+                    </div>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeColor}`}
+                    >
+                      🎉
+                    </span>
                   </div>
-                  <div className="mt-1 text-xs font-bold uppercase tracking-wide text-text-primary">
-                    {agent.role}
+                  <div className="mt-0.5 text-[11px] font-medium text-text-secondary">
+                    {pet.tag}
                   </div>
-                  <p className="mt-2 text-sm italic leading-snug text-text-secondary">
-                    &ldquo;{agent.quote}&rdquo;
+                  <p className="mt-2 text-sm leading-snug text-text-secondary">
+                    &ldquo;{pet.quote}&rdquo;
                   </p>
                 </div>
               </li>
@@ -150,9 +122,8 @@ export function MascotsGallery() {
         </ul>
 
         {/* Friendly footnote */}
-        <p className="mt-10 text-center font-mono text-[11px] uppercase tracking-widest text-text-secondary">
-          No animals were inconvenienced in the making of this dossier ·
-          Treats may have been distributed
+        <p className="mt-10 text-center text-xs text-text-secondary">
+          Stories inspired by real Meowtrix reunions · Treats were shared
         </p>
       </div>
     </section>

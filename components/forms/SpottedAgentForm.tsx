@@ -132,8 +132,8 @@ export function SpottedAgentForm() {
       setSubmitError("");
 
       showToast(
-        "INTEL RECEIVED",
-        "Agent sighting logged successfully. The Match Engine is processing."
+        "Sighting posted",
+        "Thanks! We're checking your sighting against missing pets."
       );
 
       const agentId = data.agent?.id;
@@ -211,10 +211,10 @@ export function SpottedAgentForm() {
       {/* Photo Upload */}
       <div className="space-y-2">
         <Label>
-          Surveillance Photos <span className="text-danger">*</span>
+          Photos <span className="text-danger">*</span>
         </Label>
         <p className="text-xs text-text-secondary">
-          Upload 1–5 photos of the spotted Agent. Clear shots help our AI match faster.
+          Upload 1–5 photos of the pet you saw. Clear shots help us match faster.
         </p>
         <PhotoUploader
           value={photos}
@@ -234,20 +234,20 @@ export function SpottedAgentForm() {
       <div className="space-y-2">
         <Label>
           <span className="flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-accent" />
-            Sighting Location <span className="text-danger">*</span>
+            <MapPin className="h-4 w-4 text-primary" />
+            Where did you see them? <span className="text-danger">*</span>
           </span>
         </Label>
         <p className="text-xs text-text-secondary">
-          Drop a pin where you spotted the Agent
+          Drop a pin where you saw the pet
         </p>
         <MapPicker
           onLocationSelect={handleLocationSelect}
           selectedLocation={location}
         />
         {location && (
-          <p className="font-mono text-xs text-success">
-            Coordinates locked: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+          <p className="text-xs text-success">
+            Location saved: {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
           </p>
         )}
         <InlineError id="location-error" message={fieldErrors.location} />
@@ -255,10 +255,10 @@ export function SpottedAgentForm() {
 
       {/* Description (optional) */}
       <div className="space-y-2">
-        <Label htmlFor="description">Field Notes</Label>
+        <Label htmlFor="description">Notes (optional)</Label>
         <textarea
           id="description"
-          placeholder="Behavior, direction of travel, condition, any notable traits..."
+          placeholder="Behavior, direction they were heading, condition, notable features…"
           value={description}
           onChange={(e) => {
             setDescription(e.target.value);
@@ -303,7 +303,7 @@ export function SpottedAgentForm() {
         />
         <InlineError id="sighted-at-error" message={fieldErrors.sighted_at} />
         <p className="text-xs text-text-secondary">
-          When did you spot the Agent? Leave empty for current time.
+          When did you see the pet? Leave empty for right now.
         </p>
       </div>
 
@@ -317,10 +317,10 @@ export function SpottedAgentForm() {
         {isSubmitting ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Transmitting Intel...
+            Posting…
           </>
         ) : (
-          "Log Spotted Agent"
+          "Post Sighting"
         )}
       </Button>
     </form>

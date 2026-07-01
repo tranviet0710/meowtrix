@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: "What if no one finds my pet in the first few hours?",
-    a: "An Escalating Search Protocol takes over. At 6 hours we widen the alert radius. At 24 hours we ping a broader network. At 48 hours we escalate further. The right people get notified at the right time — automatically.",
+    a: "Our smart search timeline takes over. At 6 hours we widen the alert radius. At 24 hours we notify a broader network. At 48 hours we escalate further. The right people are notified at the right time — automatically.",
   },
   {
     q: "How do you prevent scams or false claims?",
@@ -41,15 +41,13 @@ export function FaqSection() {
     >
       <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="mb-10 text-center sm:mb-12">
-          <div className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-accent">
-            {"// Intel Briefing"}
-          </div>
-          <h2 className="mt-4 font-[family-name:var(--font-space-grotesk)] text-4xl font-black uppercase leading-[1.05] text-text-primary sm:text-5xl">
-            Frequently asked.
+          <div className="text-xs font-semibold text-primary">Good questions</div>
+          <h2 className="mt-4 font-[family-name:var(--font-space-grotesk)] text-4xl font-black leading-tight tracking-tight text-text-primary sm:text-5xl">
+            Frequently asked
           </h2>
         </div>
 
-        <ul className="divide-y divide-border border border-border bg-card/40">
+        <ul className="divide-y divide-border rounded-xl border border-border bg-card/60 overflow-hidden shadow-[var(--shadow-soft)]">
           {FAQS.map((item, idx) => {
             const isOpen = open === idx;
             return (
@@ -57,15 +55,15 @@ export function FaqSection() {
                 <button
                   type="button"
                   onClick={() => setOpen(isOpen ? null : idx)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-6 sm:py-5"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:px-6 sm:py-5"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-sm font-bold uppercase tracking-wide text-text-primary sm:text-base">
+                  <span className="text-sm font-semibold text-text-primary sm:text-base">
                     {item.q}
                   </span>
                   <ChevronDown
                     className={cn(
-                      "h-5 w-5 shrink-0 text-accent transition-transform",
+                      "h-5 w-5 shrink-0 text-primary transition-transform",
                       isOpen && "rotate-180"
                     )}
                   />

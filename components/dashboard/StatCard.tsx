@@ -9,32 +9,37 @@ export interface StatCardProps {
   accentClass?: string;
 }
 
+/**
+ * StatCard — Soft, warm dashboard stat tile.
+ * The icon sits in a soft-tinted rounded square; the value uses a bold
+ * display font. Hover lifts the card gently.
+ */
 export function StatCard({
   label,
   value,
   icon,
   isLoading,
-  accentClass = "bg-brutal-yellow/10 text-brutal-yellow",
+  accentClass = "bg-primary/10 text-primary",
 }: StatCardProps) {
   return (
-    <div className="flex items-center gap-4 border-[3px] border-sidebar-active bg-card p-4 shadow-[4px_4px_0px_var(--color-sidebar-active)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_var(--color-sidebar-active)]">
+    <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
       <div
-        className={`flex h-12 w-12 flex-shrink-0 items-center justify-center border-[2px] border-current ${accentClass}`}
+        className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl ${accentClass}`}
       >
         {icon}
       </div>
       <div className="flex flex-col gap-1 overflow-hidden">
-        <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+        <span className="text-xs font-medium text-text-secondary">
           {label}
         </span>
         {isLoading ? (
           <div
-            className="h-7 w-16 animate-pulse bg-border"
+            className="h-7 w-16 animate-pulse rounded-md bg-border"
             role="status"
             aria-label={`Loading ${label}`}
           />
         ) : (
-          <span className="font-mono text-2xl font-bold text-text-primary">
+          <span className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-text-primary">
             {value !== null ? value.toLocaleString() : "—"}
           </span>
         )}

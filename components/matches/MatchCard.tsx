@@ -39,73 +39,77 @@ interface MatchCardProps {
 
 function getScoreColor(score: number): string {
   if (score >= 80) return "text-success";
-  if (score >= 70) return "text-accent";
-  return "text-secondary";
+  if (score >= 70) return "text-primary";
+  return "text-text-secondary";
 }
 
-function getScoreGlow(score: number): string {
-  if (score >= 80) return "shadow-[0_0_12px_rgba(0,255,136,0.2)]";
-  if (score >= 70) return "shadow-[0_0_12px_rgba(255,204,0,0.15)]";
-  return "";
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return "New";
+    case "claimed":
+      return "Claim in progress";
+    case "resolved":
+      return "Reunited";
+    case "rejected":
+      return "Not a match";
+    default:
+      return status;
+  }
 }
 
 /**
- * MatchCard — Displays a single match suggestion with score and preview.
- *
- * Shows the overall similarity score as a large percentage, photo thumbnails
- * of both the Overlord and Agent, matched traits, and a score breakdown.
- *
- * Requirements: 8.3, 8.5, 8.7
+ * MatchCard — Warm, rounded card showing a possible match between a missing
+ * pet and a sighting. Score displayed prominently, photos side-by-side.
  */
 export function MatchCard({ match }: MatchCardProps) {
   const overlord = match.overlords;
   const agent = match.agents;
   const scoreColor = getScoreColor(match.overall_score);
-  const scoreGlow = getScoreGlow(match.overall_score);
 
   return (
     <Link
       href={`/matches/${match.id}`}
-      className={`group block rounded-[2px] border border-border bg-card p-4 transition-all duration-200 hover:border-accent/40 hover:bg-card/80 ${scoreGlow}`}
-      aria-label={`Match suggestion: ${overlord?.pet_name ?? "Unknown"} — ${match.overall_score}% confidence`}
+      className="group block rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[var(--shadow-md)]"
+      aria-label={`Match: ${overlord?.pet_name ?? "Unknown"} — ${match.overall_score}% match`}
     >
       {/* Header: Score + Status */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`font-mono text-2xl font-bold ${scoreColor}`}
+            className={`font-[family-name:var(--font-space-grotesk)] text-3xl font-bold ${scoreColor}`}
             aria-label={`Overall match score: ${match.overall_score}%`}
           >
             {match.overall_score}%
           </div>
-          <span className="text-xs uppercase tracking-wider text-text-secondary">
-            MATCH CONFIDENCE
+          <span className="text-xs font-medium text-text-secondary">
+            match score
           </span>
         </div>
         <span
-          className={`rounded-[2px] px-2 py-0.5 font-mono text-xs uppercase ${
+          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
             match.status === "pending"
-              ? "bg-accent/10 text-accent"
+              ? "bg-primary/10 text-primary"
               : match.status === "claimed"
-                ? "bg-success/10 text-success"
+                ? "bg-accent/10 text-accent"
                 : match.status === "resolved"
-                  ? "bg-secondary/10 text-secondary"
+                  ? "bg-success/10 text-success"
                   : "bg-danger/10 text-danger"
           }`}
         >
-          {match.status}
+          {getStatusLabel(match.status)}
         </span>
       </div>
 
       {/* Photos comparison */}
       <div className="mb-3 flex items-center gap-3">
-        {/* Overlord photo */}
+        {/* Missing pet photo */}
         <div className="flex flex-col items-center gap-1">
-          <div className="h-16 w-16 overflow-hidden rounded-[2px] border border-danger/30 bg-background">
+          <div className="h-16 w-16 overflow-hidden rounded-xl border-2 border-danger/40 bg-muted">
             {overlord?.photos?.[0] ? (
               <img
                 src={overlord.photos[0]}
-                alt={`Lost pet: ${overlord.pet_name}`}
+                alt={`Missing pet: ${overlord.pet_name}`}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -114,25 +118,23 @@ export function MatchCard({ match }: MatchCardProps) {
               </div>
             )}
           </div>
-          <span className="text-[10px] font-mono uppercase text-danger">
-            OVERLORD
-          </span>
+          <span className="text-[10px] font-semibold text-danger">Missing</span>
         </div>
 
         {/* Connection indicator */}
         <div className="flex flex-col items-center gap-0.5">
-          <div className="h-px w-6 bg-accent/50" />
-          <span className="text-xs text-accent">⟷</span>
-          <div className="h-px w-6 bg-accent/50" />
+          <div className="h-px w-6 bg-primary/50" />
+          <span className="text-primary">↔</span>
+          <div className="h-px w-6 bg-primary/50" />
         </div>
 
-        {/* Agent photo */}
+        {/* Sighting photo */}
         <div className="flex flex-col items-center gap-1">
-          <div className="h-16 w-16 overflow-hidden rounded-[2px] border border-success/30 bg-background">
+          <div className="h-16 w-16 overflow-hidden rounded-xl border-2 border-success/40 bg-muted">
             {agent?.photos?.[0] ? (
               <img
                 src={agent.photos[0]}
-                alt={`Spotted cat: ${agent.description || "Agent sighting"}`}
+                alt={`Sighting: ${agent.description || "spotted pet"}`}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -141,18 +143,16 @@ export function MatchCard({ match }: MatchCardProps) {
               </div>
             )}
           </div>
-          <span className="text-[10px] font-mono uppercase text-success">
-            AGENT
-          </span>
+          <span className="text-[10px] font-semibold text-success">Sighting</span>
         </div>
 
-        {/* Cat name and timing */}
+        {/* Pet name and timing */}
         <div className="ml-3 flex flex-1 flex-col gap-1 overflow-hidden">
-          <p className="truncate text-sm font-medium text-text-primary">
-            {overlord?.pet_name ?? "Unknown Overlord"}
+          <p className="truncate text-sm font-semibold text-text-primary">
+            {overlord?.pet_name ?? "Unknown pet"}
           </p>
           <p className="text-xs text-text-secondary">
-            Detected{" "}
+            Found{" "}
             {new Date(match.created_at).toLocaleDateString(undefined, {
               month: "short",
               day: "numeric",
@@ -165,7 +165,7 @@ export function MatchCard({ match }: MatchCardProps) {
               {match.matched_traits.slice(0, 3).map((trait) => (
                 <span
                   key={trait}
-                  className="rounded-[1px] bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent"
+                  className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
                 >
                   {trait}
                 </span>

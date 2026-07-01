@@ -3,18 +3,21 @@
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 /**
- * ThemeProvider — locks the app to dark mode.
+ * ThemeProvider — Meowtrix supports two themes: dark (default) and light.
  *
- * Per the Meowtrix design steering, dark mode is the ONLY supported mode.
- * We keep next-themes in place so any legacy `useTheme()` calls still resolve,
- * but `forcedTheme="dark"` prevents anything from flipping the html class.
+ * We use next-themes' class-based strategy. The <html> element gets a
+ * `dark` or `light` class, and `app/globals.css` defines both palettes.
+ *
+ * `enableSystem` is intentionally false — users pick a theme explicitly
+ * from the Settings page. `disableTransitionOnChange` avoids a flash
+ * when toggling.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <NextThemesProvider
       attribute="class"
       defaultTheme="dark"
-      forcedTheme="dark"
+      themes={["dark", "light"]}
       enableSystem={false}
       disableTransitionOnChange
     >
