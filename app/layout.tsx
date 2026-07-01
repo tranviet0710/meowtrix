@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
@@ -13,9 +12,9 @@ export const metadata: Metadata = {
   description: "Community command center for reuniting lost cats and dogs with their families. Report a missing pet, log a sighting, and coordinate the search.",
   icons: {
     icon: [
-      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon/favicon.ico", sizes: "48x48" },
+      { url: "/logo/logo.png", sizes: "16x16", type: "image/png" },
+      { url: "/logo/logo.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo/logo.png", sizes: "48x48" },
     ],
     apple: "/favicon/apple-touch-icon.png",
   },
@@ -27,7 +26,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background antialiased">
         <ThemeProvider>{children}</ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );
