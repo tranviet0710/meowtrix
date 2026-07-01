@@ -138,10 +138,10 @@ export function MapEmptyState({ className = "" }: MapEmptyStateProps) {
       <div className="pointer-events-auto rounded-2xl border border-border bg-card/95 px-6 py-4 text-center shadow-[var(--shadow-md)] backdrop-blur-sm">
         <div className="mb-2 text-3xl">🐾</div>
         <p className="text-sm font-semibold text-text-primary">
-          No missing pets nearby
+          Nothing to show right now
         </p>
         <p className="mt-1 text-xs text-text-secondary">
-          Everything looks quiet right now. Report a missing pet or log a
+          No missing pets or sightings nearby. Report a missing pet or log a
           sighting to help your community.
         </p>
       </div>
