@@ -1,0 +1,1 @@
+- register temporal: https://temporal.io/get-cloud/payment-information
