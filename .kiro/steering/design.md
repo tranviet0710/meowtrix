@@ -1,76 +1,115 @@
----
-inclusion: always
----
-
 # UI/UX Design Guidelines
 
 ## Design Philosophy
 
-The visual identity is "Feline Overlord Tracker" — a tongue-in-cheek spy-agency dashboard for tracking cats. The tone should feel like a modern surveillance command center, but playful and cat-themed. Think dark ops meets cat memes.
+Meowtrix is a warm, friendly community app for reuniting lost pets with their families. The tone is caring, hopeful, and modern — like a well-designed pet care app, not an operations dashboard. Copy should be plain-language and accessible to non-native English speakers. Every screen should feel approachable to a worried owner in the middle of a stressful moment.
+
+Avoid military, spy, or surveillance framing (no "Overlord", "Agent", "Informant", "HQ", "Deploy", "Intel", etc.) in user-facing text. Use plain words: "missing pet", "sighting", "helper" or "member", "home", "post", "notes".
+
+Technical/database names (Overlord, Agent, Informant) may remain in code identifiers, API routes, DB columns, and internal comments — the rebrand is presentational only.
 
 ## Color Palette
 
-- **Background:** High-contrast dark mode (`#0A0A0F` base, `#1A1A2E` cards/panels)
-- **Primary accent:** Bold yellow (`#FFCC00` or `#FFD700`) for CTAs, active states, and highlights
-- **Secondary accent:** Cool gray (`#8892B0`) for muted text and borders
-- **Success/Online:** Neon green (`#00FF88`) for active tracking indicators
-- **Danger/Alert:** Red (`#FF4444`) for missing-cat alerts and escalation states
-- **Text:** White (`#E6E6E6`) primary, gray (`#8892B0`) secondary
+The app supports two themes: **dark (default)** and **light**. Both palettes are defined as CSS variables in `app/globals.css` and applied via a `dark` / `light` class on `<html>` (managed by `next-themes`).
+
+### Dark theme (default)
+
+- **Background:** `#17141A` (warm dark, not pure black)
+- **Card / surface:** `#221E27`
+- **Primary (brand):** `#FF8B70` (warm coral) — used for CTAs, active states, brand highlights
+- **Accent:** `#FFB865` (warm amber) — secondary highlight
+- **Success / Found:** `#6FCC96` (soft mint)
+- **Danger / Missing:** `#FF7D7D` (soft coral-red)
+- **Text primary:** `#F5EDE4` (warm off-white)
+- **Text secondary:** `#B4A99C` (warm gray)
+- **Border:** `#382E36`
+
+### Light theme
+
+- **Background:** `#FFF8F2` (warm cream)
+- **Card / surface:** `#FFFFFF`
+- **Primary (brand):** `#F26E52` (warm coral)
+- **Accent:** `#F5A445` (warm amber)
+- **Success:** `#3FA36E`, **Danger:** `#E45858`
+- **Text primary:** `#2D2A26` (warm charcoal, never pure black)
+- **Text secondary:** `#7B7168`
+- **Border:** `#F0E4D6`
+
+Reference tokens by their CSS variable names (`--color-primary`, `--color-card`, etc.) or their Tailwind aliases (`bg-primary`, `text-danger`, `border-border`). Do **not** hardcode hex values in components.
 
 ## Typography
 
-- Use a monospace or terminal-style font (e.g., JetBrains Mono, Fira Code) for data tables, stat counters, and reference IDs
-- Use the default sans-serif (Inter via shadcn/ui) for body text and navigation
-- Headings should feel bold and impactful — uppercase where appropriate for section headers
+- Default sans-serif is **Inter** (via next/font), used for body copy, form controls, and navigation.
+- Headings use **Space Grotesk** for a friendly-modern feel. Reference via `font-[family-name:var(--font-space-grotesk)]` or the `font-display` token.
+- **JetBrains Mono** exists but should be used sparingly — only for record IDs, coordinates, or small technical labels. Avoid mono for anything a first-time visitor reads.
+- Prefer sentence case for headings and buttons over ALL CAPS. Reserve uppercase for tiny eyebrow labels and status chips (`text-[10px]` or `text-xs`), never body copy.
 
 ## Component Style
 
-- Sharp edges, minimal border-radius (2px max on cards, 0px on data tables)
-- Glowing active states: apply `box-shadow` with yellow or green glow on focused/active elements
-- Subtle scan-line or grid-pattern backgrounds on hero sections
-- Cards and panels should use subtle borders (`border-zinc-800`) rather than heavy shadows
-- Buttons: filled yellow for primary actions, outlined/ghost for secondary
+- **Rounded corners.** Use Tailwind's `rounded-md` (12px), `rounded-lg` (16px), `rounded-xl` (20px), or `rounded-full` for pills and avatars. The tokens `--radius-*` in `globals.css` define these.
+- **Soft shadows.** Use `shadow-soft`, `shadow-md`, or the CSS custom properties `var(--shadow-soft)` / `var(--shadow-md)`. Avoid brutalist offset shadows (`shadow-[Npx_Npx_0px_...]`) in new code.
+- **Subtle borders.** 1px `border-border` is the default. Use 2px only for emphasized cards.
+- **Warm active states.** Focused inputs and hovered buttons should lift with `translateY(-1px)` + shadow bump. See `.pet-btn-primary` and `.pet-card` helpers in `globals.css`.
 
 ## Layout Patterns
 
-- Dashboard-first layout: prioritize information density with a sidebar navigation pattern
-- Map view is the hero — give Leaflet the largest viewport area
-- Use a grid layout for stat cards (cats tracked, active searches, informants online)
-- Leaderboard uses a data-table style with terminal-font rows and rank indicators
-- Mobile-first responsive: stack sidebar into bottom nav on small screens
+- Dashboard-first layout with sidebar navigation on desktop, bottom nav on mobile.
+- The map is a prominent hero on the dashboard but framed with a rounded card, not a raw brutalist border.
+- Stat cards use soft rounded backgrounds with muted color-tinted icons — playful, not intimidating.
+- Match cards, report lists, and leaderboards use generous spacing (`p-4 md:p-6`) and soft dividers.
+- Mobile-first responsive: stack sidebar into bottom nav on small screens.
 
 ## Interaction & Animation
 
-- Pulsing dot animations on active tracking pins
-- Subtle fade/slide transitions on page navigation (no jarring jumps)
-- Loading states should use cat-themed skeleton screens or scanning animations
-- Toast notifications styled as "incoming transmissions" for real-time alerts
+- Pulsing accent on active tracking pins (see `.meowtrix-avatar-pulse`).
+- Gentle transitions on hover: `translateY(-2px)` lift + shadow bump.
+- Loading states use `animate-pulse` on soft-rounded skeletons.
+- Toasts styled as warm confirmation cards (not "incoming transmissions").
+- Optional wiggle on playful mascots via `.meowtrix-wiggle`.
 
 ## Copywriting Tone
 
-- Spy/military jargon adapted for cats: "agents" (found cats), "overlords" (lost cats), "informants" (users), "HQ" (dashboard)
-- Keep it light and fun — never actually intimidating
-- Short, punchy labels. Prefer "Deploy Alert" over "Send Notification"
+- Warm, hopeful, plain-language. Speak to worried owners and helpful neighbors, not to spies.
+- Short sentences. Prefer verbs over jargon: "Post" over "Deploy", "Notify" over "Transmit", "Reunited" over "Mission Complete".
+- Use inclusive terms like "helper", "neighbor", "you", "your pet".
+- Sprinkle emojis sparingly (🐾, 🐱, 🐶, ❤️) for warmth in success states — never in error copy.
+
+## Copy Glossary (UI-facing)
+
+Backend / code names stay; UI-facing labels change:
+
+| Backend / code   | UI label                       |
+| ---------------- | ------------------------------ |
+| Overlord         | Missing pet                    |
+| Agent            | Sighting (or spotted pet)      |
+| Informant        | Helper / member                |
+| HQ               | Home                           |
+| Intel / points   | Helper points                  |
+| Deploy alert     | Post / share                   |
+| Escalating Search Protocol | Search timeline       |
+| Reunion / mission complete | Reunited              |
 
 ## Accessibility
 
-- Maintain WCAG AA contrast ratios (4.5:1 minimum for body text against dark backgrounds)
-- All interactive elements must have visible focus states (yellow glow ring)
-- Provide alt text for map markers and cat images
-- Ensure the leaderboard and data tables are navigable via keyboard
+- Maintain WCAG AA contrast ratios (4.5:1 minimum for body text) in both themes.
+- All interactive elements have visible focus rings (`outline: 2px solid var(--color-primary)` + soft glow).
+- Provide alt text for map markers and pet images.
+- Ensure tables and lists are navigable via keyboard.
+- Never rely on color alone to convey status — pair with icons or labels.
 
 ## Implementation Rules
 
-- Use exclusively Tailwind CSS utility classes and shadcn/ui components
-- Never use inline styles or custom CSS files for layout/theming
-- Dark mode is the only mode — do not implement a light theme toggle
-- All color values should be defined in the Tailwind config `extend.colors` section for consistency
-- Reference the hackthekitty.com visual language: bold headlines, high contrast, punchy sections with clear visual hierarchy
+- Use Tailwind CSS utility classes and shadcn/ui components. Prefer utility tokens over arbitrary values.
+- Never hardcode hex colors in components. Use `bg-card`, `text-primary`, `border-border`, `text-danger`, etc.
+- Both light and dark themes must be tested for any new UI. Toggle in Settings.
+- Users pick their theme explicitly — do not auto-follow system preference.
+- Legacy classes `.brutal-card` / `.brutal-btn` and arbitrary utilities like `rounded-[2px]` / `border-[3px]` are globally softened via `globals.css` for backwards compat. New code should use `rounded-md`/`rounded-lg` and `border` directly.
 
 ## Scoring Context
 
 This project is judged on UX/UI (15% weight). To maximize this score:
-- The interface must look intentionally designed, not default/boilerplate
-- Smooth interactions, clear navigation, and cohesive visual style are explicitly scored
-- Polish over feature count — a refined 3-screen app beats a rough 10-screen app
-- The video demo is what judges see first, so hero screens must be visually striking
+
+- The interface must feel warm, welcoming, and intentionally designed.
+- Copy must be understandable to non-native English speakers.
+- Both themes must be polished, not just the dark one.
+- Smooth interactions and cohesive visual language across every screen.
