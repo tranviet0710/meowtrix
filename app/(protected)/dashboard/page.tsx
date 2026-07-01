@@ -1,7 +1,34 @@
 "use client";
+import dynamic from "next/dynamic";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { MyReports } from "@/components/dashboard/MyReports";
-import { OperationsMap } from "@/components/dashboard/OperationsMap";
+
+// OperationsMap pulls in react-leaflet / leaflet at module scope, which
+// touches `window` on load. Load it dynamically with SSR disabled so the
+// prerender does not evaluate the leaflet module tree.
+const OperationsMap = dynamic(
+  () =>
+    import("@/components/dashboard/OperationsMap").then(
+      (mod) => mod.OperationsMap
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex h-full w-full items-center justify-center bg-card"
+        role="status"
+        aria-label="Loading operations map"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-sidebar-active/20" />
+          <p className="animate-pulse font-mono text-xs uppercase tracking-wide text-text-secondary">
+            Loading map...
+          </p>
+        </div>
+      </div>
+    ),
+  }
+);
 
 export default function DashboardPage() {
   return (
