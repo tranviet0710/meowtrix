@@ -122,7 +122,7 @@ export function MapView({
   if (isLoading) {
     return (
       <div
-        className={`flex items-center justify-center rounded-[2px] border border-border bg-card w-full min-h-[50vh] ${className}`}
+        className={`flex items-center justify-center rounded-[2px] border border-border bg-card w-full h-full min-h-[50vh] ${className}`}
         role="status"
         aria-label="Loading map"
       >
@@ -140,7 +140,7 @@ export function MapView({
   if (error) {
     return (
       <div
-        className={`flex items-center justify-center rounded-[2px] border border-danger/50 bg-card w-full min-h-[50vh] ${className}`}
+        className={`flex items-center justify-center rounded-[2px] border border-danger/50 bg-card w-full h-full min-h-[50vh] ${className}`}
         role="alert"
         aria-label="Map error"
       >
@@ -186,7 +186,7 @@ export function MapView({
       maxZoom={MAX_ZOOM}
       zoomControl={false}
       className={`rounded-[2px] ${className}`}
-      style={{ minHeight: "50vh", height: "100%", width: "100%" }}
+      style={{ height: "100%", width: "100%" }}
       ref={setMapRef}
     >
       <TileLayer

@@ -24,7 +24,7 @@ export const MapViewDynamic = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex items-center justify-center rounded-[2px] border border-border bg-card w-full min-h-[50vh]"
+        className="flex items-center justify-center rounded-[2px] border border-border bg-card w-full h-full min-h-[50vh]"
         role="status"
         aria-label="Loading map"
       >

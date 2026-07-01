@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Circle } from "react-leaflet";
+import { Circle, CircleMarker } from "react-leaflet";
 import { calculateHeatmapRadius, getHeatmapCenter } from "@/lib/heatmapCalc";
 
 interface HeatmapOverlayProps {
@@ -14,29 +14,37 @@ interface HeatmapOverlayProps {
 }
 
 /**
- * Number of concentric circles used to simulate the gradient effect.
- * More rings = smoother gradient, but more DOM elements.
- */
-const GRADIENT_RINGS = 8;
-
-/**
- * Maximum opacity at the center of the heatmap.
- */
-const MAX_OPACITY = 0.6;
-
-/**
  * Interval in milliseconds for recalculating the radius (5 minutes).
  */
 const RECALC_INTERVAL_MS = 5 * 60 * 1000;
 
 /**
+ * Warm danger color from the design tokens (--color-danger, dark theme value).
+ * Kept as a hex since Leaflet strokes/fills don't inherit CSS variables reliably.
+ * Softer than the previous #FF4444 and legible on both light and dark OSM tiles.
+ */
+const ZONE_COLOR = "#FF7D7D";
+
+/** Soft fill so overlapping zones from nearby overlords don't saturate to solid red. */
+const FILL_OPACITY = 0.1;
+
+/** Dashed stroke — reads as "search area" rather than a hard boundary. */
+const STROKE_OPACITY = 0.65;
+const STROKE_WEIGHT = 2;
+const STROKE_DASH = "6 6";
+
+/**
  * HeatmapOverlay — Renders a probability zone overlay on the map for a lost Overlord.
  *
- * Uses multiple concentric Leaflet Circles with decreasing opacity to simulate
- * a gradient effect (center 0.6 → edge 0). Recalculates radius every 5 minutes
- * as the elapsed time increases.
+ * Design: one soft-filled Leaflet Circle plus a small anchor dot at the last-seen
+ * location. Uses a dashed brand-danger stroke so multiple overlapping zones remain
+ * readable and match the app's warm palette.
  *
- * Must be dynamically imported with next/dynamic and ssr: false since Leaflet requires the DOM.
+ * Recalculates radius every 5 minutes as elapsed time grows. Re-centers on the
+ * most recent Agent sighting that falls within the current zone (per spec 6.5).
+ *
+ * Must be dynamically imported with next/dynamic and ssr: false since Leaflet
+ * requires the DOM.
  */
 export function HeatmapOverlay({
   overlordId,
@@ -57,9 +65,7 @@ export function HeatmapOverlay({
       setRadius(newRadius);
     }
 
-    // Initial calculation
     recalculate();
-
     const intervalId = setInterval(recalculate, RECALC_INTERVAL_MS);
 
     return () => {
@@ -67,18 +73,12 @@ export function HeatmapOverlay({
     };
   }, [lastSeenAt]);
 
-  // Calculate the center point (may shift if agent sightings are within zone)
+  // Zone center may shift toward a recent sighting within the radius.
   const center = useMemo(() => {
     if (radius === null) {
       return { lat: lastSeenLat, lng: lastSeenLng };
     }
-
-    return getHeatmapCenter(
-      lastSeenLat,
-      lastSeenLng,
-      agentSightings,
-      radius
-    );
+    return getHeatmapCenter(lastSeenLat, lastSeenLng, agentSightings, radius);
   }, [lastSeenLat, lastSeenLng, agentSightings, radius]);
 
   // Don't render if resolved or if less than 30 min elapsed (radius is null)
@@ -86,29 +86,38 @@ export function HeatmapOverlay({
     return null;
   }
 
-  // Generate concentric circles with linearly decreasing opacity
-  const rings = Array.from({ length: GRADIENT_RINGS }, (_, i) => {
-    const fraction = (i + 1) / GRADIENT_RINGS;
-    const ringRadius = radius * fraction;
-    // Opacity decreases linearly from MAX_OPACITY at center to 0 at edge
-    const opacity = MAX_OPACITY * (1 - fraction);
-
-    return (
+  return (
+    <>
+      {/* Soft-filled search area with a dashed brand-danger border. */}
       <Circle
-        key={`${overlordId}-ring-${i}`}
+        key={`${overlordId}-zone`}
         center={[center.lat, center.lng]}
-        radius={ringRadius}
+        radius={radius}
         pathOptions={{
-          color: "#FF4444",
-          fillColor: "#FF4444",
-          fillOpacity: opacity,
-          weight: 0,
-          stroke: false,
+          color: ZONE_COLOR,
+          fillColor: ZONE_COLOR,
+          fillOpacity: FILL_OPACITY,
+          opacity: STROKE_OPACITY,
+          weight: STROKE_WEIGHT,
+          dashArray: STROKE_DASH,
         }}
         interactive={false}
       />
-    );
-  });
 
-  return <>{rings}</>;
+      {/* Small anchor dot to visually pin the center of the zone. */}
+      <CircleMarker
+        key={`${overlordId}-center`}
+        center={[center.lat, center.lng]}
+        radius={3}
+        pathOptions={{
+          color: ZONE_COLOR,
+          fillColor: ZONE_COLOR,
+          fillOpacity: 0.9,
+          opacity: 0.9,
+          weight: 1,
+        }}
+        interactive={false}
+      />
+    </>
+  );
 }

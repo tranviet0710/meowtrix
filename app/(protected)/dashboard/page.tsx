@@ -47,7 +47,7 @@ export default function DashboardPage() {
       <MyReports />
 
       <section
-        className="relative flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] min-h-[50vh] md:min-h-[60vh]"
+        className="relative overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] h-[70dvh] md:h-[calc(100dvh-11rem)] md:min-h-[560px]"
         aria-label="Live map of missing pets and sightings"
       >
         <div className="absolute top-0 left-0 z-[400] rounded-br-xl border-b border-r border-border bg-card/95 backdrop-blur-sm px-3 py-1.5">

@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapViewDynamic } from "@/components/map/MapViewDynamic";
 import { AvatarMarker } from "@/components/map/AvatarMarker";
 import { MapPopup, MapEmptyState } from "@/components/map/MapPopup";
+import { HeatmapOverlay } from "@/components/map/HeatmapOverlay";
+import { ActivityHeatmapLayer } from "@/components/map/ActivityHeatmapLayer";
+import {
+  MapLayersControl,
+  type MapLayerToggles,
+} from "@/components/map/MapLayersControl";
 import type { Agent, Overlord } from "@/types";
 
 /**
@@ -13,12 +19,19 @@ import type { Agent, Overlord } from "@/types";
  * - Sightings (Agents) show as pins with a green ring.
  * - Only active records are rendered — reunited / resolved cases are hidden
  *   so the map stays focused on ongoing recovery efforts.
+ * - Two optional map layers can be toggled by the user:
+ *   • Probability zones — a widening predicted-location halo per active missing pet
+ *   • Activity heatmap — density of all recent reports across the area
  * - Empty state overlay shows when no active records exist.
  */
 export function OperationsMap() {
   const [overlords, setOverlords] = useState<Overlord[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [layers, setLayers] = useState<MapLayerToggles>({
+    probabilityZones: true,
+    activityHeatmap: false,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -63,20 +76,59 @@ export function OperationsMap() {
   }, []);
 
   // Sanity-filter rows missing coordinates
-  const validOverlords = overlords.filter(
-    (o) =>
-      typeof o.last_seen_lat === "number" &&
-      typeof o.last_seen_lng === "number" &&
-      !Number.isNaN(o.last_seen_lat) &&
-      !Number.isNaN(o.last_seen_lng)
+  const validOverlords = useMemo(
+    () =>
+      overlords.filter(
+        (o) =>
+          typeof o.last_seen_lat === "number" &&
+          typeof o.last_seen_lng === "number" &&
+          !Number.isNaN(o.last_seen_lat) &&
+          !Number.isNaN(o.last_seen_lng)
+      ),
+    [overlords]
   );
 
-  const validAgents = agents.filter(
-    (a) =>
-      typeof a.sighting_lat === "number" &&
-      typeof a.sighting_lng === "number" &&
-      !Number.isNaN(a.sighting_lat) &&
-      !Number.isNaN(a.sighting_lng)
+  const validAgents = useMemo(
+    () =>
+      agents.filter(
+        (a) =>
+          typeof a.sighting_lat === "number" &&
+          typeof a.sighting_lng === "number" &&
+          !Number.isNaN(a.sighting_lat) &&
+          !Number.isNaN(a.sighting_lng)
+      ),
+    [agents]
+  );
+
+  // Sightings feed for probability zone re-centering. Shape matches the
+  // string-timestamp overload of getHeatmapCenter.
+  const agentSightings = useMemo(
+    () =>
+      validAgents.map((a) => ({
+        lat: a.sighting_lat,
+        lng: a.sighting_lng,
+        sighted_at: a.sighted_at,
+      })),
+    [validAgents]
+  );
+
+  // Aggregate all report locations for the density heatmap. Missing pets
+  // carry more weight than sightings so the "hot zones" trend toward areas
+  // with active lost cases, not just casual sightings.
+  const heatmapPoints = useMemo(
+    () => [
+      ...validOverlords.map((o) => ({
+        lat: o.last_seen_lat,
+        lng: o.last_seen_lng,
+        weight: 2,
+      })),
+      ...validAgents.map((a) => ({
+        lat: a.sighting_lat,
+        lng: a.sighting_lng,
+        weight: 1,
+      })),
+    ],
+    [validOverlords, validAgents]
   );
 
   const showEmptyState =
@@ -85,6 +137,25 @@ export function OperationsMap() {
   return (
     <>
       <MapViewDynamic className="h-full w-full">
+        {/* Probability zones per active missing pet */}
+        {layers.probabilityZones &&
+          validOverlords.map((o) => (
+            <HeatmapOverlay
+              key={`heat-${o.id}`}
+              overlordId={o.id}
+              lastSeenLat={o.last_seen_lat}
+              lastSeenLng={o.last_seen_lng}
+              lastSeenAt={o.last_seen_at}
+              agentSightings={agentSightings}
+              status={o.status}
+            />
+          ))}
+
+        {/* City-wide activity density */}
+        {layers.activityHeatmap && heatmapPoints.length > 0 && (
+          <ActivityHeatmapLayer points={heatmapPoints} />
+        )}
+
         {validOverlords.map((o) => (
           <AvatarMarker
             key={`overlord-${o.id}`}
@@ -128,6 +199,13 @@ export function OperationsMap() {
           </AvatarMarker>
         ))}
       </MapViewDynamic>
+
+      {/* Floating layer toggles — top-right so they don't clash with the
+          "Live Map" caption in the top-left of the dashboard card. */}
+      <div className="pointer-events-none absolute right-3 top-3 z-[500]">
+        <MapLayersControl value={layers} onChange={setLayers} />
+      </div>
+
       {showEmptyState && <MapEmptyState />}
     </>
   );
