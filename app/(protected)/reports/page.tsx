@@ -94,10 +94,10 @@ function FilterGroup<T extends string>({
               aria-checked={selected}
               onClick={() => onChange(option.value)}
               className={
-                "px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-all border-[2px] " +
+                "px-3 py-1.5 text-xs font-medium rounded-full transition-all border " +
                 (selected
-                  ? "border-accent bg-accent/10 text-accent shadow-[2px_2px_0px_var(--color-accent)]"
-                  : "border-border bg-card/40 text-text-secondary hover:border-text-secondary/60")
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card text-text-secondary hover:border-primary/50 hover:text-primary")
               }
             >
               {option.label}
@@ -173,26 +173,26 @@ export default function ReportsPage() {
     <div className="flex h-full flex-col gap-4 p-4 md:p-6">
       {/* Header */}
       <header>
-        <h1 className="font-[family-name:var(--font-space-grotesk)] text-xl font-bold uppercase tracking-wider text-sidebar-active">
+        <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-text-primary">
           Reports
         </h1>
-        <p className="mt-1 text-xs font-mono uppercase tracking-wide text-text-secondary">
-          Filter the network feed of lost &amp; found reports
+        <p className="mt-1 text-sm text-text-secondary">
+          Browse missing pet reports and sightings from the community
         </p>
       </header>
 
       {/* Filter Bar */}
       <section
         aria-label="Report filters"
-        className="border-[3px] border-border bg-card/50 p-3 md:p-4"
+        className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]"
       >
         <div className="flex items-center gap-2 mb-3">
-          <Filter className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-text-primary">
+          <Filter className="h-4 w-4 text-primary" aria-hidden="true" />
+          <span className="text-sm font-semibold text-text-primary">
             Filters
           </span>
           {activeFilterCount > 0 && (
-            <span className="ml-auto text-[10px] font-mono text-accent">
+            <span className="ml-auto text-xs text-primary">
               {activeFilterCount} active
             </span>
           )}
@@ -241,28 +241,28 @@ export default function ReportsPage() {
       </section>
 
       {/* Tabs */}
-      <div className="flex border-[3px] border-border">
+      <div className="flex gap-2 rounded-xl border border-border bg-card p-1">
         <button
           onClick={() => setActiveTab("lost")}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold uppercase tracking-wide transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "lost"
-              ? "bg-danger/10 text-danger border-r-[3px] border-border"
-              : "text-text-secondary hover:bg-card border-r-[3px] border-border"
+              ? "bg-danger/10 text-danger"
+              : "text-text-secondary hover:bg-muted"
           }`}
         >
           <AlertTriangle className="h-4 w-4" />
-          Lost ({overlords.length})
+          Missing ({overlords.length})
         </button>
         <button
           onClick={() => setActiveTab("found")}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold uppercase tracking-wide transition-all ${
+          className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "found"
               ? "bg-success/10 text-success"
-              : "text-text-secondary hover:bg-card"
+              : "text-text-secondary hover:bg-muted"
           }`}
         >
           <Eye className="h-4 w-4" />
-          Found ({agents.length})
+          Sightings ({agents.length})
         </button>
       </div>
 
@@ -270,19 +270,19 @@ export default function ReportsPage() {
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-[2px] border border-border bg-card" />
+            <div key={i} className="h-24 animate-pulse rounded-xl border border-border bg-card" />
           ))}
         </div>
       )}
 
       {/* Error */}
       {error && !isLoading && (
-        <div className="flex flex-col items-center gap-3 border-[3px] border-danger bg-card p-6">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-danger/40 bg-card p-6 shadow-[var(--shadow-soft)]">
           <AlertTriangle className="h-5 w-5 text-danger" />
           <p className="text-sm text-text-primary">{error}</p>
           <button
             onClick={fetchReports}
-            className="min-h-[44px] border-[3px] border-accent bg-accent/10 px-4 py-2 text-sm font-bold uppercase text-accent shadow-[3px_3px_0px_0px] shadow-accent/40 hover:bg-accent/20"
+            className="min-h-[40px] rounded-lg border border-primary bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20"
           >
             Retry
           </button>
@@ -293,10 +293,10 @@ export default function ReportsPage() {
       {!isLoading && !error && activeTab === "lost" && (
         <div className="space-y-3">
           {overlords.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 border-[3px] border-border bg-card p-10">
+            <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-10 shadow-[var(--shadow-soft)]">
               <Search className="h-8 w-8 text-text-secondary" />
-              <p className="font-mono text-sm text-text-secondary">
-                NO LOST REPORTS MATCH YOUR FILTERS
+              <p className="text-sm text-text-secondary">
+                No missing pet reports match your filters
               </p>
             </div>
           ) : (
@@ -304,10 +304,10 @@ export default function ReportsPage() {
               <Link
                 key={report.id}
                 href={`/overlords/${report.id}`}
-                className="flex items-center gap-4 border-[3px] border-border bg-card p-4 transition-all hover:border-danger/50 hover:shadow-[3px_3px_0px_0px] hover:shadow-danger/30"
+                className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-danger/50 hover:shadow-[var(--shadow-md)]"
               >
                 {/* Photo */}
-                <div className="h-16 w-16 flex-shrink-0 overflow-hidden border-[2px] border-border bg-background">
+                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
                   {report.photos[0] ? (
                     <img
                       src={report.photos[0]}
@@ -324,10 +324,10 @@ export default function ReportsPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-text-primary truncate">
+                    <p className="text-sm font-semibold text-text-primary truncate">
                       {report.pet_name}
                     </p>
-                    <span className="rounded-[2px] bg-danger/10 px-2 py-0.5 font-mono text-[10px] uppercase text-danger">
+                    <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-medium text-danger">
                       {report.pet_type}
                     </span>
                   </div>
@@ -337,7 +337,7 @@ export default function ReportsPage() {
                     </p>
                   )}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-                    <span className="flex items-center gap-1 text-xs text-text-secondary font-mono">
+                    <span className="flex items-center gap-1 text-xs text-text-secondary">
                       <Clock className="h-3 w-3" />
                       {new Date(report.last_seen_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
                     </span>
@@ -352,13 +352,13 @@ export default function ReportsPage() {
 
                 {/* Status */}
                 <span
-                  className={`flex-shrink-0 rounded-[2px] px-2 py-1 font-mono text-[10px] uppercase border ${
+                  className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${
                     report.status === "active"
-                      ? "bg-danger/10 text-danger border-danger/30"
-                      : "bg-success/10 text-success border-success/30"
+                      ? "bg-danger/10 text-danger"
+                      : "bg-success/10 text-success"
                   }`}
                 >
-                  {report.status === "active" ? "MISSING" : "RECOVERED"}
+                  {report.status === "active" ? "Missing" : "Home"}
                 </span>
               </Link>
             ))
@@ -370,10 +370,10 @@ export default function ReportsPage() {
       {!isLoading && !error && activeTab === "found" && (
         <div className="space-y-3">
           {agents.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 border-[3px] border-border bg-card p-10">
+            <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-10 shadow-[var(--shadow-soft)]">
               <Search className="h-8 w-8 text-text-secondary" />
-              <p className="font-mono text-sm text-text-secondary">
-                NO FOUND REPORTS MATCH YOUR FILTERS
+              <p className="text-sm text-text-secondary">
+                No sightings match your filters
               </p>
             </div>
           ) : (
@@ -381,10 +381,10 @@ export default function ReportsPage() {
               <Link
                 key={report.id}
                 href={`/agents/${report.id}`}
-                className="flex items-center gap-4 border-[3px] border-border bg-card p-4 transition-all hover:border-success/50 hover:shadow-[3px_3px_0px_0px] hover:shadow-success/30"
+                className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-success/50 hover:shadow-[var(--shadow-md)]"
               >
                 {/* Photo */}
-                <div className="h-16 w-16 flex-shrink-0 overflow-hidden border-[2px] border-border bg-background">
+                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
                   {report.photos[0] ? (
                     <img
                       src={report.photos[0]}
@@ -401,10 +401,10 @@ export default function ReportsPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-text-primary">
-                      Spotted {report.pet_type === "cat" ? "Cat" : "Dog"}
+                    <p className="text-sm font-semibold text-text-primary">
+                      Spotted {report.pet_type === "cat" ? "cat" : "dog"}
                     </p>
-                    <span className="rounded-[2px] bg-success/10 px-2 py-0.5 font-mono text-[10px] uppercase text-success">
+                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
                       {report.pet_type}
                     </span>
                   </div>
@@ -414,7 +414,7 @@ export default function ReportsPage() {
                     </p>
                   )}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-                    <span className="flex items-center gap-1 text-xs text-text-secondary font-mono">
+                    <span className="flex items-center gap-1 text-xs text-text-secondary">
                       <Clock className="h-3 w-3" />
                       {new Date(report.sighted_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
                     </span>
@@ -429,13 +429,13 @@ export default function ReportsPage() {
 
                 {/* Status */}
                 <span
-                  className={`flex-shrink-0 rounded-[2px] px-2 py-1 font-mono text-[10px] uppercase border ${
+                  className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${
                     report.status === "active"
-                      ? "bg-success/10 text-success border-success/30"
-                      : "bg-secondary/10 text-text-secondary border-secondary/30"
+                      ? "bg-success/10 text-success"
+                      : "bg-muted text-text-secondary"
                   }`}
                 >
-                  {report.status === "active" ? "SPOTTED" : "RESOLVED"}
+                  {report.status === "active" ? "Sighting" : "Resolved"}
                 </span>
               </Link>
             ))

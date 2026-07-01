@@ -101,7 +101,7 @@ export default function RegisterPage() {
       <Card className="border-border bg-card">
         <CardHeader className="text-center">
           <CardTitle className="text-xl text-text-primary">
-            Registration Complete
+            Almost there!
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
@@ -110,17 +110,17 @@ export default function RegisterPage() {
           </div>
           <div className="text-center space-y-2">
             <p className="text-sm text-text-primary font-medium">
-              Check your email to activate your account
+              Check your email to confirm your account
             </p>
             <p className="text-xs text-text-secondary">
-              We sent a confirmation link to <span className="font-mono text-accent">{email}</span>.
-              Click the link to verify your account before signing in.
+              We sent a link to <span className="font-medium text-primary">{email}</span>.
+              Click it to finish setting up your account.
             </p>
           </div>
-          <div className="mt-2 w-full rounded-[2px] border border-accent/30 bg-accent/5 px-4 py-3 text-xs text-text-secondary">
+          <div className="mt-2 w-full rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-text-secondary">
             <p className="mb-2">Didn&apos;t get the email? Check your spam folder or resend it below.</p>
             {resendState === "sent" ? (
-              <p className="font-mono text-success">✓ Activation email resent.</p>
+              <p className="text-success">✓ Confirmation email resent.</p>
             ) : (
               <Button
                 type="button"
@@ -129,7 +129,7 @@ export default function RegisterPage() {
                 onClick={handleResend}
                 disabled={resendState === "sending"}
               >
-                {resendState === "sending" ? "Sending..." : "Resend activation email"}
+                {resendState === "sending" ? "Sending…" : "Resend confirmation email"}
               </Button>
             )}
             {resendError && (
@@ -138,7 +138,7 @@ export default function RegisterPage() {
           </div>
         </CardContent>
         <CardFooter className="justify-center">
-          <Link href="/login" className="text-sm text-accent hover:underline">
+          <Link href="/login" className="text-sm text-primary font-semibold hover:underline">
             Go to Sign In
           </Link>
         </CardFooter>
@@ -150,16 +150,16 @@ export default function RegisterPage() {
     <Card className="border-border bg-card">
       <CardHeader className="text-center">
         <CardTitle className="text-xl text-text-primary">
-          Recruit New Informant
+          Create Your Account
         </CardTitle>
         <CardDescription>
-          Join the MEOWTRIX network and help track lost Overlords
+          Join Meowtrix and help reunite lost pets with their families
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         {error && (
-          <div className="mb-4 rounded-[2px] border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
             {error}
           </div>
         )}
@@ -170,7 +170,7 @@ export default function RegisterPage() {
             <Input
               id="display-name"
               type="text"
-              placeholder="Agent Whiskers"
+              placeholder="Your name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
@@ -183,7 +183,7 @@ export default function RegisterPage() {
             <Input
               id="email"
               type="email"
-              placeholder="agent@meowtrix.io"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -196,7 +196,7 @@ export default function RegisterPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Min. 8 characters"
+              placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -205,7 +205,7 @@ export default function RegisterPage() {
               autoComplete="new-password"
             />
             <p className="text-xs text-text-secondary">
-              8–128 characters required
+              8–128 characters
             </p>
           </div>
 
@@ -214,15 +214,15 @@ export default function RegisterPage() {
             className="w-full"
             disabled={loading}
           >
-            {loading ? "Creating Account..." : "Create Account"}
+            {loading ? "Creating account…" : "Create Account"}
           </Button>
         </form>
       </CardContent>
 
       <CardFooter className="justify-center">
         <p className="text-sm text-text-secondary">
-          Already an informant?{" "}
-          <Link href="/login" className="text-accent hover:underline">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary font-semibold hover:underline">
             Sign in
           </Link>
         </p>

@@ -11,12 +11,12 @@ export default function ReportFoundPage() {
         <div className="flex items-center gap-2">
           <Eye className="h-6 w-6 text-success" />
           <h1 className="text-2xl font-bold uppercase tracking-wider text-text-primary">
-            Report Spotted Agent
+            Report a Spotted Pet
           </h1>
         </div>
         <p className="text-sm text-text-secondary">
-          Log a pet sighting. Upload photos and mark the location — our AI will
-          cross-reference against missing Overlords and alert their handlers.
+          Saw a cat or dog that might be lost? Upload photos and mark the location —
+          our AI will cross-check against missing pets and alert their owners.
         </p>
       </div>
 

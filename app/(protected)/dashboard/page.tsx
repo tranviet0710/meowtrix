@@ -17,12 +17,12 @@ const OperationsMap = dynamic(
       <div
         className="flex h-full w-full items-center justify-center bg-card"
         role="status"
-        aria-label="Loading operations map"
+        aria-label="Loading map"
       >
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-pulse rounded-full bg-sidebar-active/20" />
-          <p className="animate-pulse font-mono text-xs uppercase tracking-wide text-text-secondary">
-            Loading map...
+          <div className="h-8 w-8 animate-pulse rounded-full bg-primary/20" />
+          <p className="animate-pulse text-sm text-text-secondary">
+            Loading map…
           </p>
         </div>
       </div>
@@ -34,11 +34,11 @@ export default function DashboardPage() {
   return (
     <div className="flex h-full flex-col gap-6 p-4 md:p-6">
       <header>
-        <h1 className="font-[family-name:var(--font-space-grotesk)] text-xl font-bold uppercase tracking-wider text-sidebar-active">
-          HQ Dashboard
+        <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-text-primary">
+          Welcome back 🐾
         </h1>
-        <p className="mt-1 text-xs font-mono uppercase tracking-wide text-text-secondary">
-          Command center overview — all systems operational
+        <p className="mt-1 text-sm text-text-secondary">
+          Here&apos;s what&apos;s happening in your area
         </p>
       </header>
 
@@ -47,12 +47,12 @@ export default function DashboardPage() {
       <MyReports />
 
       <section
-        className="relative flex-1 overflow-hidden border-[3px] border-sidebar-active shadow-[4px_4px_0px_var(--color-sidebar-active)] min-h-[50vh] md:min-h-[60vh]"
-        aria-label="Operations map"
+        className="relative flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] min-h-[50vh] md:min-h-[60vh]"
+        aria-label="Live map of missing pets"
       >
-        <div className="absolute top-0 left-0 z-10 bg-card border-b-[3px] border-r-[3px] border-sidebar-active px-3 py-1">
-          <span className="font-[family-name:var(--font-space-grotesk)] text-xs font-bold uppercase text-sidebar-active">
-            Live Operations Map
+        <div className="absolute top-0 left-0 z-[400] rounded-br-xl border-b border-r border-border bg-card/95 backdrop-blur-sm px-3 py-1.5">
+          <span className="text-xs font-semibold text-text-primary">
+            Live Map · Missing Pets Near You
           </span>
         </div>
         <OperationsMap />

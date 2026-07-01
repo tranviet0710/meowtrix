@@ -259,29 +259,29 @@ export default function MatchDetailPage() {
       {/* Back link */}
       <Link
         href="/matches"
-        className="flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-accent"
+        className="flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-primary"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Match Intelligence
+        Back to Matches
       </Link>
 
       {/* Header: Score + Status */}
-      <header className="flex flex-col gap-3 rounded-[2px] border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div
-            className={`font-mono text-4xl font-bold ${
+            className={`font-[family-name:var(--font-space-grotesk)] text-4xl font-bold ${
               match.overall_score >= 80
                 ? "text-success"
                 : match.overall_score >= 70
-                  ? "text-accent"
-                  : "text-secondary"
+                  ? "text-primary"
+                  : "text-text-secondary"
             }`}
           >
             {match.overall_score}%
           </div>
           <div>
-            <h1 className="font-mono text-sm font-bold uppercase tracking-wider text-text-primary">
-              CORRELATION REPORT
+            <h1 className="text-lg font-semibold text-text-primary">
+              Match Details
             </h1>
             <p className="text-xs text-text-secondary">
               Match ID: <span className="font-mono">{match.id.slice(0, 8)}</span>
@@ -289,28 +289,34 @@ export default function MatchDetailPage() {
           </div>
         </div>
         <span
-          className={`inline-flex w-fit rounded-[2px] px-3 py-1 font-mono text-xs uppercase ${
+          className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium ${
             match.status === "pending"
-              ? "bg-accent/10 text-accent"
+              ? "bg-primary/10 text-primary"
               : match.status === "claimed"
-                ? "bg-success/10 text-success"
+                ? "bg-accent/10 text-accent"
                 : match.status === "resolved"
-                  ? "bg-secondary/10 text-secondary"
+                  ? "bg-success/10 text-success"
                   : "bg-danger/10 text-danger"
           }`}
         >
-          {match.status}
+          {match.status === "pending"
+            ? "New"
+            : match.status === "claimed"
+              ? "Claim in progress"
+              : match.status === "resolved"
+                ? "Reunited"
+                : "Not a match"}
         </span>
       </header>
 
       {/* Main content grid */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Overlord card */}
-        <section className="rounded-[2px] border border-danger/30 bg-card p-4">
+        {/* Missing pet card */}
+        <section className="rounded-xl border border-danger/30 bg-card p-4 shadow-[var(--shadow-soft)]">
           <div className="mb-3 flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-danger" />
-            <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-danger">
-              LOST OVERLORD
+            <h2 className="text-sm font-semibold text-danger">
+              Missing pet
             </h2>
           </div>
 
@@ -361,17 +367,17 @@ export default function MatchDetailPage() {
             </div>
           ) : (
             <p className="text-xs text-text-secondary">
-              Overlord data unavailable
+              Missing pet data unavailable
             </p>
           )}
         </section>
 
-        {/* Agent card */}
-        <section className="rounded-[2px] border border-success/30 bg-card p-4">
+        {/* Sighting card */}
+        <section className="rounded-xl border border-success/30 bg-card p-4 shadow-[var(--shadow-soft)]">
           <div className="mb-3 flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-success" />
-            <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-success">
-              SPOTTED AGENT
+            <h2 className="text-sm font-semibold text-success">
+              Sighting
             </h2>
           </div>
 
@@ -395,7 +401,7 @@ export default function MatchDetailPage() {
 
               <div>
                 <p className="text-sm font-medium text-text-primary">
-                  Agent Sighting
+                  Sighting
                 </p>
                 {agent.description && (
                   <p className="mt-1 text-xs text-text-secondary line-clamp-3">
@@ -422,14 +428,14 @@ export default function MatchDetailPage() {
             </div>
           ) : (
             <p className="text-xs text-text-secondary">
-              Agent data unavailable
+              Sighting data unavailable
             </p>
           )}
         </section>
       </div>
 
       {/* Score Breakdown */}
-      <section className="rounded-[2px] border border-border bg-card p-5">
+      <section className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-soft)]">
         <ScoreBreakdown
           visual={match.score_breakdown.visual}
           description={match.score_breakdown.description}
@@ -440,15 +446,15 @@ export default function MatchDetailPage() {
 
       {/* Matched traits */}
       {match.matched_traits.length > 0 && (
-        <section className="rounded-[2px] border border-border bg-card p-4">
-          <h3 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
-            MATCHED IDENTIFIERS
+        <section className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+          <h3 className="mb-2 text-sm font-semibold text-text-primary">
+            Matching Features
           </h3>
           <div className="flex flex-wrap gap-2">
             {match.matched_traits.map((trait) => (
               <span
                 key={trait}
-                className="rounded-[2px] bg-accent/10 px-2.5 py-1 font-mono text-xs text-accent"
+                className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
               >
                 {trait}
               </span>
@@ -457,28 +463,28 @@ export default function MatchDetailPage() {
         </section>
       )}
 
-      {/* Claim button — only for overlord owner when status is pending */}
+      {/* Claim button — only for missing-pet owner when status is pending */}
       {canClaim && (
-        <section className="rounded-[2px] border border-accent/30 bg-accent/5 p-5">
+        <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 shadow-[var(--shadow-soft)]">
           <div className="flex flex-col items-start gap-4">
             <div className="flex items-center gap-3">
-              <Shield className="h-6 w-6 shrink-0 text-accent" aria-hidden="true" />
+              <Shield className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
               <div>
-                <p className="text-sm font-medium text-text-primary">
-                  Initiate Claim
+                <p className="text-base font-semibold text-text-primary">
+                  This might be your pet
                 </p>
-                <p className="text-xs text-text-secondary">
-                  Claim this match and get connected with the finder via email
+                <p className="text-sm text-text-secondary">
+                  Claim this match and we&apos;ll connect you with the finder by email
                 </p>
               </div>
             </div>
             <button
               onClick={handleInitiateClaim}
               disabled={state.isClaimLoading}
-              className="w-full sm:w-auto min-h-[44px] rounded-[2px] bg-accent px-6 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Initiate ownership claim on this match"
+              className="w-full sm:w-auto min-h-[44px] rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-all hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:translate-y-0"
+              aria-label="Claim this match"
             >
-              {state.isClaimLoading ? "INITIATING..." : "CLAIM OVERLORD"}
+              {state.isClaimLoading ? "Starting…" : "Claim This Pet"}
             </button>
           </div>
         </section>
@@ -486,30 +492,30 @@ export default function MatchDetailPage() {
 
       {/* Claimed state — show actions for involved parties */}
       {match.status === "claimed" && (currentUserId === overlord?.owner_id || currentUserId === agent?.reporter_id) && (
-        <section className="rounded-[2px] border border-success/30 bg-success/5 p-5">
+        <section className="rounded-xl border border-success/30 bg-success/5 p-5 shadow-[var(--shadow-soft)]">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <Clock className="h-6 w-6 shrink-0 text-success" aria-hidden="true" />
               <div>
-                <p className="text-sm font-medium text-text-primary">
-                  CLAIM IN PROGRESS — Verification Pending
+                <p className="text-base font-semibold text-text-primary">
+                  Claim in progress
                 </p>
-                <p className="text-xs text-text-secondary">
-                  Both parties have been notified via email. Schedule a meetup to verify the pet.
+                <p className="text-sm text-text-secondary">
+                  Both of you have been notified by email. Meet up to verify the pet, then come back here.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              {/* Only overlord owner can resolve */}
+              {/* Only missing-pet owner can resolve */}
               {currentUserId === overlord?.owner_id && (
                 <button
                   onClick={() => handleClaimAction("resolve")}
                   disabled={isActionLoading}
-                  className="min-h-[44px] rounded-[2px] bg-success px-5 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-success/80 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-h-[44px] rounded-lg bg-success px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-md)] transition-all hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:translate-y-0"
                   aria-label="Mark pet as reunited"
                 >
-                  {isActionLoading ? "PROCESSING..." : "✓ MARK RESOLVED"}
+                  {isActionLoading ? "Saving…" : "✓ Mark as Reunited"}
                 </button>
               )}
 
@@ -517,10 +523,10 @@ export default function MatchDetailPage() {
               <button
                 onClick={() => handleClaimAction("revert")}
                 disabled={isActionLoading}
-                className="min-h-[44px] rounded-[2px] border border-danger/50 bg-danger/10 px-5 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-danger transition-colors hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Revert claim — not the right pet"
+                className="min-h-[44px] rounded-lg border border-danger/50 bg-danger/10 px-5 py-2.5 text-sm font-semibold text-danger transition-colors hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Not the right pet"
               >
-                {isActionLoading ? "PROCESSING..." : "↩ REVERT CLAIM"}
+                {isActionLoading ? "Saving…" : "↩ Not a match"}
               </button>
             </div>
           </div>
@@ -529,9 +535,9 @@ export default function MatchDetailPage() {
 
       {/* Resolved status */}
       {match.status === "resolved" && (
-        <section className="rounded-[2px] border border-success/30 bg-success/5 p-4 text-center">
-          <p className="font-mono text-xs text-success">
-            ✓ MISSION COMPLETE — Overlord recovered and reunited
+        <section className="rounded-xl border border-success/40 bg-success/10 p-4 text-center shadow-[var(--shadow-soft)]">
+          <p className="text-sm font-semibold text-success">
+            🎉 Reunited — this pet is home
           </p>
         </section>
       )}
@@ -539,28 +545,28 @@ export default function MatchDetailPage() {
       {/* Claim popup — shown after successful claim initiation */}
       {showClaimPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-[2px] border border-accent bg-card p-6 shadow-[0_0_30px_rgba(255,204,0,0.2)]">
+          <div className="w-full max-w-md rounded-2xl border border-primary/40 bg-card p-6 shadow-[var(--shadow-lg)]">
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
                 <span className="text-3xl">📧</span>
               </div>
-              <h2 className="font-mono text-lg font-bold uppercase tracking-wider text-accent">
-                Claim Initiated!
+              <h2 className="font-[family-name:var(--font-space-grotesk)] text-lg font-bold text-text-primary">
+                Claim started!
               </h2>
               <p className="text-sm text-text-primary">
-                Both you and the finder have been sent an email with each other&apos;s contact information.
+                We&apos;ve sent you and the finder each other&apos;s contact info by email.
               </p>
               <p className="text-xs text-text-secondary">
-                Schedule a meetup to verify your pet. Once confirmed, come back here to mark the match as <strong className="text-success">resolved</strong>.
+                Meet up to verify your pet. Once confirmed, come back here and mark it as <strong className="text-success">reunited</strong>.
               </p>
-              <div className="mt-2 rounded-[2px] border border-border bg-background p-3 text-xs text-text-secondary">
-                <p>⏰ If no action is taken within 24 hours, both parties will receive a reminder.</p>
+              <div className="mt-2 rounded-lg border border-border bg-muted p-3 text-xs text-text-secondary">
+                <p>⏰ We&apos;ll send both of you a reminder if there&apos;s no update in 24 hours.</p>
               </div>
               <button
                 onClick={() => setShowClaimPopup(false)}
-                className="mt-2 min-h-[44px] w-full rounded-[2px] bg-accent px-6 py-2.5 font-mono text-sm font-bold uppercase tracking-wider text-background transition-colors hover:bg-accent-hover"
+                className="mt-2 min-h-[44px] w-full rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-all hover:-translate-y-0.5 hover:brightness-105"
               >
-                GOT IT
+                Got it
               </button>
             </div>
           </div>
@@ -570,7 +576,7 @@ export default function MatchDetailPage() {
       {/* Error banner */}
       {state.error && state.match && (
         <div
-          className="rounded-[2px] border border-danger/50 bg-danger/10 px-4 py-3 text-sm text-danger"
+          className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger"
           role="alert"
         >
           {state.error}

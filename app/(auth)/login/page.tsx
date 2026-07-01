@@ -127,28 +127,28 @@ function LoginForm() {
     <Card className="border-border bg-card">
       <CardHeader className="text-center">
         <CardTitle className="text-xl text-text-primary">
-          Informant Sign-In
+          Welcome back
         </CardTitle>
         <CardDescription>
-          Access your MEOWTRIX command center
+          Sign in to keep helping pets find their way home
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         {/* Activation-required banner */}
         {needsActivation && (
-          <div className="mb-4 rounded-[2px] border border-accent/40 bg-accent/5 p-4 text-sm" role="alert">
+          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm" role="alert">
             <div className="flex items-start gap-2">
-              <MailWarning className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+              <MailWarning className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <div className="space-y-2">
-                <p className="font-medium text-text-primary">Account not activated yet</p>
+                <p className="font-medium text-text-primary">Please confirm your email first</p>
                 <p className="text-xs leading-relaxed text-text-secondary">
-                  We sent a confirmation link to <span className="font-mono text-accent">{email}</span>.
+                  We sent a confirmation link to <span className="font-medium text-primary">{email}</span>.
                   Click it before signing in. Didn&apos;t get it? Check spam, or resend below.
                 </p>
                 {resendState === "sent" ? (
-                  <p className="font-mono text-xs text-success">
-                    ✓ New activation link dispatched. Allow up to a minute to arrive.
+                  <p className="text-xs text-success">
+                    ✓ New confirmation email sent. It can take a minute to arrive.
                   </p>
                 ) : (
                   <Button
@@ -158,7 +158,7 @@ function LoginForm() {
                     onClick={handleResendConfirmation}
                     disabled={resendState === "sending"}
                   >
-                    {resendState === "sending" ? "Sending..." : "Resend activation email"}
+                    {resendState === "sending" ? "Sending…" : "Resend confirmation email"}
                   </Button>
                 )}
                 {resendError && (
@@ -171,7 +171,7 @@ function LoginForm() {
 
         {/* Generic auth error */}
         {error && !needsActivation && (
-          <div className="mb-4 rounded-[2px] border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
             {error}
           </div>
         )}
@@ -182,7 +182,7 @@ function LoginForm() {
             <Input
               id="email"
               type="email"
-              placeholder="agent@meowtrix.io"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -208,7 +208,7 @@ function LoginForm() {
             className="w-full"
             disabled={loading}
           >
-            {loading ? "Authenticating..." : "Sign In"}
+            {loading ? "Signing in…" : "Sign In"}
           </Button>
         </form>
 
@@ -244,9 +244,9 @@ function LoginForm() {
 
       <CardFooter className="justify-center">
         <p className="text-sm text-text-secondary">
-          New informant?{" "}
-          <Link href="/register" className="text-accent hover:underline">
-            Register here
+          New here?{" "}
+          <Link href="/register" className="text-primary font-semibold hover:underline">
+            Create an account
           </Link>
         </p>
       </CardFooter>

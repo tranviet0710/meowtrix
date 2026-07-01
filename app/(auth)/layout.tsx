@@ -22,12 +22,12 @@ export default async function AuthLayout({
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
       {/* MEOWTRIX Logo / Title */}
       <div className="mb-8 text-center">
-        <Image src="/logo/logo.png" alt="Meowtrix logo" width={64} height={64} className="mx-auto mb-3" priority />
-        <h1 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-wider text-sidebar-active uppercase">
+        <Image src="/logo/logo.png" alt="Meowtrix logo" width={64} height={64} className="mx-auto mb-3 rounded-2xl" priority />
+        <h1 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-bold tracking-tight text-primary">
           Meowtrix
         </h1>
-        <p className="mt-2 text-sm font-bold uppercase text-text-secondary tracking-wide">
-          Feline &amp; Canine Overlord Tracker
+        <p className="mt-2 text-sm text-text-secondary">
+          Reuniting lost cats &amp; dogs 🐾
         </p>
       </div>
 

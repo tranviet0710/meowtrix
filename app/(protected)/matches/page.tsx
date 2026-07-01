@@ -80,16 +80,16 @@ export default function MatchesPage() {
       {/* Header */}
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="font-mono text-lg font-bold uppercase tracking-wider text-accent">
-            Match Intelligence
+          <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-bold text-text-primary">
+            Match Suggestions
           </h1>
-          <p className="mt-0.5 text-xs text-text-secondary">
-            AI-powered suspect correlations — ranked by confidence
+          <p className="mt-0.5 text-sm text-text-secondary">
+            AI-suggested matches between missing pets and sightings
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Shuffle className="h-5 w-5 text-accent" aria-hidden="true" />
-          <span className="font-mono text-sm text-text-secondary">
+          <Shuffle className="h-5 w-5 text-primary" aria-hidden="true" />
+          <span className="text-sm text-text-secondary">
             {!state.isLoading && `${state.matches.length} results`}
           </span>
         </div>
@@ -101,9 +101,9 @@ export default function MatchesPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-52 animate-pulse rounded-[2px] border border-border bg-card"
+              className="h-52 animate-pulse rounded-xl border border-border bg-card"
               role="status"
-              aria-label="Loading match suggestions"
+              aria-label="Loading matches"
             />
           ))}
         </div>
@@ -112,7 +112,7 @@ export default function MatchesPage() {
       {/* Error state */}
       {state.error && !state.isLoading && (
         <div
-          className="flex flex-col items-center gap-3 rounded-[2px] border border-danger/50 bg-card p-6"
+          className="flex flex-col items-center gap-3 rounded-xl border border-danger/40 bg-card p-6 shadow-[var(--shadow-soft)]"
           role="alert"
           aria-label="Matches loading error"
         >
@@ -125,7 +125,7 @@ export default function MatchesPage() {
           <p className="text-sm text-text-primary">{state.error}</p>
           <button
             onClick={fetchMatches}
-            className="min-h-[44px] min-w-[44px] rounded-[2px] border border-accent bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/20"
+            className="min-h-[40px] rounded-lg border border-primary bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
             aria-label="Retry loading matches"
           >
             Retry
@@ -135,17 +135,17 @@ export default function MatchesPage() {
 
       {/* Empty state */}
       {!state.isLoading && !state.error && state.matches.length === 0 && (
-        <div className="flex flex-col items-center gap-4 rounded-[2px] border border-border bg-card p-10">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
-            <Shuffle className="h-8 w-8 text-accent" aria-hidden="true" />
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-10 shadow-[var(--shadow-soft)]">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <Shuffle className="h-8 w-8 text-primary" aria-hidden="true" />
           </div>
           <div className="text-center">
-            <p className="font-mono text-sm font-medium text-text-primary">
-              NO CORRELATIONS DETECTED
+            <p className="text-base font-semibold text-text-primary">
+              No matches yet
             </p>
-            <p className="mt-1 text-xs text-text-secondary">
-              The Match Engine is scanning for potential overlord-agent
-              connections. New matches will appear here when detected.
+            <p className="mt-1 text-sm text-text-secondary">
+              We&apos;re checking new sightings against missing pets. Matches
+              will show up here when we find them.
             </p>
           </div>
         </div>

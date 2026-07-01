@@ -18,8 +18,8 @@ import {
 const MapPicker = dynamic(() => import("@/components/map/MapPicker"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[300px] items-center justify-center rounded-[2px] border border-border bg-background">
-      <p className="text-sm text-text-secondary">Loading map...</p>
+    <div className="flex h-[300px] items-center justify-center rounded-xl border border-border bg-muted">
+      <p className="text-sm text-text-secondary">Loading map…</p>
     </div>
   ),
 });
@@ -66,6 +66,25 @@ export default function LocationConsentPage() {
         return;
       }
 
+      // Seed the residential coords into localStorage so MapView's center
+      // fallback chain (prop → geolocation → residential → Bangkok) works on
+      // the dashboard even before the profile row is re-fetched.
+      if (typeof window !== "undefined") {
+        if (consent && selectedLocation) {
+          window.localStorage.setItem(
+            "meowtrix_residential_lat",
+            String(selectedLocation.lat)
+          );
+          window.localStorage.setItem(
+            "meowtrix_residential_lng",
+            String(selectedLocation.lng)
+          );
+        } else {
+          window.localStorage.removeItem("meowtrix_residential_lat");
+          window.localStorage.removeItem("meowtrix_residential_lng");
+        }
+      }
+
       router.push("/dashboard");
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -82,37 +101,37 @@ export default function LocationConsentPage() {
     <Card className="border-border bg-card">
       <CardHeader className="text-center">
         <CardTitle className="text-xl text-text-primary">
-          Location Consent
+          Enable Nearby Alerts?
         </CardTitle>
         <CardDescription className="mt-2 max-w-sm mx-auto">
-          MEOWTRIX uses your residential location to alert you when pets go
-          missing nearby. Without this, you won&apos;t receive proximity
-          notifications.
+          We&apos;ll let you know when a pet goes missing in your area so you
+          can help. Your location stays private and you can change this
+          anytime in Settings.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
         {error && (
-          <div className="rounded-[2px] border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-danger">
+          <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
             {error}
           </div>
         )}
 
         {/* Consent Toggle */}
-        <div className="flex items-center justify-between rounded-[2px] border border-border p-4">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-4">
           <div className="space-y-1">
-            <Label htmlFor="location-consent" className="text-sm font-medium">
-              Enable nearby alerts
+            <Label htmlFor="location-consent" className="text-sm font-semibold">
+              Nearby alerts
             </Label>
             <p className="text-xs text-text-secondary">
-              Receive notifications about missing pets in your area
+              Get notified about missing pets in your area
             </p>
           </div>
           <Switch
             id="location-consent"
             checked={consent}
             onCheckedChange={setConsent}
-            aria-label="Enable location-based notifications"
+            aria-label="Enable nearby alerts"
           />
         </div>
 
@@ -120,14 +139,14 @@ export default function LocationConsentPage() {
         {consent && (
           <div className="space-y-2">
             <Label className="text-sm">
-              Drop a pin on your approximate residential area
+              Drop a pin on your neighborhood
             </Label>
             <MapPicker
               onLocationSelect={(loc) => setSelectedLocation(loc)}
               selectedLocation={selectedLocation}
             />
             {selectedLocation && (
-              <p className="text-xs text-text-secondary font-mono">
+              <p className="text-xs text-text-secondary">
                 📍 {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
               </p>
             )}
@@ -143,7 +162,7 @@ export default function LocationConsentPage() {
             onClick={handleSkip}
             disabled={loading}
           >
-            Skip
+            Not now
           </Button>
           <Button
             type="button"
@@ -151,7 +170,7 @@ export default function LocationConsentPage() {
             onClick={handleSave}
             disabled={loading}
           >
-            {loading ? "Saving..." : "Save"}
+            {loading ? "Saving…" : "Save"}
           </Button>
         </div>
       </CardContent>

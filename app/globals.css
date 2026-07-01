@@ -1,79 +1,245 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: #0A0A0F;
-  --color-card: #1A1A2E;
-  --color-accent: #FFCC00;
-  --color-accent-hover: #FFD700;
-  --color-secondary: #8892B0;
-  --color-success: #00FF88;
-  --color-danger: #FF4444;
-  --color-text-primary: #E6E6E6;
-  --color-text-secondary: #8892B0;
-  --color-border: #2A2A3E;
-  --color-foreground: #E6E6E6;
-  --color-muted: #1A1A2E;
-  --color-muted-foreground: #8892B0;
-  --color-popover: #1A1A2E;
-  --color-popover-foreground: #E6E6E6;
-  --color-card-foreground: #E6E6E6;
-  --color-primary: #FFCC00;
-  --color-primary-foreground: #0A0A0F;
-  --color-secondary-foreground: #E6E6E6;
-  --color-accent-foreground: #0A0A0F;
-  --color-destructive: #FF4444;
-  --color-destructive-foreground: #E6E6E6;
-  --color-input: #2A2A3E;
-  --color-ring: #FFCC00;
-  --color-brutal-yellow: #FFDE4D;
-  --color-brutal-orange: #FF9F1C;
-  --color-brutal-pink: #FF6B97;
-  --color-brutal-mint: #51E5A5;
-  --color-sidebar-bg: #1A1A2E;
-  --color-sidebar-border: #FFDE4D;
-  --color-sidebar-text: #8892B0;
-  --color-sidebar-active: #FFDE4D;
-  --color-nav-bg: #1A1A2E;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --shadow-brutal: 4px 4px 0px #000;
-  --border-brutal: 3px solid currentColor;
-}
-
 /*
- * NOTE: Meowtrix is dark-mode only (see .kiro/steering/design.md).
- * Do not add a light theme block or `html.light { ... }` overrides here.
+ * MEOWTRIX design tokens.
+ *
+ * The default token block below IS the dark theme. A `html.light { ... }`
+ * override block further down provides the light theme values.
+ *
+ * next-themes toggles the `class` attribute on <html> between "dark"
+ * (default) and "light". We do not use system preference here — users pick.
  */
 
-html, body { overflow-x: hidden; max-width: 100vw; }
-body { background-color: var(--color-background); color: var(--color-text-primary); font-family: var(--font-sans); font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-text-size-adjust: 100%; }
-@media (max-width: 767px) { body { font-size: 16px; } }
-*:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; box-shadow: 0 0 0 4px rgba(255, 159, 28, 0.2); }
-::selection { background-color: rgba(255, 159, 28, 0.3); color: var(--color-text-primary); }
+@theme {
+  /* --- Base palette (dark theme defaults) --- */
+  --color-background: #17141A;
+  --color-card: #221E27;
+  --color-surface: #2A252F;
 
+  /* Brand & accents — warm, friendly coral + amber */
+  --color-primary: #FF8B70;
+  --color-primary-hover: #FFA48C;
+  --color-primary-foreground: #1A1017;
+
+  --color-accent: #FFB865;
+  --color-accent-hover: #FFC985;
+  --color-accent-foreground: #1A1017;
+
+  --color-secondary: #B4A99C;
+  --color-secondary-foreground: #F5EDE4;
+
+  /* Signal colors — softer than pure hex for a cuter feel */
+  --color-success: #6FCC96;
+  --color-danger: #FF7D7D;
+  --color-warning: #FFC96B;
+
+  /* Text */
+  --color-text-primary: #F5EDE4;
+  --color-text-secondary: #B4A99C;
+  --color-foreground: #F5EDE4;
+
+  /* UI surfaces */
+  --color-border: #382E36;
+  --color-muted: #2A252F;
+  --color-muted-foreground: #B4A99C;
+  --color-popover: #221E27;
+  --color-popover-foreground: #F5EDE4;
+  --color-card-foreground: #F5EDE4;
+
+  --color-destructive: #FF7D7D;
+  --color-destructive-foreground: #F5EDE4;
+  --color-input: #2A252F;
+  --color-ring: #FF8B70;
+
+  /* Playful accent palette used across cards, chips, mascots */
+  --color-brutal-yellow: #FFC876;    /* legacy alias — now warm amber */
+  --color-brutal-orange: #FF9F70;    /* legacy alias — now coral orange */
+  --color-brutal-pink: #FFA0B5;      /* soft rose */
+  --color-brutal-mint: #8FD8B4;      /* soft mint */
+
+  /* Sidebar (semantic aliases used by layout components) */
+  --color-sidebar-bg: #221E27;
+  --color-sidebar-border: #382E36;
+  --color-sidebar-text: #B4A99C;
+  --color-sidebar-active: #FF8B70;
+  --color-nav-bg: #221E27;
+
+  /* --- Radii — friendly, rounded --- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+
+  /* --- Fonts --- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* --- Shadows — soft, warm, welcoming --- */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
+  --shadow-primary: 0 6px 20px rgba(255, 139, 112, 0.25);
+  --shadow-brutal: var(--shadow-md); /* legacy alias — softened */
+}
+
+/* --- Light theme overrides ------------------------------------------- */
+html.light {
+  --color-background: #FFF8F2;
+  --color-card: #FFFFFF;
+  --color-surface: #FFF3E9;
+
+  --color-primary: #F26E52;
+  --color-primary-hover: #E85C3E;
+  --color-primary-foreground: #FFFFFF;
+
+  --color-accent: #F5A445;
+  --color-accent-hover: #E88F2C;
+  --color-accent-foreground: #FFFFFF;
+
+  --color-secondary: #7B7168;
+  --color-secondary-foreground: #2D2A26;
+
+  --color-success: #3FA36E;
+  --color-danger: #E45858;
+  --color-warning: #E8A431;
+
+  --color-text-primary: #2D2A26;
+  --color-text-secondary: #7B7168;
+  --color-foreground: #2D2A26;
+
+  --color-border: #F0E4D6;
+  --color-muted: #FFF3E9;
+  --color-muted-foreground: #7B7168;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #2D2A26;
+  --color-card-foreground: #2D2A26;
+
+  --color-destructive: #E45858;
+  --color-destructive-foreground: #FFFFFF;
+  --color-input: #FFF3E9;
+  --color-ring: #F26E52;
+
+  --color-brutal-yellow: #F5A445;
+  --color-brutal-orange: #FF7F50;
+  --color-brutal-pink: #FF87A0;
+  --color-brutal-mint: #4FC28C;
+
+  --color-sidebar-bg: #FFFFFF;
+  --color-sidebar-border: #F0E4D6;
+  --color-sidebar-text: #7B7168;
+  --color-sidebar-active: #F26E52;
+  --color-nav-bg: #FFFFFF;
+
+  --shadow-soft: 0 1px 2px rgba(45, 42, 38, 0.04), 0 2px 8px rgba(45, 42, 38, 0.05);
+  --shadow-md: 0 4px 14px rgba(45, 42, 38, 0.08);
+  --shadow-lg: 0 12px 32px rgba(45, 42, 38, 0.10);
+  --shadow-primary: 0 6px 20px rgba(242, 110, 82, 0.30);
+  --shadow-brutal: var(--shadow-md);
+}
+
+/* --- Base document styles -------------------------------------------- */
+html, body { overflow-x: hidden; max-width: 100vw; }
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+@media (max-width: 767px) { body { font-size: 16px; } }
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 25%, transparent);
+}
+::selection {
+  background-color: color-mix(in oklab, var(--color-primary) 30%, transparent);
+  color: var(--color-text-primary);
+}
+
+/* --- Soft-pivot: legacy brutalist utilities become friendly variants -- */
+/*
+ * The codebase uses arbitrary Tailwind values like `rounded-[2px]`,
+ * `border-[3px]`, and `border-[2px]` throughout. Rewriting every occurrence
+ * would touch dozens of files; instead we override those specific classes
+ * so the entire app picks up softer visuals in a single stroke.
+ */
+.rounded-\[2px\] { border-radius: var(--radius-md); }
+.rounded-\[1px\] { border-radius: var(--radius-sm); }
+.border-\[3px\] { border-width: 2px; }
+.border-\[2px\] { border-width: 1px; }
+
+/* --- Legacy "brutal" helpers, redefined as soft cards ---------------- */
 .brutal-card {
-  border: 3px solid currentColor;
-  box-shadow: var(--shadow-brutal);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
   background-color: var(--color-card);
+  border-radius: var(--radius-lg);
 }
 
 .brutal-btn {
-  border: 3px solid currentColor;
-  box-shadow: var(--shadow-brutal);
-  transition: transform 0.1s, box-shadow 0.1s;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+  transition: transform 120ms ease, box-shadow 120ms ease;
   cursor: pointer;
+  border-radius: var(--radius-md);
 }
-.brutal-btn:active {
-  transform: translate(4px, 4px);
-  box-shadow: 0px 0px 0px transparent;
-}
+.brutal-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.brutal-btn:active { transform: translateY(0); box-shadow: var(--shadow-soft); }
 
+/* --- Semantic pet-card / pet-btn (new preferred classes) ------------- */
+.pet-card {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+.pet-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.pet-btn-primary {
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: var(--color-primary-foreground);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 1.25rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-primary);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+.pet-btn-primary:hover { transform: translateY(-1px); filter: brightness(1.03); }
+.pet-btn-primary:active { transform: translateY(0); }
+
+/* --- Animations ------------------------------------------------------ */
 @keyframes shrink-width { from { width: 100%; } to { width: 0%; } }
 .animate-shrink-width { animation: shrink-width linear forwards; }
-@keyframes slide-in-from-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+@keyframes slide-in-from-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
 .animate-in { animation: slide-in-from-right 0.3s ease-out forwards; }
+
+/* Avatar marker pulse — dashboard map AvatarMarker. Declared globally
+   because Leaflet divIcons strip inline <style> in some browsers. */
+@keyframes meowtrix-avatar-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.meowtrix-avatar-pulse {
+  animation: meowtrix-avatar-pulse 1.6s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+/* Little wiggle for playful bits (e.g., hero mascot) */
+@keyframes meowtrix-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+.meowtrix-wiggle:hover { animation: meowtrix-wiggle 500ms ease-in-out; }

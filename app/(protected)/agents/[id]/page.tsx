@@ -124,12 +124,12 @@ export default function AgentDetailPage() {
   if (state.isLoading) {
     return (
       <div className="flex h-full flex-col gap-4 p-4 md:p-6">
-        <div className="h-6 w-36 animate-pulse rounded-[2px] bg-border" />
-        <div className="h-8 w-64 animate-pulse rounded-[2px] bg-border" />
-        <div className="h-48 animate-pulse rounded-[2px] border border-border bg-card" />
-        <div className="h-32 animate-pulse rounded-[2px] border border-border bg-card" />
-        <p className="text-center text-xs font-mono text-text-secondary mt-4">
-          DECRYPTING AGENT DATA...
+        <div className="h-6 w-36 animate-pulse rounded-md bg-border" />
+        <div className="h-8 w-64 animate-pulse rounded-md bg-border" />
+        <div className="h-48 animate-pulse rounded-xl border border-border bg-card" />
+        <div className="h-32 animate-pulse rounded-xl border border-border bg-card" />
+        <p className="text-center text-xs text-text-secondary mt-4">
+          Loading sighting…
         </p>
       </div>
     );
@@ -141,10 +141,10 @@ export default function AgentDetailPage() {
       <div className="flex h-full flex-col gap-4 p-4 md:p-6">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 text-sm text-text-secondary hover:text-accent"
+          className="flex items-center gap-2 text-sm text-text-secondary hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to HQ
+          Back to Home
         </Link>
         <div
           className="flex flex-col items-center gap-3 rounded-[2px] border border-danger/50 bg-card p-6"
@@ -172,41 +172,41 @@ export default function AgentDetailPage() {
       {/* Back link */}
       <Link
         href="/dashboard"
-        className="flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-accent"
+        className="flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-primary"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to HQ
+        Back to Home
       </Link>
 
       {/* Header: Title + Status */}
-      <header className="flex flex-col gap-3 rounded-[2px] border border-success/30 bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-3 rounded-xl border border-success/30 bg-card p-5 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Eye className="h-5 w-5 text-success" aria-hidden="true" />
           <div>
-            <h1 className="text-lg font-bold text-text-primary">
-              Agent Sighting
+            <h1 className="text-xl font-bold text-text-primary">
+              Pet Sighting
             </h1>
-            <p className="font-mono text-xs text-text-secondary uppercase tracking-wider">
-              FIELD REPORT — SPOTTED OPERATIVE
+            <p className="text-xs text-text-secondary">
+              A pet was spotted nearby
             </p>
           </div>
         </div>
         <span
-          className={`inline-flex w-fit rounded-[2px] px-3 py-1 font-mono text-xs uppercase ${
+          className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium ${
             agent.status === "active"
               ? "bg-success/10 text-success"
-              : "bg-secondary/10 text-secondary"
+              : "bg-muted text-text-secondary"
           }`}
         >
-          {agent.status === "active" ? "ACTIVE" : "RESOLVED"}
+          {agent.status === "active" ? "Active" : "Resolved"}
         </span>
       </header>
 
       {/* Photo Gallery */}
       {agent.photos.length > 0 && (
-        <section className="rounded-[2px] border border-border bg-card p-4">
-          <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
-            SURVEILLANCE IMAGERY
+        <section className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+          <h2 className="mb-3 text-sm font-semibold text-text-primary">
+            Photos
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {agent.photos.map((photo, idx) => (
@@ -228,11 +228,11 @@ export default function AgentDetailPage() {
       {/* Details Grid */}
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Location */}
-        <div className="rounded-[2px] border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
           <div className="flex items-center gap-2 mb-2">
             <MapPin className="h-4 w-4 text-success" aria-hidden="true" />
-            <span className="font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
-              Sighting Location
+            <span className="text-xs font-semibold text-text-secondary">
+              Sighting location
             </span>
           </div>
           {agent.sighting_address ? (
@@ -252,11 +252,11 @@ export default function AgentDetailPage() {
         </div>
 
         {/* Timestamp */}
-        <div className="rounded-[2px] border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4 text-accent" aria-hidden="true" />
-            <span className="font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
-              Sighted At
+            <Clock className="h-4 w-4 text-primary" aria-hidden="true" />
+            <span className="text-xs font-semibold text-text-secondary">
+              Sighted at
             </span>
           </div>
           <p className="text-sm text-text-primary">
@@ -270,9 +270,9 @@ export default function AgentDetailPage() {
 
       {/* Description */}
       {agent.description && (
-        <section className="rounded-[2px] border border-border bg-card p-4">
-          <h2 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
-            FIELD NOTES
+        <section className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+          <h2 className="mb-2 text-sm font-semibold text-text-primary">
+            Notes
           </h2>
           <p className="text-sm text-text-primary leading-relaxed">
             {agent.description}
@@ -282,11 +282,11 @@ export default function AgentDetailPage() {
 
       {/* Trait Tags */}
       {agent.trait_tags && (
-        <section className="rounded-[2px] border border-border bg-card p-4">
+        <section className="rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
           <div className="flex items-center gap-2 mb-3">
-            <Tag className="h-4 w-4 text-accent" aria-hidden="true" />
-            <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
-              BIOMETRIC ANALYSIS
+            <Tag className="h-4 w-4 text-primary" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-text-primary">
+              Pet Details (AI-detected)
             </h2>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -327,14 +327,14 @@ export default function AgentDetailPage() {
           {/* Distinguishing Features */}
           {agent.trait_tags.distinguishing_features.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border">
-              <span className="text-xs text-text-secondary font-mono uppercase tracking-wider">
+              <span className="text-xs font-semibold text-text-secondary">
                 Distinguishing Features
               </span>
               <div className="flex flex-wrap gap-2 mt-2">
                 {agent.trait_tags.distinguishing_features.map((feature, idx) => (
                   <span
                     key={idx}
-                    className="rounded-[2px] bg-accent/10 px-2.5 py-1 text-xs text-accent font-mono"
+                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
                   >
                     {feature}
                   </span>
@@ -347,11 +347,11 @@ export default function AgentDetailPage() {
 
       {/* Resolved banner */}
       {agent.status === "resolved" && (
-        <section className="rounded-[2px] border border-success/30 bg-success/5 p-4 text-center">
+        <section className="rounded-xl border border-success/40 bg-success/10 p-4 text-center shadow-[var(--shadow-soft)]">
           <div className="flex items-center justify-center gap-2">
             <CheckCircle className="h-5 w-5 text-success" aria-hidden="true" />
-            <p className="font-mono text-sm font-bold text-success uppercase">
-              AGENT MATCHED — MISSION ACCOMPLISHED
+            <p className="text-sm font-semibold text-success">
+              🎉 Matched — this sighting helped reunite a pet
             </p>
           </div>
         </section>
@@ -359,8 +359,8 @@ export default function AgentDetailPage() {
 
       {/* Metadata footer */}
       <div className="text-center">
-        <p className="text-[10px] font-mono text-text-secondary/60 uppercase tracking-widest">
-          RECORD ID: {agent.id.slice(0, 8)} — FILED{" "}
+        <p className="text-[10px] text-text-secondary/60">
+          ID: {agent.id.slice(0, 8)} · Posted{" "}
           {new Date(agent.created_at).toLocaleDateString(undefined, {
             dateStyle: "medium",
           })}

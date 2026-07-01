@@ -11,12 +11,12 @@ export default function ReportLostPage() {
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-6 w-6 text-danger" />
           <h1 className="text-2xl font-bold uppercase tracking-wider text-text-primary">
-            Report Lost Overlord
+            Report a Missing Pet
           </h1>
         </div>
         <p className="text-sm text-text-secondary">
-          File a missing Overlord report. Our network of Informants will be alerted
-          and the Escalating Search Protocol will activate automatically. Works for both cats and dogs.
+          File a report for your lost cat or dog. Our community will be alerted
+          and the escalating search protocol will activate automatically.
         </p>
       </div>
 

@@ -69,15 +69,15 @@ export default function LeaderboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 border-[3px] border-sidebar-active bg-sidebar-active/10 shadow-[3px_3px_0px_var(--color-sidebar-active)]">
-            <Trophy className="w-5 h-5 text-sidebar-active" />
+          <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary/10 text-primary">
+            <Trophy className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-[family-name:var(--font-space-grotesk)] font-bold text-text-primary uppercase tracking-wide">
-              Informant Leaderboard
+            <h1 className="text-xl md:text-2xl font-[family-name:var(--font-space-grotesk)] font-bold text-text-primary">
+              Top Helpers
             </h1>
-            <p className="text-xs font-mono font-bold text-text-secondary mt-0.5 uppercase">
-              Top Field Operatives — Ranked by Intel Points
+            <p className="text-sm text-text-secondary mt-0.5">
+              Ranked by verified reunions
             </p>
           </div>
         </div>
@@ -85,21 +85,21 @@ export default function LeaderboardPage() {
       </div>
 
       {/* Content area */}
-      <div className="border-[3px] border-sidebar-active bg-card shadow-[4px_4px_0px_var(--color-sidebar-active)] overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-soft)] overflow-hidden">
         {/* Loading state */}
         {isLoading && (
           <div className="p-8">
             <div className="space-y-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 animate-pulse">
-                  <div className="w-8 h-8 bg-border border-2 border-accent/30" />
-                  <div className="flex-1 h-5 bg-border" />
-                  <div className="w-16 h-5 bg-border" />
+                  <div className="w-8 h-8 bg-border rounded-lg" />
+                  <div className="flex-1 h-5 bg-border rounded-md" />
+                  <div className="w-16 h-5 bg-border rounded-md" />
                 </div>
               ))}
             </div>
-            <p className="text-center text-xs font-mono font-bold text-text-secondary mt-6 uppercase">
-              Decrypting Intel...
+            <p className="text-center text-xs text-text-secondary mt-6">
+              Loading rankings…
             </p>
           </div>
         )}
@@ -107,14 +107,14 @@ export default function LeaderboardPage() {
         {/* Error state */}
         {!isLoading && error && (
           <div className="p-8 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 border-[3px] border-danger bg-danger/10 shadow-[3px_3px_0px] shadow-danger/40 mb-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-danger/10 mb-4">
               <span className="text-danger text-lg">⚠</span>
             </div>
-            <p className="text-sm font-bold text-text-secondary mb-4">{error}</p>
+            <p className="text-sm text-text-primary mb-4">{error}</p>
             <button
               type="button"
               onClick={() => fetchLeaderboard(page)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase bg-accent text-background border-[3px] border-accent shadow-[3px_3px_0px_#000] transition-all hover:brightness-110 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg shadow-[var(--shadow-primary)] transition-all hover:-translate-y-0.5 hover:brightness-105"
             >
               Retry
             </button>
@@ -124,18 +124,18 @@ export default function LeaderboardPage() {
         {/* Empty state */}
         {!isLoading && !error && entries.length === 0 && (
           <div className="p-12 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 border-[3px] border-sidebar-active/30 bg-sidebar-active/5 shadow-[3px_3px_0px] shadow-accent/20 mb-6">
-              <Trophy className="w-8 h-8 text-text-secondary" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+              <Trophy className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-lg font-[family-name:var(--font-space-grotesk)] font-bold text-text-primary mb-2 uppercase">
-              No Rankings Available
+            <h2 className="text-lg font-[family-name:var(--font-space-grotesk)] font-semibold text-text-primary mb-2">
+              No rankings yet
             </h2>
             <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
-              No Informants have earned points yet. Report spotted cats and help
-              reunite lost Overlords with their owners to climb the ranks!
+              Post a sighting or help reunite a lost pet with its owner to
+              start climbing the leaderboard.
             </p>
-            <p className="text-[10px] font-mono font-bold text-text-secondary/60 mt-4 uppercase tracking-wider">
-              Intel points awarded upon verified claim resolution
+            <p className="text-xs text-text-secondary/70 mt-4">
+              Points are awarded once a match is verified.
             </p>
           </div>
         )}
@@ -147,16 +147,17 @@ export default function LeaderboardPage() {
 
             {/* Pagination */}
             {pagination && pagination.total_pages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t-[3px] border-sidebar-active">
-                <span className="text-xs font-mono font-bold text-text-secondary uppercase">
-                  Page {pagination.page}/{pagination.total_pages} — {pagination.total_entries} Informants
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <span className="text-xs text-text-secondary">
+                  Page {pagination.page} of {pagination.total_pages} —{" "}
+                  {pagination.total_entries} helpers
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handlePreviousPage}
                     disabled={!pagination.has_previous}
-                    className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 border-[2px] border-sidebar-active text-text-secondary shadow-[2px_2px_0px_var(--color-sidebar-active)] transition-all hover:text-sidebar-active active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] w-10 h-10 rounded-lg border border-border text-text-secondary transition-all hover:text-primary hover:border-primary/50 disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Previous page"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -165,7 +166,7 @@ export default function LeaderboardPage() {
                     type="button"
                     onClick={handleNextPage}
                     disabled={!pagination.has_next}
-                    className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] w-10 h-10 border-[2px] border-sidebar-active text-text-secondary shadow-[2px_2px_0px_var(--color-sidebar-active)] transition-all hover:text-sidebar-active active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] w-10 h-10 rounded-lg border border-border text-text-secondary transition-all hover:text-primary hover:border-primary/50 disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Next page"
                   >
                     <ChevronRight className="w-4 h-4" />
