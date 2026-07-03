@@ -1,0 +1,67 @@
+name: Security Scan
+
+# Runs on every push to main and every pull request. Combines a lightweight
+# built-in scan (npm audit) with continuous security coverage provided by the
+# Aikido GitHub App, which is installed on this repo and handles SAST, secret
+# scanning, and dependency scanning automatically via PR checks.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Minimal permissions — we only read the repo and post nothing back.
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (frozen lockfile)
+        run: npm ci --ignore-scripts
+
+      # Fail only on high/critical CVEs so noisy low-severity findings don't
+      # block PRs. Aikido's GitHub App scan handles nuance downstream.
+      - name: Run npm audit
+        run: npm audit --audit-level=high --production
+
+  typecheck-and-lint:
+    name: Typecheck & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (frozen lockfile)
+        run: npm ci --ignore-scripts
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint

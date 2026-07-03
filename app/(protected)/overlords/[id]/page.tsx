@@ -11,6 +11,8 @@ import {
   Download,
   CheckCircle,
   Tag,
+  ExternalLink,
+  FileText,
 } from "lucide-react";
 
 interface TraitTags {
@@ -349,32 +351,73 @@ export default function OverlordDetailPage() {
         </section>
       )}
 
-      {/* Poster Download */}
+      {/* Poster: inline preview + download */}
       {overlord.poster_url && (
-        <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 shadow-[var(--shadow-soft)]">
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <section className="rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-[var(--shadow-soft)] sm:p-5">
+          {/* Header: title + actions */}
+          <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <Download className="h-6 w-6 text-primary" aria-hidden="true" />
+              <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
               <div>
                 <p className="text-base font-semibold text-text-primary">
-                  Missing pet poster ready
+                  Missing pet poster
                 </p>
                 <p className="text-xs text-text-secondary">
-                  A4 printable PDF — print and post in your area
+                  A4 printable PDF — preview below, or download to print
                 </p>
               </div>
             </div>
-            <a
-              href={overlord.poster_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-              className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-all hover:-translate-y-0.5 hover:brightness-105"
-              aria-label={`Download poster for ${overlord.pet_name}`}
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+              <a
+                href={overlord.poster_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-h-[44px] inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-primary/40 bg-card px-4 py-2 text-sm font-medium text-primary transition-all hover:-translate-y-0.5 hover:bg-primary/10 sm:flex-none"
+                aria-label={`Open poster for ${overlord.pet_name} in a new tab`}
+              >
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                Open in new tab
+              </a>
+              <a
+                href={overlord.poster_url}
+                download={`missing-${overlord.pet_name.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+                className="min-h-[44px] inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-all hover:-translate-y-0.5 hover:brightness-105 sm:flex-none"
+                aria-label={`Download poster for ${overlord.pet_name}`}
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                Download
+              </a>
+            </div>
+          </div>
+
+          {/* Inline PDF preview */}
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-soft)]">
+            <object
+              data={overlord.poster_url}
+              type="application/pdf"
+              className="block h-[560px] w-full sm:h-[720px]"
+              aria-label={`PDF preview of the missing-pet poster for ${overlord.pet_name}`}
             >
-              <Download className="h-4 w-4" aria-hidden="true" />
-              Download Poster
-            </a>
+              {/* Fallback for browsers that can't render PDFs inline (e.g. some mobile browsers) */}
+              <div className="flex h-[420px] flex-col items-center justify-center gap-3 p-6 text-center">
+                <FileText
+                  className="h-10 w-10 text-text-secondary"
+                  aria-hidden="true"
+                />
+                <p className="text-sm text-text-primary">
+                  Your browser can&apos;t show the PDF here.
+                </p>
+                <a
+                  href={overlord.poster_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-[44px] inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-all hover:-translate-y-0.5 hover:brightness-105"
+                >
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                  Open poster in a new tab
+                </a>
+              </div>
+            </object>
           </div>
         </section>
       )}

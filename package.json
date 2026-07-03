@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
     "seed": "npx tsx scripts/seed.ts --seed",
-    "seed:cleanup": "SEED_CLEANUP=true npx tsx scripts/seed.ts"
+    "seed:cleanup": "SEED_CLEANUP=true npx tsx scripts/seed.ts",
+    "worker": "npx tsx temporal/worker.ts",
+    "worker:dev": "npx tsx watch temporal/worker.ts"
   },
   "dependencies": {
     "@google/generative-ai": "0.24.1",
@@ -39,6 +41,7 @@
     "sharp": "0.34.5",
     "tailwind-merge": "3.3.0",
     "three": "0.185.0",
+    "ws": "8.21.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
@@ -51,6 +54,7 @@
     "@types/pdfkit": "0.13.8",
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.5",
+    "@types/ws": "8.18.1",
     "@vitest/coverage-v8": "3.2.1",
     "dotenv": "16.4.7",
     "eslint": "9.28.0",

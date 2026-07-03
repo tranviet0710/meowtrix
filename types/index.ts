@@ -21,6 +21,7 @@ export type ClaimStatus = 'pending' | 'verified' | 'rejected' | 'locked';
 export type NotificationType =
   | 'match_alert'
   | 'escalation'
+  | 'lost_nearby'
   | 'claim_initiated'
   | 'claim_verified'
   | 'claim_rejected'

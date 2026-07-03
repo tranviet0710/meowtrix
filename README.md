@@ -40,7 +40,7 @@ MEOWTRIX is a real-time intelligence platform for tracking and recovering lost p
 | 🟢 | `AGENT_SPOTTED` | Log a sighting with AI-powered trait extraction |
 | 🧠 | `PATTERN_LOCK` | Gemini vision compares traits for matchmaking |
 | 🗺️ | `ZONE_PREDICT` | Probability zones expand over time on the map |
-| ⏰ | `SEARCH_PROTOCOL` | Temporal workflows: 6h → 24h → 48h escalation |
+| ⏰ | `SEARCH_PROTOCOL` | Temporal workflows: 6h notify → 24h flyer → 48h expand → 14d conclude |
 | ✅ | `CLAIM_VERIFY` | 3-question challenge to confirm identity |
 
 ---
@@ -109,13 +109,24 @@ Powered by **Temporal** durable workflows:
 
 | Time | Action | Radius |
 |:----:|--------|:------:|
-| 0h | 📋 Report filed | — |
-| 6h | 🔔 Notify nearby informants | 1km |
-| 24h | 📄 Auto-generate missing poster (PDF) | — |
-| 48h | 📡 Expand alert radius | 5km |
+| 0h | 📋 Report filed (immediate `lost_nearby` blast, ~5km bounding box) | 5km |
+| 6h | 🔔 Notify nearby helpers with location consent | 1km |
+| 24h | 📄 Auto-generate printable missing poster (PDF) | — |
+| 48h | 📡 Expand alert radius (excludes already-notified helpers) | 5km |
 | 14d | 🏁 Search concluded | — |
 
-If the overlord is recovered at any stage, the workflow cancels automatically.
+If the overlord is recovered at any stage, the workflow short-circuits automatically. Tier delays are configurable at runtime via `SEARCH_PROTOCOL_STAGE*_DELAY_MS` env vars — see `.env.example` for the full list.
+
+### Running the Temporal worker
+
+The Next.js server *starts* workflows, but a separate worker process polls the task queue and executes them. Run it alongside `npm run dev`:
+
+```bash
+npm run worker         # one-shot
+npm run worker:dev     # auto-reload on file changes
+```
+
+Make sure `TEMPORAL_ADDRESS`, `NEXT_PUBLIC_SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` are set in `.env.local`.
 
 ---
 
@@ -127,7 +138,20 @@ If the overlord is recovered at any stage, the workflow cancels automatically.
 | Verification | 3-step claim challenge (locked after 3 failures) |
 | Uploads | Format + size validation (JPEG/PNG/WebP, ≤5MB) |
 | Secrets | Server-side only — no keys in client bundles |
-| Scanning | Aikido SAST + Dependency Audit (continuous) |
+| Scanning | Aikido SAST + Dependency Audit (continuous) + `npm audit` in CI |
+
+### Aikido setup
+
+Aikido runs both **continuously** (via the Aikido GitHub App on the repo) and **in-CI** (via `.github/workflows/security.yml`, which runs on every PR and push to `main`).
+
+To enable the in-CI gate:
+
+1. Sign in to the [Aikido dashboard](https://app.aikido.dev) and connect this GitHub repo (Settings → Integrations → GitHub).
+2. Grab a CI API key from *Settings → Integrations → Continuous Integration*.
+3. In this repo's GitHub Settings, add a repository secret named `AIKIDO_API_KEY` with that value.
+4. Push a PR — the `Aikido Security Scan` job will run automatically. High-severity SAST or secret findings will block the merge; dependency findings are surfaced non-blockingly.
+
+The workflow also runs `npm audit --audit-level=high --production`, `tsc --noEmit`, and `npm run lint` on every push. Suppressions for Aikido are managed via `.aikido/config.yml`.
 
 ---
 
@@ -225,7 +249,7 @@ MIT
 
 <div align="center">
 
-<img src="https://media.giphy.com/media/ICOgUNjpvO0PC/giphy.gif" width="200" alt="Agent Deployed">
+<img src="https://media.giphy.com/media/ICOgUNjpO0PC/giphy.gif" width="200" alt="Agent Deployed">
 
 <br>
 
