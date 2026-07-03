@@ -1,6 +1,27 @@
 // temporal/worker.ts — Temporal worker entry point
 // Starts a Temporal worker that executes the Search Protocol workflow and its activities.
 
+// Load .env.local before importing anything that reads env vars.
+// The worker runs as a standalone Node process (npm run worker) and does NOT
+// inherit Next.js's automatic env loading — activities that talk to Supabase
+// need NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to be present.
+import { config as loadEnv } from 'dotenv';
+import path from 'path';
+loadEnv({ path: path.resolve(process.cwd(), '.env.local') });
+// Also load .env as a fallback for any values not present in .env.local
+loadEnv({ path: path.resolve(process.cwd(), '.env') });
+
+// @supabase/supabase-js unconditionally instantiates a RealtimeClient in its
+// constructor, which requires a global WebSocket. Node.js < 22 does not
+// provide one, so we shim it here with `ws`. We only use REST (postgrest)
+// from activities, but the shim is required just to let the client build.
+import WebSocket from 'ws';
+// Type-cast because `ws` is not fully API-compatible with the browser
+// WebSocket but is enough for supabase-js to run its constructor checks.
+if (typeof (globalThis as { WebSocket?: unknown }).WebSocket === 'undefined') {
+  (globalThis as { WebSocket: unknown }).WebSocket = WebSocket;
+}
+
 import { NativeConnection, Worker } from '@temporalio/worker';
 import * as activities from './activities';
 

@@ -10,6 +10,46 @@ import { Connection, Client } from "@temporalio/client";
 
 const TASK_QUEUE = "meowtrix-search-protocol";
 
+/**
+ * Read an optional `SearchProtocolConfig` from environment variables so
+ * operators can retune the tier timeline without redeploying the worker.
+ *
+ * Recognised env vars (all in milliseconds, integer):
+ *   SEARCH_PROTOCOL_STAGE1_DELAY_MS
+ *   SEARCH_PROTOCOL_STAGE2_DELAY_MS
+ *   SEARCH_PROTOCOL_STAGE3_DELAY_MS
+ *   SEARCH_PROTOCOL_STAGE4_DELAY_MS
+ *   SEARCH_PROTOCOL_STAGE1_RADIUS_M
+ *   SEARCH_PROTOCOL_STAGE3_RADIUS_M
+ *
+ * Returns `undefined` when no overrides are set, so the workflow falls back
+ * to its own defaults (1h / 6h / 48h / 14d, 1km / 5km).
+ */
+function readSearchProtocolConfigFromEnv():
+  | Record<string, number>
+  | undefined {
+  const keys: Array<[string, string]> = [
+    ["SEARCH_PROTOCOL_STAGE1_DELAY_MS", "stage1DelayMs"],
+    ["SEARCH_PROTOCOL_STAGE2_DELAY_MS", "stage2DelayMs"],
+    ["SEARCH_PROTOCOL_STAGE3_DELAY_MS", "stage3DelayMs"],
+    ["SEARCH_PROTOCOL_STAGE4_DELAY_MS", "stage4DelayMs"],
+    ["SEARCH_PROTOCOL_STAGE1_RADIUS_M", "stage1RadiusMeters"],
+    ["SEARCH_PROTOCOL_STAGE3_RADIUS_M", "stage3RadiusMeters"],
+  ];
+
+  const cfg: Record<string, number> = {};
+  for (const [envKey, cfgKey] of keys) {
+    const raw = process.env[envKey];
+    if (!raw) continue;
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      cfg[cfgKey] = parsed;
+    }
+  }
+
+  return Object.keys(cfg).length > 0 ? cfg : undefined;
+}
+
 /** Fields that must never be returned to non-owners */
 const VERIFICATION_FIELDS = [
   "verification_name",
@@ -158,8 +198,13 @@ export async function POST(request: NextRequest) {
         const client = new Client({ connection });
         const workflowId = `search-protocol-${overlord.id}`;
 
+        const overrideConfig = readSearchProtocolConfigFromEnv();
+        const workflowArgs: unknown[] = overrideConfig
+          ? [overlord.id, overrideConfig]
+          : [overlord.id];
+
         await client.workflow.start("searchProtocolWorkflow", {
-          args: [overlord.id],
+          args: workflowArgs,
           taskQueue: TASK_QUEUE,
           workflowId,
         });
