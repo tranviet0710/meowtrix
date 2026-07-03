@@ -138,7 +138,20 @@ Make sure `TEMPORAL_ADDRESS`, `NEXT_PUBLIC_SUPABASE_URL`, and `SUPABASE_SERVICE_
 | Verification | 3-step claim challenge (locked after 3 failures) |
 | Uploads | Format + size validation (JPEG/PNG/WebP, ≤5MB) |
 | Secrets | Server-side only — no keys in client bundles |
-| Scanning | Aikido SAST + Dependency Audit (continuous) |
+| Scanning | Aikido SAST + Dependency Audit (continuous) + `npm audit` in CI |
+
+### Aikido setup
+
+Aikido runs both **continuously** (via the Aikido GitHub App on the repo) and **in-CI** (via `.github/workflows/security.yml`, which runs on every PR and push to `main`).
+
+To enable the in-CI gate:
+
+1. Sign in to the [Aikido dashboard](https://app.aikido.dev) and connect this GitHub repo (Settings → Integrations → GitHub).
+2. Grab a CI API key from *Settings → Integrations → Continuous Integration*.
+3. In this repo's GitHub Settings, add a repository secret named `AIKIDO_API_KEY` with that value.
+4. Push a PR — the `Aikido Security Scan` job will run automatically. High-severity SAST or secret findings will block the merge; dependency findings are surfaced non-blockingly.
+
+The workflow also runs `npm audit --audit-level=high --production`, `tsc --noEmit`, and `npm run lint` on every push. Suppressions for Aikido are managed via `.aikido/config.yml`.
 
 ---
 

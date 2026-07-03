@@ -1,0 +1,38 @@
+# .aikido/config.yml — Aikido Security scan configuration
+#
+# This file is read by Aikido's GitHub App and the CI CLI when scanning
+# this repository. Anything committed here supplements the settings you
+# manage in the Aikido dashboard (https://app.aikido.dev).
+#
+# Docs: https://help.aikido.dev/
+
+# Global severity policy — CI fails only on HIGH+ findings. Match the
+# --minimum-severity-level flag used in .github/workflows/security.yml.
+severity_policy:
+  minimum_severity: HIGH
+
+# Which scan types are relevant for this project.
+scanners:
+  sast: true             # Static analysis on TS/JS source
+  dependencies: true     # npm dependency scanning
+  secrets: true          # Committed secrets / API keys
+  iac: false             # No IaC in this repo
+  containers: false      # No Dockerfile in this repo
+
+# Paths to skip — generated artifacts, deps, and test fixtures we can't fix.
+ignore_paths:
+  - node_modules/
+  - .next/
+  - coverage/
+  - "**/*.min.js"
+  - "**/*.d.ts"
+  - "docs/todos/**"
+
+# Per-rule suppressions. Keep this list tiny and always attach an issue link
+# in the `reason` field so the exception is auditable.
+#
+# Example (uncomment to use):
+# suppressions:
+#   - rule_id: js/hardcoded-credentials
+#     path: scripts/seed.ts
+#     reason: "Seed data for local development only; issue #<n>"

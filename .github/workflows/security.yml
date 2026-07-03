@@ -1,0 +1,123 @@
+name: Security Scan
+
+# Runs on every push to main and every pull request. Combines a lightweight
+# built-in scan (npm audit) with the Aikido Security CLI when the
+# AIKIDO_API_KEY secret is configured. Aikido is also connected as a GitHub
+# App on this repo for continuous scans; this workflow adds an in-CI gate.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Minimal permissions — we only read the repo and post nothing back.
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (frozen lockfile)
+        run: npm ci --ignore-scripts
+
+      # Fail only on high/critical CVEs so noisy low-severity findings don't
+      # block PRs. Aikido's SLA-mode scan handles nuance downstream.
+      - name: Run npm audit
+        run: npm audit --audit-level=high --production
+
+  aikido-scan:
+    name: Aikido Security Scan
+    runs-on: ubuntu-latest
+    # Skip on forked PRs — repository secrets are not available there.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name != 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Aikido CI client
+        run: npm install -g @aikidosec/ci-api-client
+
+      - name: Configure Aikido API key
+        env:
+          AIKIDO_API_KEY: ${{ secrets.AIKIDO_API_KEY }}
+        run: |
+          if [ -z "${AIKIDO_API_KEY}" ]; then
+            echo "::warning::AIKIDO_API_KEY secret is not set — skipping Aikido scan."
+            echo "AIKIDO_ENABLED=false" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          aikido-api-client apikey "${AIKIDO_API_KEY}"
+          echo "AIKIDO_ENABLED=true" >> "$GITHUB_ENV"
+
+      - name: Aikido scan (pull request)
+        if: env.AIKIDO_ENABLED == 'true' && github.event_name == 'pull_request'
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          BASE_COMMIT: ${{ github.event.pull_request.base.sha }}
+          HEAD_COMMIT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          aikido-api-client scan \
+            "${REPO_NAME}" \
+            "${BASE_COMMIT}" \
+            "${HEAD_COMMIT}" \
+            --fail-on-sast-scan \
+            --fail-on-secrets-scan \
+            --minimum-severity-level="HIGH"
+
+      - name: Aikido scan (push to main)
+        if: env.AIKIDO_ENABLED == 'true' && github.event_name == 'push'
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          aikido-api-client scan-release \
+            "${REPO_NAME}" \
+            "${COMMIT_SHA}" \
+            --fail-on-sast-scan \
+            --fail-on-secrets-scan \
+            --minimum-severity-level="HIGH" \
+            --sla-mode
+
+  typecheck-and-lint:
+    name: Typecheck & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (frozen lockfile)
+        run: npm ci --ignore-scripts
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
