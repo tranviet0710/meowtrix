@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { isIP } from "node:net";
 import type { TraitTags, PatternType, FurLength } from "@/types";
 
 const GEMINI_PROMPT = `Analyze this pet photo (cat or dog) and extract the following traits in JSON format:
@@ -29,6 +30,72 @@ const VALID_PATTERN_TYPES: PatternType[] = [
 const VALID_FUR_LENGTHS: FurLength[] = ["short", "medium", "long"];
 
 const REQUEST_TIMEOUT_MS = 30_000;
+
+function isPrivateOrLoopbackHost(hostname: string): boolean {
+  const normalized = hostname.trim().toLowerCase();
+
+  if (
+    normalized === "localhost" ||
+    normalized.endsWith(".localhost") ||
+    normalized.endsWith(".local") ||
+    normalized.endsWith(".internal")
+  ) {
+    return true;
+  }
+
+  const ipVersion = isIP(normalized);
+  if (ipVersion === 4) {
+    const octets = normalized.split(".").map(Number);
+    if (octets.length !== 4) {
+      return false;
+    }
+    const [a, b] = octets;
+    return (
+      a === 10 ||
+      a === 127 ||
+      a === 0 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254)
+    );
+  }
+
+  if (ipVersion === 6) {
+    const firstHextet = normalized.split(":")[0]?.toLowerCase() ?? "";
+    return (
+      normalized === "::1" ||
+      firstHextet.startsWith("fc") ||
+      firstHextet.startsWith("fd") ||
+      normalized.startsWith("fe80:")
+    );
+  }
+
+  return false;
+}
+
+function getAllowedImageHosts(): string[] {
+  const hosts = new Set<string>();
+  const envHosts = process.env.IMAGE_FETCH_ALLOWED_HOSTS;
+  if (envHosts) {
+    for (const host of envHosts.split(",")) {
+      const value = host.trim().toLowerCase();
+      if (value) {
+        hosts.add(value);
+      }
+    }
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    try {
+      hosts.add(new URL(supabaseUrl).hostname.toLowerCase());
+    } catch {
+      // Ignore invalid env value
+    }
+  }
+
+  return Array.from(hosts);
+}
 
 /**
  * Parses raw text from Gemini into a validated TraitTags object.
@@ -249,7 +316,7 @@ function mergeFeatures(tagsArray: TraitTags[]): string[] {
     .map(([normalized]) => originalCaseMap.get(normalized) ?? normalized);
 }
 
-function buildValidatedImageUrl(imageUrl: string): string {
+export function buildValidatedImageUrl(imageUrl: string): string {
   try {
     // Minimal path validation
     if (imageUrl.includes('/../') || /\/%2e%2e\//i.test(imageUrl)) {
@@ -257,10 +324,29 @@ function buildValidatedImageUrl(imageUrl: string): string {
     }
     
     const url = new URL(imageUrl);
+
+    const decodedPathname = decodeURIComponent(url.pathname);
+    if (decodedPathname.includes("/../")) {
+      throw new Error("Invalid path");
+    }
     
     // Protocol check
     if (!['http:', 'https:'].includes(url.protocol)) {
       throw new Error('Invalid protocol');
+    }
+
+    if (url.username || url.password) {
+      throw new Error("Invalid auth in URL");
+    }
+
+    const hostname = url.hostname.toLowerCase();
+    if (isPrivateOrLoopbackHost(hostname)) {
+      throw new Error("Private host is not allowed");
+    }
+
+    const allowedHosts = getAllowedImageHosts();
+    if (allowedHosts.length > 0 && !allowedHosts.includes(hostname)) {
+      throw new Error("Host is not allowed");
     }
     
     return url.href;
