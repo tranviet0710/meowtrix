@@ -1,0 +1,2 @@
+- exploring aikido tools
+- social media post

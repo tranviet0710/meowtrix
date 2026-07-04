@@ -295,6 +295,9 @@ async function cleanupSeedData(supabase: AdminClient): Promise<void> {
   const { data: catPhotos } = await supabase.storage.from("cat-photos").list("seed");
   if (catPhotos && catPhotos.length > 0) {
     const paths = catPhotos.map((f) => `seed/${f.name}`);
+    if (paths.some(path => path.includes('..'))) {
+      throw new Error('Invalid file path');
+    }
     await supabase.storage.from("cat-photos").remove(paths);
     console.log(`  ✅ Cleaned ${paths.length} seed photos from storage`);
   }

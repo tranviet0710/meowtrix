@@ -249,13 +249,34 @@ function mergeFeatures(tagsArray: TraitTags[]): string[] {
     .map(([normalized]) => originalCaseMap.get(normalized) ?? normalized);
 }
 
+function buildValidatedImageUrl(imageUrl: string): string {
+  try {
+    // Minimal path validation
+    if (imageUrl.includes('/../') || /\/%2e%2e\//i.test(imageUrl)) {
+      throw new Error('Invalid path');
+    }
+    
+    const url = new URL(imageUrl);
+    
+    // Protocol check
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
 /**
  * Fetches an image from a URL and returns its base64 data and MIME type.
  */
 async function fetchImageAsBase64(
   imageUrl: string
 ): Promise<{ base64: string; mimeType: string }> {
-  const response = await fetch(imageUrl);
+  const validatedUrl = buildValidatedImageUrl(imageUrl);
+  const response = await fetch(validatedUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
   }
