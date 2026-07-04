@@ -39,6 +39,9 @@ function isPrivateOrLoopbackHost(hostname: string): boolean {
   const ipVersion = isIP(normalized);
   if (ipVersion === 4) {
     const octets = normalized.split(".").map(Number);
+    if (octets.length !== 4) {
+      return false;
+    }
     const [a, b] = octets;
     return (
       a === 10 ||
@@ -51,10 +54,11 @@ function isPrivateOrLoopbackHost(hostname: string): boolean {
   }
 
   if (ipVersion === 6) {
+    const firstHextet = normalized.split(":")[0]?.toLowerCase() ?? "";
     return (
       normalized === "::1" ||
-      normalized.startsWith("fc") ||
-      normalized.startsWith("fd") ||
+      firstHextet.startsWith("fc") ||
+      firstHextet.startsWith("fd") ||
       normalized.startsWith("fe80:")
     );
   }
@@ -94,6 +98,11 @@ function buildValidatedImageUrl(imageUrl: string): string {
     }
     
     const url = new URL(imageUrl);
+
+    const decodedPathname = decodeURIComponent(url.pathname);
+    if (decodedPathname.includes("/../")) {
+      throw new Error("Invalid path");
+    }
     
     // Protocol + host checks
     if (!['http:', 'https:'].includes(url.protocol)) {
