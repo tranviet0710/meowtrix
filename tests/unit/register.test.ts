@@ -39,7 +39,7 @@ describe('Registration API - Input Validation', () => {
       const result = registrationSchema.safeParse(input);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].path).toContain('email');
+        expect(result.error.issues[0].path).toContain('email');
       }
     });
 
@@ -52,8 +52,8 @@ describe('Registration API - Input Validation', () => {
       const result = registrationSchema.safeParse(input);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].path).toContain('password');
-        expect(result.error.errors[0].message).toContain('at least 8');
+        expect(result.error.issues[0].path).toContain('password');
+        expect(result.error.issues[0].message).toContain('at least 8');
       }
     });
 
@@ -86,7 +86,7 @@ describe('Registration API - Input Validation', () => {
       const result = registrationSchema.safeParse(input);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].path).toContain('password');
+        expect(result.error.issues[0].path).toContain('password');
       }
     });
 
@@ -99,7 +99,7 @@ describe('Registration API - Input Validation', () => {
       const result = registrationSchema.safeParse(input);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].path).toContain('display_name');
+        expect(result.error.issues[0].path).toContain('display_name');
       }
     });
 

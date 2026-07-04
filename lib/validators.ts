@@ -27,13 +27,13 @@ export const overlordFormSchema = z.object({
     .string()
     .min(1, 'Pet name is required')
     .max(50, 'Pet name must be at most 50 characters'),
-  pet_type: z.enum(['cat', 'dog'], { required_error: 'Pet type is required' }),
+  pet_type: z.enum(['cat', 'dog'], { error: 'Pet type is required' }),
   description: z
     .string()
     .max(500, 'Description must be at most 500 characters')
     .default(''),
-  last_seen_lat: z.number({ required_error: 'Last-seen location is required' }),
-  last_seen_lng: z.number({ required_error: 'Last-seen location is required' }),
+  last_seen_lat: z.number({ error: 'Last-seen location is required' }),
+  last_seen_lng: z.number({ error: 'Last-seen location is required' }),
   last_seen_at: z
     .string()
     .refine(
@@ -77,13 +77,13 @@ export type OverlordFormInput = z.infer<typeof overlordFormSchema>;
 
 // --- Spotted Agent form schema ---
 export const agentFormSchema = z.object({
-  pet_type: z.enum(['cat', 'dog'], { required_error: 'Pet type is required' }),
+  pet_type: z.enum(['cat', 'dog'], { error: 'Pet type is required' }),
   description: z
     .string()
     .max(500, 'Description must be at most 500 characters')
     .default(''),
-  sighting_lat: z.number({ required_error: 'Sighting location is required' }),
-  sighting_lng: z.number({ required_error: 'Sighting location is required' }),
+  sighting_lat: z.number({ error: 'Sighting location is required' }),
+  sighting_lng: z.number({ error: 'Sighting location is required' }),
   sighted_at: z
     .string()
     .optional()

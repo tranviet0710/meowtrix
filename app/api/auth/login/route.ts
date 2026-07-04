@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
-      console.error('[Login] Validation failed:', JSON.stringify(parsed.error.errors, null, 2));
+      console.error('[Login] Validation failed:', JSON.stringify(parsed.error.issues, null, 2));
       return NextResponse.json(
         { success: false, error: "Invalid credentials" },
         { status: 400 }
