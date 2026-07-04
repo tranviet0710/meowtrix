@@ -7,8 +7,14 @@ import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
 import { reverseGeocode } from "@/lib/geocoding";
 import { Connection, Client } from "@temporalio/client";
+import {
+  getClientConnectionOptions,
+  getTemporalNamespace,
+  getTemporalTaskQueue,
+  isTemporalConfigured,
+} from "@/lib/temporalClient";
 
-const TASK_QUEUE = "meowtrix-search-protocol";
+const TASK_QUEUE = getTemporalTaskQueue();
 
 /**
  * Read an optional `SearchProtocolConfig` from environment variables so
@@ -190,12 +196,13 @@ export async function POST(request: NextRequest) {
 
     // Start Search Protocol (Temporal workflow) if configured
     let temporalWorkflowId: string | null = null;
-    if (process.env.TEMPORAL_ADDRESS) {
+    if (isTemporalConfigured()) {
       try {
-        const connection = await Connection.connect({
-          address: process.env.TEMPORAL_ADDRESS,
+        const connection = await Connection.connect(getClientConnectionOptions());
+        const client = new Client({
+          connection,
+          namespace: getTemporalNamespace(),
         });
-        const client = new Client({ connection });
         const workflowId = `search-protocol-${overlord.id}`;
 
         const overrideConfig = readSearchProtocolConfigFromEnv();
