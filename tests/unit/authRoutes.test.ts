@@ -232,6 +232,62 @@ describe('GET /api/auth/callback', () => {
     expect(response.headers.get('location')).toBe('http://localhost:3000/matches');
   });
 
+  it('falls back to /dashboard when next is absolute external URL', async () => {
+    mockExchangeCodeForSession.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-457',
+          email: 'safe@meowtrix.com',
+          user_metadata: { full_name: 'Safe Agent' },
+        },
+        session: {},
+      },
+      error: null,
+    });
+
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: 'user-457' }, error: null }),
+        }),
+      }),
+    });
+
+    const request = createNextRequest('http://localhost:3000/api/auth/callback?code=abc123&next=https://evil.com/phish');
+    const response = await callbackHandler(request as any);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost:3000/dashboard');
+  });
+
+  it('falls back to /dashboard when next is protocol-relative', async () => {
+    mockExchangeCodeForSession.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-458',
+          email: 'safe2@meowtrix.com',
+          user_metadata: { full_name: 'Safe Agent 2' },
+        },
+        session: {},
+      },
+      error: null,
+    });
+
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: 'user-458' }, error: null }),
+        }),
+      }),
+    });
+
+    const request = createNextRequest('http://localhost:3000/api/auth/callback?code=abc123&next=//evil.com');
+    const response = await callbackHandler(request as any);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost:3000/dashboard');
+  });
+
   it('redirects to /login with error when code is missing', async () => {
     const request = createNextRequest('http://localhost:3000/api/auth/callback');
     const response = await callbackHandler(request as any);

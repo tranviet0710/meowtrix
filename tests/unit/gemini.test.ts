@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseGeminiResponse } from "@/lib/gemini";
+import { parseGeminiResponse, buildValidatedImageUrl } from "@/lib/gemini";
 
 describe("parseGeminiResponse", () => {
   it("parses a valid complete JSON response", () => {
@@ -20,6 +20,26 @@ describe("parseGeminiResponse", () => {
       fur_length: "short",
       breed_estimate: "Domestic Shorthair",
       distinguishing_features: ["green eyes", "striped tail", "white paws"],
+    });
+  });
+
+  describe("buildValidatedImageUrl", () => {
+    it("allows normal public https URLs", () => {
+      expect(buildValidatedImageUrl("https://example.com/cat.jpg")).toBe(
+        "https://example.com/cat.jpg"
+      );
+    });
+
+    it("rejects localhost URLs", () => {
+      expect(() => buildValidatedImageUrl("http://localhost:3000/cat.jpg")).toThrow(
+        "Invalid URL"
+      );
+    });
+
+    it("rejects private IPv4 URLs", () => {
+      expect(() => buildValidatedImageUrl("http://192.168.1.10/cat.jpg")).toThrow(
+        "Invalid URL"
+      );
     });
   });
 

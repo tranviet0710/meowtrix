@@ -74,7 +74,7 @@ Sau khi project tạo xong, vào **Settings → API**:
 
 | Key | Giá trị |
 |-----|---------|
-| `GEMINI_API_KEY` | Key vừa copy (dạng `AIzaSy...`) |
+| `GEMINI_API_KEY` | Key vừa copy (ví dụ: `your-gemini-api-key`) |
 
 > 💡 **Lưu ý:** Free tier của Gemini API cho phép 60 requests/phút — đủ cho development.
 
@@ -134,11 +134,11 @@ Mở `.env.local` và điền các giá trị:
 ```env
 # --- Supabase ---
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
 # --- Gemini AI Vision ---
-GEMINI_API_KEY=AIzaSy...
+GEMINI_API_KEY=your-gemini-api-key
 
 # --- Temporal ---
 TEMPORAL_ADDRESS=localhost:7233
