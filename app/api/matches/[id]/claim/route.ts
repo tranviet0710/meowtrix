@@ -4,6 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { sendClaimEmails, sendEmail, type ClaimEmailSendResult } from "@/lib/email";
 import { Connection, Client, WorkflowExecutionAlreadyStartedError } from "@temporalio/client";
+import {
+  getClientConnectionOptions,
+  getTemporalNamespace,
+  getTemporalTaskQueue,
+} from "@/lib/temporalClient";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -278,13 +283,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Start the 24h claim reminder Temporal workflow (non-blocking)
     try {
-      const temporalAddress = process.env.TEMPORAL_ADDRESS ?? "localhost:7233";
-      const connection = await Connection.connect({ address: temporalAddress });
-      const client = new Client({ connection });
+      const connection = await Connection.connect(getClientConnectionOptions());
+      const client = new Client({
+        connection,
+        namespace: getTemporalNamespace(),
+      });
 
       await client.workflow.start("claimReminderWorkflow", {
         args: [matchId],
-        taskQueue: process.env.TEMPORAL_TASK_QUEUE ?? "meowtrix-search-protocol",
+        taskQueue: getTemporalTaskQueue(),
         workflowId: `claim-reminder-${matchId}`,
       });
     } catch (temporalError) {

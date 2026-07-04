@@ -21,10 +21,38 @@ function getSupabaseClient() {
 }
 
 /**
+ * Build a validated URL for image fetching.
+ */
+function buildValidatedImageUrl(imageUrl: string): string {
+  try {
+    // Minimal path validation
+    if (imageUrl.includes('/../') || /\/%2e%2e\//i.test(imageUrl)) {
+      throw new Error('Invalid path');
+    }
+    
+    const url = new URL(imageUrl);
+    
+    // Protocol + host checks
+    const allowedDomains = ['example.com']; // add your allowed domains here
+    if (!allowedDomains.includes(url.hostname)) {
+      throw new Error('Invalid host');
+    }
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+    
+    return url.href;
+  } catch {
+    throw new Error('Invalid URL');
+  }
+}
+
+/**
  * Fetch an image from a URL and return it as a Buffer.
  */
 async function fetchImageBuffer(url: string): Promise<Buffer> {
-  const response = await fetch(url);
+  const validatedUrl = buildValidatedImageUrl(url);
+  const response = await fetch(validatedUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch image from ${url}: ${response.statusText}`);
   }
@@ -234,6 +262,9 @@ export async function generateMissingPoster(overlordId: string): Promise<void> {
 
   // Upload to Supabase Storage (posters bucket)
   const fileName = `poster_${overlordId}.pdf`;
+  if (fileName.includes('..')) {
+    throw new Error('Invalid file name');
+  }
   const { error: uploadError } = await supabase.storage
     .from('posters')
     .upload(fileName, pdfBuffer, {

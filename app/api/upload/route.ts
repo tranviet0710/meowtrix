@@ -73,6 +73,10 @@ export async function POST(request: NextRequest) {
     const fileId = crypto.randomUUID();
     const storagePath = `${user.id}/${fileId}.${ext}`;
 
+    if (storagePath.includes('..')) {
+      throw new Error('Invalid storage path');
+    }
+
     // 9. Upload to Supabase Storage using service role client
     const serviceClient = await createServiceRoleClient();
     const { error: uploadError } = await serviceClient.storage
