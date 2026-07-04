@@ -22,10 +22,16 @@ if (typeof (globalThis as { WebSocket?: unknown }).WebSocket === 'undefined') {
   (globalThis as { WebSocket: unknown }).WebSocket = WebSocket;
 }
 
-import { NativeConnection, Worker } from '@temporalio/worker';
+import { NativeConnection, Worker, NativeConnectionOptions } from '@temporalio/worker';
 import * as activities from './activities';
+import {
+  getTemporalAddress,
+  getTemporalNamespace,
+  getTemporalTaskQueue,
+  getWorkerConnectionOptions,
+} from '../lib/temporalClient';
 
-const TASK_QUEUE = 'meowtrix-search-protocol';
+const TASK_QUEUE = getTemporalTaskQueue();
 
 /**
  * Run the Temporal worker.
@@ -36,22 +42,42 @@ const TASK_QUEUE = 'meowtrix-search-protocol';
  *
  * Environment variables required:
  * - TEMPORAL_ADDRESS: Temporal server address (default: localhost:7233)
+ * - TEMPORAL_NAMESPACE: Temporal namespace (default: default)
+ * - TEMPORAL_API_KEY: API key for Temporal Cloud (optional, preferred for Cloud)
+ * - TEMPORAL_TLS_CERT: Client certificate for mTLS connection (optional)
+ * - TEMPORAL_TLS_KEY: Client private key for mTLS connection (optional)
  * - NEXT_PUBLIC_SUPABASE_URL: Supabase project URL
  * - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key
  */
 async function run(): Promise<void> {
-  const address = process.env.TEMPORAL_ADDRESS ?? 'localhost:7233';
+  const address = getTemporalAddress();
+  const namespace = getTemporalNamespace();
 
-  const connection = await NativeConnection.connect({ address });
+  // Auth mode (apiKey / mTLS / plaintext) is decided by getWorkerConnectionOptions().
+  const connectionOptions = getWorkerConnectionOptions() as NativeConnectionOptions;
+
+  if (connectionOptions.apiKey) {
+    console.log(
+      '[Temporal Worker] API key authentication enabled for Temporal Cloud.',
+    );
+  } else if (connectionOptions.tls && typeof connectionOptions.tls === 'object') {
+    console.log(
+      '[Temporal Worker] mTLS client certificate authentication enabled.',
+    );
+  }
+
+  const connection = await NativeConnection.connect(connectionOptions);
 
   const worker = await Worker.create({
     connection,
+    namespace,
     workflowsPath: require.resolve('./workflows'),
     activities,
     taskQueue: TASK_QUEUE,
   });
 
   console.log(`[Temporal Worker] Starting on task queue: ${TASK_QUEUE}`);
+  console.log(`[Temporal Worker] Using namespace: ${namespace}`);
   console.log(`[Temporal Worker] Connected to: ${address}`);
 
   await worker.run();
