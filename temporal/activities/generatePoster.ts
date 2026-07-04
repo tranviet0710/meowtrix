@@ -262,6 +262,9 @@ export async function generateMissingPoster(overlordId: string): Promise<void> {
 
   // Upload to Supabase Storage (posters bucket)
   const fileName = `poster_${overlordId}.pdf`;
+  if (fileName.includes('..')) {
+    throw new Error('Invalid file name');
+  }
   const { error: uploadError } = await supabase.storage
     .from('posters')
     .upload(fileName, pdfBuffer, {
