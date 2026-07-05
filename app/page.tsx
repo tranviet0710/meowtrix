@@ -24,7 +24,7 @@ export default async function Home() {
       <LandingNav isAuthenticated={isAuthenticated} />
       <main>
         <HeroSection isAuthenticated={isAuthenticated} />
-        <StatsBanner />
+        {/* <StatsBanner /> */}
         <MissionSection />
         <MascotsGallery />
         <FeaturesSection />
