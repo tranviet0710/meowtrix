@@ -47,44 +47,125 @@ MEOWTRIX is a real-time intelligence platform for tracking and recovering lost p
 
 ## 🏗️ System Architecture
 
+The browser talks to Next.js on Vercel. A middleware refreshes the Supabase session
+and gates protected routes. API routes are the only place Supabase is touched, and
+they call out to Google Gemini for trait extraction, OpenStreetMap for reverse
+geocoding, and Temporal to start durable workflows. A separate Temporal worker
+process executes those workflows and writes back into Supabase (posters to Storage,
+alerts to the `notifications` table). Supabase Realtime pushes new notification
+rows to the client for live match alerts and search updates.
+
 <div align="center">
 
 ```mermaid
-graph TB
-    subgraph Client
-        UI[React UI]
-        Map[Leaflet Map]
+flowchart TB
+    subgraph Client["🌐 Client (Browser)"]
+        direction TB
+        UI["Next.js 15 App Router<br/>React 19 Server + Client Components<br/>Tailwind • shadcn/ui • next-themes"]
+        Map["Leaflet 1.9 + leaflet.heat<br/>dynamic import, ssr:false"]
+        RTSub["Realtime subscription<br/>notifications table"]
     end
 
-    subgraph Vercel
-        Router[App Router]
-        API[API Routes]
+    subgraph Edge["⚡ Vercel Edge"]
+        MW["middleware.ts<br/>@supabase/ssr session refresh<br/>+ protected-route guard"]
     end
 
-    subgraph Supabase
-        Auth[Auth]
-        DB[(PostgreSQL)]
-        Storage[Storage]
-        RT[Realtime]
+    subgraph Server["🖥️ Vercel Serverless — Next.js API routes"]
+        direction TB
+        AuthAPI["/api/auth/*<br/>login • register • callback • signout"]
+        UploadAPI["/api/upload<br/>Sharp validation → Storage"]
+        OverlordAPI["/api/overlords<br/>Zod → Gemini → match trigger →<br/>Temporal start + lost_nearby blast"]
+        AgentAPI["/api/agents<br/>Zod → Gemini → match trigger →<br/>nearby-owner notifications"]
+        VisionAPI["/api/vision/process<br/>retryable tagging endpoint"]
+        MatchAPI["/api/matches<br/>/api/matches/[id]/claim"]
+        ClaimAPI["/api/claims/[id]/verify<br/>3-step lockout →<br/>Temporal claim reminder start"]
+        MiscAPI["/api/leaderboard • /stats<br/>/notifications • /presence • /settings"]
     end
 
-    subgraph Services
-        Gemini[Gemini AI]
-        Temporal[Temporal]
+    subgraph LibLayer["📚 Shared server libs (lib/)"]
+        MatchEng["matchEngine.ts<br/>visual 40% • text 25% •<br/>proximity 25% • other 10%"]
+        Poster["PDFKit poster builder"]
     end
 
-    UI --> Router
-    Map --> Router
-    Router --> API
-    API --> Auth
-    API --> DB
-    API --> Storage
-    API --> Gemini
-    API --> Temporal
-    RT --> UI
+    subgraph Supabase["🗄️ Supabase"]
+        direction TB
+        SBAuth["Auth<br/>email + confirmation"]
+        SBDB[("PostgreSQL + RLS on every table<br/>informants • overlords • agents<br/>match_suggestions • claims • notifications<br/>overlords_public view masks verification_*")]
+        SBStorage["Storage<br/>pet-photos • posters"]
+        SBRT["Realtime publication<br/>public.notifications"]
+    end
+
+    subgraph External["☁️ External services"]
+        direction TB
+        Gemini["Google Gemini<br/>@google/generative-ai<br/>trait extraction"]
+        Resend["Resend<br/>transactional email<br/>(claim + escalation)"]
+        OSM["OpenStreetMap Nominatim<br/>reverse geocoding"]
+    end
+
+    subgraph Worker["⏱️ Temporal Worker — separate Node process"]
+        direction TB
+        WFSearch["searchProtocolWorkflow<br/>6h → 24h → 48h → 14d"]
+        WFClaim["claimReminderWorkflow<br/>24h claim reminder"]
+        Act["Activities<br/>isOverlordResolved • notifyNearbyInformants<br/>generateMissingPoster • sendSearchConcluded<br/>isMatchStillClaimed • sendClaimReminder"]
+        WFSearch --> Act
+        WFClaim --> Act
+    end
+
+    TemporalSvc[("Temporal Server<br/>task queue:<br/>meowtrix-search-protocol")]
+
+    UI --> MW
+    Map --> MW
+    MW --> Server
+    RTSub -. push .-> UI
+
+    AuthAPI --> SBAuth
+    UploadAPI --> SBStorage
+    OverlordAPI --> SBDB
+    OverlordAPI --> Gemini
+    OverlordAPI --> OSM
+    OverlordAPI --> MatchEng
+    OverlordAPI -- start workflow --> TemporalSvc
+    AgentAPI --> SBDB
+    AgentAPI --> Gemini
+    AgentAPI --> OSM
+    AgentAPI --> MatchEng
+    VisionAPI --> Gemini
+    VisionAPI --> SBDB
+    VisionAPI --> MatchEng
+    MatchAPI --> SBDB
+    ClaimAPI --> SBDB
+    ClaimAPI -- start reminder --> TemporalSvc
+    MiscAPI --> SBDB
+    MatchEng --> SBDB
+
+    TemporalSvc <--> Worker
+    Act --> SBDB
+    Act --> SBStorage
+    Act --> Poster
+    Poster --> SBStorage
+    Act --> Resend
+
+    SBDB -. INSERT .-> SBRT
+    SBRT -. push .-> RTSub
 ```
 
 </div>
+
+### Runtime processes
+
+| Process | Where it runs | Talks to |
+|---|---|---|
+| **Web app + API routes** | Vercel (Node runtime) | Supabase (anon + service role), Gemini, OpenStreetMap, Temporal (client) |
+| **Middleware** | Vercel Edge | Supabase Auth (session refresh) |
+| **Temporal worker** | Long-lived Node process (`npm run worker`) | Temporal Server, Supabase (service role), Resend |
+| **Browser client** | User's browser | API routes, Supabase Realtime (WebSocket) |
+
+### Data-plane rules
+
+- **Never in the client bundle.** `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, and Temporal credentials are read only server-side.
+- **RLS is on for every table.** Sensitive verification fields (`verification_name`, `verification_marking`, `verification_trait`) are exposed through the `overlords_public` view, which returns them only to the owner.
+- **Two Supabase clients on the server.** The anon client is used for user-scoped reads inside a request; the service-role client is used for privileged writes (workflow starts, cross-user notification inserts).
+- **Idempotent workflows.** Every escalation stage first calls `isOverlordResolved(overlordId)` and short-circuits if the pet has been recovered, so cancellation is safe at any point.
 
 ---
 
