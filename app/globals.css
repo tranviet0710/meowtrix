@@ -243,3 +243,12 @@ body {
   75% { transform: rotate(3deg); }
 }
 .meowtrix-wiggle:hover { animation: meowtrix-wiggle 500ms ease-in-out; }
+
+/* Contain Leaflet's internal z-index stack (panes go up to 700,
+   controls up to 1000) inside its own stacking context so it can't
+   paint over app chrome like the sidebar, notification panel, or
+   bottom nav. Leaflet already sets .leaflet-container to
+   position: relative — adding z-index: 0 seals the stacking context. */
+.leaflet-container {
+  z-index: 0;
+}

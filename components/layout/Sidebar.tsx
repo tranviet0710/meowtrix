@@ -53,7 +53,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-sidebar-bg border-r border-sidebar-border">
+    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 z-40 bg-sidebar-bg border-r border-sidebar-border">
       <div className="flex items-center h-16 px-5 border-b border-sidebar-border">
         <Image
           src="/logo/logo.png"
