@@ -33,7 +33,29 @@ interface FieldErrors {
   sighted_at?: string;
 }
 
-export function SpottedAgentForm() {
+/**
+ * Imperative handle exposed to the AI-assist modal.
+ *
+ * The AI extractor speaks in the shared "last_seen_at" vocabulary regardless
+ * of which report form is being filled. For sightings, that value is mapped
+ * onto the form's local `sighted_at` state.
+ *
+ * `undefined` means "the caller did not supply this field, leave it alone".
+ * `null` means "the AI could not read this field" — the caller is expected
+ * to filter nulls before invoking this method, but we also skip nulls
+ * defensively here.
+ */
+export interface SpottedAgentFormHandle {
+  applyAiSuggestions(values: {
+    pet_type?: "cat" | "dog" | null;
+    description?: string | null;
+    last_seen_at?: string | null; // maps to sighted_at in this form
+    location?: { lat: number; lng: number } | null;
+    photos?: string[];
+  }): void;
+}
+
+export const SpottedAgentForm = React.forwardRef<SpottedAgentFormHandle, Record<never, never>>(function SpottedAgentForm(_, ref) {
   const router = useRouter();
   const { toast, showToast, dismissToast } = useSuccessToast();
 
@@ -48,6 +70,21 @@ export function SpottedAgentForm() {
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
   const [submitError, setSubmitError] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Imperative handle for the AI-assist modal. The AI's `last_seen_at` is
+  // mapped to this form's `sighted_at` state. We treat both `null` and
+  // `undefined` as "leave this field alone".
+  React.useImperativeHandle(ref, () => ({
+    applyAiSuggestions(values) {
+      if (values.pet_type != null) setPetType(values.pet_type);
+      if (values.description != null) setDescription(values.description);
+      if (values.last_seen_at != null) setSightedAt(values.last_seen_at);
+      if (values.location != null) setLocation(values.location);
+      if (values.photos != null && values.photos.length > 0) {
+        setPhotos(values.photos);
+      }
+    },
+  }));
 
   function validateForm(): boolean {
     const errors: FieldErrors = {};
@@ -325,7 +362,9 @@ export function SpottedAgentForm() {
       </Button>
     </form>
   );
-}
+});
+
+SpottedAgentForm.displayName = "SpottedAgentForm";
 
 /** Inline validation error display */
 function InlineError({ id, message }: { id: string; message?: string }) {

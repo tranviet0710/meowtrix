@@ -38,7 +38,32 @@ interface FieldErrors {
   verification_trait?: string;
 }
 
-export function LostOverlordForm() {
+/**
+ * Imperative handle exposed to the AI-assist modal.
+ *
+ * Only the non-verification fields are reachable. Verification-field state
+ * setters (`setVerificationName`, `setVerificationMarking`, `setVerificationTrait`)
+ * are intentionally NOT part of this contract (Requirement 8.3). This is the
+ * third layer of defense against the AI ever populating ownership-verification
+ * answers on behalf of the user.
+ *
+ * `undefined` means "the caller did not supply this field, leave it alone".
+ * `null` means "the AI could not read this field" — the caller is expected
+ * to filter nulls before invoking this method, but we also skip nulls
+ * defensively here.
+ */
+export interface LostOverlordFormHandle {
+  applyAiSuggestions(values: {
+    pet_name?: string | null;
+    pet_type?: "cat" | "dog" | null;
+    description?: string | null;
+    last_seen_at?: string | null;
+    location?: { lat: number; lng: number } | null;
+    photos?: string[];
+  }): void;
+}
+
+export const LostOverlordForm = React.forwardRef<LostOverlordFormHandle, Record<never, never>>(function LostOverlordForm(_, ref) {
   const router = useRouter();
   const { toast, showToast, dismissToast } = useSuccessToast();
 
@@ -57,6 +82,25 @@ export function LostOverlordForm() {
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
   const [submitError, setSubmitError] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Imperative handle for the AI-assist modal. Only the non-verification
+  // setters are reachable — verification state setters are intentionally
+  // omitted (Requirement 8.3). We treat both `null` and `undefined` as
+  // "leave this field alone".
+  React.useImperativeHandle(ref, () => ({
+    applyAiSuggestions(values) {
+      if (values.pet_name != null) setPetName(values.pet_name);
+      if (values.pet_type != null) setPetType(values.pet_type);
+      if (values.description != null) setDescription(values.description);
+      if (values.last_seen_at != null) setLastSeenAt(values.last_seen_at);
+      if (values.location != null) setLocation(values.location);
+      if (values.photos != null && values.photos.length > 0) {
+        setPhotos(values.photos);
+      }
+      // verification_name / verification_marking / verification_trait are
+      // intentionally NOT reachable here.
+    },
+  }));
 
   function validateForm(): boolean {
     const errors: FieldErrors = {};
@@ -461,7 +505,9 @@ export function LostOverlordForm() {
       </Button>
     </form>
   );
-}
+});
+
+LostOverlordForm.displayName = "LostOverlordForm";
 
 /** Inline validation error display */
 function InlineError({ id, message }: { id: string; message?: string }) {
