@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabaseServer";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { HeroSection } from "@/components/landing/HeroSection";
-import { StatsBanner } from "@/components/landing/StatsBanner";
+// import { StatsBanner } from "@/components/landing/StatsBanner";
 import { MissionSection } from "@/components/landing/MissionSection";
 import { MascotsGallery } from "@/components/landing/MascotsGallery";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
