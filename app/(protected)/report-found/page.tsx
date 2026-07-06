@@ -1,13 +1,9 @@
 "use client";
 
-import { useRef } from "react";
 import { Eye } from "lucide-react";
-import { SpottedAgentForm, type SpottedAgentFormHandle } from "@/components/forms/SpottedAgentForm";
-import { AiAssistButton } from "@/components/reports/AiAssistButton";
+import { SpottedAgentForm } from "@/components/forms/SpottedAgentForm";
 
 export default function ReportFoundPage() {
-  const formRef = useRef<SpottedAgentFormHandle>(null);
-
   return (
     <div className="mx-auto w-[92%] max-w-2xl py-8 md:w-full md:px-6">
       {/* Page Header */}
@@ -24,16 +20,8 @@ export default function ReportFoundPage() {
         </p>
       </div>
 
-      {/* AI Assist */}
-      <div className="mb-6">
-        <AiAssistButton
-          variant="spotted"
-          onApply={(v) => formRef.current?.applyAiSuggestions(v)}
-        />
-      </div>
-
       {/* Form */}
-      <SpottedAgentForm ref={formRef} />
+      <SpottedAgentForm />
     </div>
   );
 }

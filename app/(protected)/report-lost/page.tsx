@@ -1,13 +1,9 @@
 "use client";
 
-import { useRef } from "react";
 import { AlertTriangle } from "lucide-react";
-import { LostOverlordForm, type LostOverlordFormHandle } from "@/components/forms/LostOverlordForm";
-import { AiAssistButton } from "@/components/reports/AiAssistButton";
+import { LostOverlordForm } from "@/components/forms/LostOverlordForm";
 
 export default function ReportLostPage() {
-  const formRef = useRef<LostOverlordFormHandle>(null);
-
   return (
     <div className="mx-auto w-[92%] max-w-2xl py-8 md:w-full md:px-6">
       {/* Page Header */}
@@ -24,16 +20,8 @@ export default function ReportLostPage() {
         </p>
       </div>
 
-      {/* AI Assist */}
-      <div className="mb-6">
-        <AiAssistButton
-          variant="lost"
-          onApply={(v) => formRef.current?.applyAiSuggestions(v)}
-        />
-      </div>
-
       {/* Form */}
-      <LostOverlordForm ref={formRef} />
+      <LostOverlordForm />
     </div>
   );
 }
