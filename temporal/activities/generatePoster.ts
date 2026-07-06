@@ -3,6 +3,7 @@
 
 import PDFDocument from 'pdfkit';
 import { isIP } from "node:net";
+import sharp from 'sharp';
 import { createClient } from '@supabase/supabase-js';
 
 /**
@@ -143,6 +144,18 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
 }
 
 /**
+ * PDFKit only supports JPEG and PNG. Meowtrix stores optimized uploads as WebP
+ * (and Gemini/user uploads may be JPEG or PNG). Normalize any supported input
+ * to PNG so the poster can always embed the photo.
+ */
+async function toPdfCompatibleImage(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer)
+    .rotate() // honor EXIF orientation before flattening metadata
+    .png()
+    .toBuffer();
+}
+
+/**
  * Generate an A4 PDF missing poster for an Overlord.
  *
  * The poster contains:
@@ -215,11 +228,11 @@ export async function generateMissingPoster(overlordId: string): Promise<void> {
   // Cat photo (if available)
   if (overlord.photos && overlord.photos.length > 0) {
     try {
-      const imageBuffer = await fetchImageBuffer(overlord.photos[0]);
+      const rawImageBuffer = await fetchImageBuffer(overlord.photos[0]);
+      // Convert WebP/other formats to PNG since PDFKit only accepts JPEG/PNG.
+      const imageBuffer = await toPdfCompatibleImage(rawImageBuffer);
       const imageX = (pageWidth - 250) / 2 + 50; // center a 250pt wide image
       doc.image(imageBuffer, imageX, doc.y, {
-        width: 250,
-        height: 250,
         fit: [250, 250],
         align: 'center',
       });
