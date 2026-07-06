@@ -9,6 +9,7 @@ import {
   getTemporalNamespace,
   getTemporalTaskQueue,
 } from "@/lib/temporalClient";
+import { executeResolutionFlow } from "@/lib/resolutionFlow";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -475,6 +476,26 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         .from("overlords")
         .update({ status: "resolved" })
         .eq("id", overlord.id);
+
+      // Cascade the resolution:
+      //   - mark the matched agent (sighting) as resolved so it stops
+      //     appearing in active sighting counts / lists
+      //   - cancel other pending / claimed match suggestions for both
+      //     the overlord and the agent
+      //   - reject any pending claims on this overlord
+      //   - cancel the escalating-search Temporal workflow if any
+      // Errors here are non-fatal — the primary reunion already succeeded.
+      try {
+        await executeResolutionFlow(serviceClient, overlord.id, agent.id);
+      } catch (resolutionError) {
+        const errMsg =
+          resolutionError instanceof Error
+            ? resolutionError.message
+            : String(resolutionError);
+        console.error(
+          `[Claim ${matchId}] Resolution flow failed for overlord=${overlord.id}, agent=${agent.id}: ${errMsg}`
+        );
+      }
 
       // Award 10 points to the agent reporter
       const { data: informant } = await serviceClient
