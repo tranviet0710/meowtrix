@@ -29,12 +29,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("sanitizes database error and does not expose error.message", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: 'duplicate key value violates unique constraint "agents_pkey"',
       details: "Key (id)=(123) already exists.",
       hint: "Check your insert statement",
       code: "23505",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "create Agent");
 
@@ -52,12 +52,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("sanitizes type mismatch errors without exposing schema details", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: 'column "photos" is of type text[] but expression is of type integer',
       details: "You will need to rewrite or cast the expression.",
-      hint: null,
+      hint: "",
       code: "42804",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "create Agent", "[Agent POST]");
 
@@ -74,12 +74,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("sanitizes constraint violation errors without exposing constraint names", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: 'null value in column "reporter_id" violates not-null constraint',
       details: 'Failing row contains (null, ...).',
-      hint: null,
+      hint: "",
       code: "23502",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "create Agent");
 
@@ -94,12 +94,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("sanitizes foreign key violation errors without exposing table relationships", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: 'insert or update on table "agents" violates foreign key constraint "agents_reporter_id_fkey"',
       details: 'Key (reporter_id)=(invalid-uuid) is not present in table "users".',
-      hint: null,
+      hint: "",
       code: "23503",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "create Agent");
 
@@ -116,12 +116,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("logs full error details server-side for debugging", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: "Database error with sensitive details",
       details: "Sensitive detail information",
       hint: "Helpful hint for developers",
       code: "ERRCODE",
-    };
+    });
 
     sanitizeDatabaseError(dbError, "create Agent", "[Agent POST]");
 
@@ -139,12 +139,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("logs without context prefix when logContext is not provided", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: "Some error",
-      details: null,
-      hint: null,
+      details: "",
+      hint: "",
       code: "ERR",
-    };
+    });
 
     sanitizeDatabaseError(dbError, "fetch Overlords");
 
@@ -153,19 +153,19 @@ describe("sanitizeDatabaseError", () => {
       {
         message: "Some error",
         code: "ERR",
-        details: null,
-        hint: null,
+        details: "",
+        hint: "",
       }
     );
   });
 
   it("handles errors with missing optional fields", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: "Error message",
-      details: null,
-      hint: null,
+      details: "",
+      hint: "",
       code: "CODE",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "delete Agent");
 
@@ -174,12 +174,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("sanitizes PostgREST permission errors without exposing RLS policies", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: 'new row violates row-level security policy for table "agents"',
-      details: null,
-      hint: null,
+      details: "",
+      hint: "",
       code: "42501",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "create Agent");
 
@@ -194,12 +194,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("sanitizes check constraint violation errors", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: 'new row for relation "agents" violates check constraint "agents_photos_check"',
       details: 'Failing row contains (...).',
-      hint: null,
+      hint: "",
       code: "23514",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "create Agent");
 
@@ -213,12 +213,12 @@ describe("sanitizeDatabaseError", () => {
   });
 
   it("uses operation string in generic error message", () => {
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: "Some database error",
-      details: null,
-      hint: null,
+      details: "",
+      hint: "",
       code: "ERR",
-    };
+    });
 
     const result1 = sanitizeDatabaseError(dbError, "create Agent");
     const result2 = sanitizeDatabaseError(dbError, "update Overlord");
@@ -231,12 +231,12 @@ describe("sanitizeDatabaseError", () => {
 
   it("prevents information disclosure through array type errors", () => {
     // Simulates the pentest scenario where attacker sends invalid photos field
-    const dbError: PostgrestError = {
+    const dbError = new PostgrestError({
       message: 'column "photos" is of type text[] but expression is of type jsonb',
       details: "The photos field expects an array of text values",
       hint: "Cast the value to the correct type",
       code: "42804",
-    };
+    });
 
     const result = sanitizeDatabaseError(dbError, "create Agent", "[Agent POST]");
 
