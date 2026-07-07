@@ -514,9 +514,10 @@ describe('Registration API - Account Enumeration Protection', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.user.id).toBe('enumeration-protection');
+    expect(data.message).toBe('If your email can be registered, you will receive a confirmation link shortly.');
+    expect(data.user).toBeUndefined();
   });
 
   it('handles "user already exists" error message variant', async () => {
@@ -540,9 +541,10 @@ describe('Registration API - Account Enumeration Protection', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.user.id).toBe('enumeration-protection');
+    expect(data.message).toBe('If your email can be registered, you will receive a confirmation link shortly.');
+    expect(data.user).toBeUndefined();
   });
 
   it('handles status 422 without specific message', async () => {
@@ -566,9 +568,10 @@ describe('Registration API - Account Enumeration Protection', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.user.id).toBe('enumeration-protection');
+    expect(data.message).toBe('If your email can be registered, you will receive a confirmation link shortly.');
+    expect(data.user).toBeUndefined();
   });
 
   it('returns different error for rate limiting (not enumeration)', async () => {

@@ -59,9 +59,12 @@ export async function POST(request: NextRequest) {
     const parsed = bodySchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { success: false, error: "A valid email is required." },
-        { status: 400 }
+      return ensureMinimumResponseTime(
+        startTime,
+        NextResponse.json(
+          { success: false, error: "A valid email is required." },
+          { status: 400 }
+        )
       );
     }
 
@@ -148,9 +151,13 @@ export async function POST(request: NextRequest) {
     return ensureMinimumResponseTime(startTime, genericResponse);
   } catch (error) {
     console.error("[ResendConfirmation] Unexpected error:", error);
-    return NextResponse.json(
-      { success: false, error: "An unexpected error occurred." },
-      { status: 500 }
+
+    return ensureMinimumResponseTime(
+      startTime,
+      NextResponse.json(
+        { success: false, error: "An unexpected error occurred." },
+        { status: 500 }
+      )
     );
   }
 }
