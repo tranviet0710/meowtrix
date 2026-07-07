@@ -136,10 +136,15 @@ export async function PATCH(
 
       // Fire-and-forget: Trigger Vision Service for new photos
       const baseUrl = request.nextUrl.origin;
+      const cookieHeader = request.headers.get("cookie");
       for (const photoUrl of body.photos as string[]) {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (cookieHeader) {
+          headers["Cookie"] = cookieHeader;
+        }
         fetch(`${baseUrl}/api/vision/process`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             record_id: id,
             record_type: "agent",
