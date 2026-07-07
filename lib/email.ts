@@ -76,19 +76,26 @@ export async function sendClaimEmails(params: {
 }): Promise<ClaimEmailSendResult[]> {
   const { overlordOwnerEmail, overlordOwnerName, agentReporterEmail, agentReporterName, petName, matchId, matchScore } = params;
 
+  // Escape all user-controlled inputs to prevent HTML injection
+  const safeOverlordOwnerName = escapeHtml(overlordOwnerName);
+  const safeAgentReporterName = escapeHtml(agentReporterName);
+  const safePetName = escapeHtml(petName);
+  const safeOverlordOwnerEmail = escapeHtml(overlordOwnerEmail);
+  const safeAgentReporterEmail = escapeHtml(agentReporterEmail);
+
   const matchUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://meowtrix.io"}/matches/${matchId}`;
 
   // Email to the lost reporter (overlord owner)
   const overlordEmailPromise = sendEmail({
     to: overlordOwnerEmail,
-    subject: `🎯 Claim Initiated — ${petName} may have been found!`,
+    subject: `🎯 Claim Initiated — ${safePetName} may have been found!`,
     html: `
       <div style="font-family: monospace; background: #0A0A0F; color: #E6E6E6; padding: 32px; max-width: 600px;">
         <h1 style="color: #FFCC00; font-size: 18px; text-transform: uppercase; letter-spacing: 2px;">
           ⚡ CLAIM INITIATED
         </h1>
-        <p>Good news, <strong>${overlordOwnerName}</strong>!</p>
-        <p>You've initiated a claim on a match for <strong style="color: #FFCC00;">${petName}</strong> with a <strong>${matchScore}%</strong> confidence score.</p>
+        <p>Good news, <strong>${safeOverlordOwnerName}</strong>!</p>
+        <p>You've initiated a claim on a match for <strong style="color: #FFCC00;">${safePetName}</strong> with a <strong>${matchScore}%</strong> confidence score.</p>
         
         <h2 style="color: #00FF88; font-size: 14px; margin-top: 24px;">NEXT STEPS</h2>
         <ol style="line-height: 1.8;">
@@ -100,8 +107,8 @@ export async function sendClaimEmails(params: {
 
         <h2 style="color: #00FF88; font-size: 14px; margin-top: 24px;">FINDER'S CONTACT</h2>
         <p>
-          Name: <strong>${agentReporterName}</strong><br/>
-          Email: <a href="mailto:${agentReporterEmail}" style="color: #FFCC00;">${agentReporterEmail}</a>
+          Name: <strong>${safeAgentReporterName}</strong><br/>
+          Email: <a href="mailto:${safeAgentReporterEmail}" style="color: #FFCC00;">${safeAgentReporterEmail}</a>
         </p>
 
         <p style="margin-top: 24px;">
@@ -120,14 +127,14 @@ export async function sendClaimEmails(params: {
   // Email to the found reporter (agent reporter)
   const agentEmailPromise = sendEmail({
     to: agentReporterEmail,
-    subject: `🎯 Someone is claiming the pet you found — ${petName}!`,
+    subject: `🎯 Someone is claiming the pet you found — ${safePetName}!`,
     html: `
       <div style="font-family: monospace; background: #0A0A0F; color: #E6E6E6; padding: 32px; max-width: 600px;">
         <h1 style="color: #FFCC00; font-size: 18px; text-transform: uppercase; letter-spacing: 2px;">
           ⚡ CLAIM ALERT
         </h1>
-        <p>Hello, <strong>${agentReporterName}</strong>!</p>
-        <p>The owner of <strong style="color: #FFCC00;">${petName}</strong> has claimed the pet you spotted. The match has a <strong>${matchScore}%</strong> confidence score.</p>
+        <p>Hello, <strong>${safeAgentReporterName}</strong>!</p>
+        <p>The owner of <strong style="color: #FFCC00;">${safePetName}</strong> has claimed the pet you spotted. The match has a <strong>${matchScore}%</strong> confidence score.</p>
         
         <h2 style="color: #00FF88; font-size: 14px; margin-top: 24px;">NEXT STEPS</h2>
         <ol style="line-height: 1.8;">
@@ -138,8 +145,8 @@ export async function sendClaimEmails(params: {
 
         <h2 style="color: #00FF88; font-size: 14px; margin-top: 24px;">OWNER'S CONTACT</h2>
         <p>
-          Name: <strong>${overlordOwnerName}</strong><br/>
-          Email: <a href="mailto:${overlordOwnerEmail}" style="color: #FFCC00;">${overlordOwnerEmail}</a>
+          Name: <strong>${safeOverlordOwnerName}</strong><br/>
+          Email: <a href="mailto:${safeOverlordOwnerEmail}" style="color: #FFCC00;">${safeOverlordOwnerEmail}</a>
         </p>
 
         <p style="margin-top: 24px;">
@@ -219,18 +226,23 @@ export async function sendClaimReminderEmail(params: {
   matchId: string;
 }): Promise<void> {
   const { email, displayName, petName, matchId } = params;
+  
+  // Escape all user-controlled inputs to prevent HTML injection
+  const safeDisplayName = escapeHtml(displayName);
+  const safePetName = escapeHtml(petName);
+  
   const matchUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://meowtrix.io"}/matches/${matchId}`;
 
   await sendEmail({
     to: email,
-    subject: `⏰ Reminder: Update claim status for ${petName}`,
+    subject: `⏰ Reminder: Update claim status for ${safePetName}`,
     html: `
       <div style="font-family: monospace; background: #0A0A0F; color: #E6E6E6; padding: 32px; max-width: 600px;">
         <h1 style="color: #FFCC00; font-size: 18px; text-transform: uppercase; letter-spacing: 2px;">
           ⏰ CLAIM REMINDER
         </h1>
-        <p>Hello, <strong>${displayName}</strong>!</p>
-        <p>It's been 24 hours since a claim was made for <strong style="color: #FFCC00;">${petName}</strong>, but no status update has been recorded.</p>
+        <p>Hello, <strong>${safeDisplayName}</strong>!</p>
+        <p>It's been 24 hours since a claim was made for <strong style="color: #FFCC00;">${safePetName}</strong>, but no status update has been recorded.</p>
         
         <p>Please update the match status:</p>
         <ul style="line-height: 1.8;">
@@ -343,7 +355,7 @@ export async function sendConfirmationEmail(params: {
 }
 
 /** Minimal HTML-escape for interpolated user content in email templates. */
-function escapeHtml(input: string): string {
+export function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
