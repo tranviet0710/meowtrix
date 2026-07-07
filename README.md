@@ -73,7 +73,7 @@ Copy the template and fill in your keys (see [Section 3](#-3-configuration) for 
 cp .env.example .env.local
 ```
 
-At a minimum, fill in `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `GEMINI_API_KEY`.
+At a minimum, fill in `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` and `GEMINI_API_KEY`.
 
 ### Step 3 — Push the database schema
 
