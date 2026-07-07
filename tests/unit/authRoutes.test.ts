@@ -739,7 +739,7 @@ describe('POST /api/auth/resend-confirmation', () => {
       error: null,
     });
 
-    vi.mocked(sendConfirmationEmail).mockResolvedValue(undefined);
+    vi.mocked(sendConfirmationEmail).mockResolvedValue({ id: null });
 
     const request = createResendRequest({ email: 'unconfirmed@meowtrix.com' });
     const response = await resendConfirmationHandler(request as any);
@@ -830,7 +830,7 @@ describe('POST /api/auth/resend-confirmation', () => {
       error: null,
     });
 
-    vi.mocked(sendConfirmationEmail).mockResolvedValue(undefined);
+    vi.mocked(sendConfirmationEmail).mockResolvedValue({ id: null });
 
     const unconfirmedRequest = createResendRequest({ email: 'unconfirmed@meowtrix.com' });
     const unconfirmedResponse = await resendConfirmationHandler(unconfirmedRequest as any);
@@ -992,7 +992,7 @@ describe('POST /api/auth/resend-confirmation', () => {
       error: null,
     });
 
-    vi.mocked(sendConfirmationEmail).mockResolvedValue(undefined);
+    vi.mocked(sendConfirmationEmail).mockResolvedValue({ id: null });
 
     // Send with mixed case
     const request = createResendRequest({ email: 'TeSt@MeOwTrIx.CoM' });
