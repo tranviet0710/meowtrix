@@ -296,7 +296,7 @@ describe('Registration API - Account Enumeration Protection', () => {
     vi.resetModules();
   });
 
-  it('returns HTTP 201 with success response when registration succeeds', async () => {
+  it('returns HTTP 200 with success response when registration succeeds', async () => {
     // Mock successful registration
     mockServiceClient.auth.admin.generateLink.mockResolvedValue({
       data: {
@@ -323,13 +323,14 @@ describe('Registration API - Account Enumeration Protection', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.user).toBeDefined();
-    expect(data.user.email).toBe('newuser@example.com');
+    expect(data.message).toBe('If your email can be registered, you will receive a confirmation link shortly.');
+    // User object should NOT be exposed to prevent enumeration
+    expect(data.user).toBeUndefined();
   });
 
-  it('returns HTTP 201 with success response when email already exists (enumeration protection)', async () => {
+  it('returns HTTP 200 with success response when email already exists (enumeration protection)', async () => {
     // Mock duplicate email error from Supabase
     mockServiceClient.auth.admin.generateLink.mockResolvedValue({
       data: null,
@@ -353,11 +354,11 @@ describe('Registration API - Account Enumeration Protection', () => {
     const data = await response.json();
 
     // Should return success to prevent enumeration
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.user).toBeDefined();
-    expect(data.user.id).toBe('enumeration-protection');
-    expect(data.user.email).toBe('existing@example.com');
+    expect(data.message).toBe('If your email can be registered, you will receive a confirmation link shortly.');
+    // User object should NOT be exposed
+    expect(data.user).toBeUndefined();
   });
 
   it('returns identical response structure for new and existing emails', async () => {
@@ -413,26 +414,27 @@ describe('Registration API - Account Enumeration Protection', () => {
     const existingUserResponse = await POST(existingUserRequest);
     const existingUserData = await existingUserResponse.json();
 
-    // Both should return 201 status
-    expect(newUserResponse.status).toBe(201);
-    expect(existingUserResponse.status).toBe(201);
+    // Both should return 200 status
+    expect(newUserResponse.status).toBe(200);
+    expect(existingUserResponse.status).toBe(200);
 
     // Both should have success: true
     expect(newUserData.success).toBe(true);
     expect(existingUserData.success).toBe(true);
 
-    // Both should have user object with id and email
-    expect(newUserData.user).toBeDefined();
-    expect(newUserData.user.id).toBeDefined();
-    expect(newUserData.user.email).toBeDefined();
-    
-    expect(existingUserData.user).toBeDefined();
-    expect(existingUserData.user.id).toBeDefined();
-    expect(existingUserData.user.email).toBeDefined();
+    // Both should have the same message
+    expect(newUserData.message).toBe('If your email can be registered, you will receive a confirmation link shortly.');
+    expect(existingUserData.message).toBe('If your email can be registered, you will receive a confirmation link shortly.');
+
+    // Neither should expose user object
+    expect(newUserData.user).toBeUndefined();
+    expect(existingUserData.user).toBeUndefined();
 
     // Response structure should be identical (same keys)
     expect(Object.keys(newUserData).sort()).toEqual(Object.keys(existingUserData).sort());
-    expect(Object.keys(newUserData.user).sort()).toEqual(Object.keys(existingUserData.user).sort());
+    
+    // Responses should be byte-for-byte identical
+    expect(JSON.stringify(newUserData)).toBe(JSON.stringify(existingUserData));
   });
 
   it('does NOT return HTTP 409 for duplicate email (prevents enumeration)', async () => {
@@ -458,8 +460,8 @@ describe('Registration API - Account Enumeration Protection', () => {
 
     // Should NOT return 409 Conflict
     expect(response.status).not.toBe(409);
-    // Should return 201 Created instead
-    expect(response.status).toBe(201);
+    // Should return 200 OK instead
+    expect(response.status).toBe(200);
   });
 
   it('does NOT return "Email already in use" error message (prevents enumeration)', async () => {
