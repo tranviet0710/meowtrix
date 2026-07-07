@@ -355,7 +355,7 @@ export async function sendConfirmationEmail(params: {
 }
 
 /** Minimal HTML-escape for interpolated user content in email templates. */
-function escapeHtml(input: string): string {
+export function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
