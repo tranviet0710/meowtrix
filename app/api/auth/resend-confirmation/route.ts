@@ -9,10 +9,34 @@ const bodySchema = z.object({
   email: z.string().email("Invalid email format"),
 });
 
+/**
+ * Ensures the response takes at least MIN_RESPONSE_TIME_MS to prevent
+ * timing-based side-channel attacks that could reveal account existence.
+ */
+async function ensureMinimumResponseTime(
+  startTime: number,
+  response: NextResponse
+): Promise<NextResponse> {
+  const elapsed = Date.now() - startTime;
+  const remaining = MIN_RESPONSE_TIME_MS - elapsed;
+  
+  if (remaining > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remaining));
+  }
+  
+  return response;
+}
+
 /** How many users to page through when searching by email. */
 const USER_SEARCH_PER_PAGE = 200;
 /** Max pages to scan before giving up (defensive cap). */
 const USER_SEARCH_MAX_PAGES = 10;
+/**
+ * Minimum response time in milliseconds to prevent timing side-channel attacks.
+ * This ensures all responses take at least this long, making it harder to
+ * distinguish between existing unconfirmed accounts and other cases.
+ */
+const MIN_RESPONSE_TIME_MS = 1000;
 
 /**
  * POST /api/auth/resend-confirmation
@@ -24,9 +48,12 @@ const USER_SEARCH_MAX_PAGES = 10;
  * cat-themed template.
  *
  * Returns the same generic success response whether or not the email exists
- * to avoid leaking account existence.
+ * to avoid leaking account existence. Enforces a minimum response time to
+ * prevent timing-based enumeration attacks.
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     const body = await request.json().catch(() => ({}));
     const parsed = bodySchema.safeParse(body);
@@ -76,8 +103,8 @@ export async function POST(request: NextRequest) {
         "If an unconfirmed account exists for this email, a new activation link is on its way.",
     });
 
-    if (!user) return genericResponse;
-    if (user.email_confirmed_at) return genericResponse; // already confirmed
+    if (!user) return ensureMinimumResponseTime(startTime, genericResponse);
+    if (user.email_confirmed_at) return ensureMinimumResponseTime(startTime, genericResponse); // already confirmed
 
     const appUrl =
       process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
@@ -97,7 +124,7 @@ export async function POST(request: NextRequest) {
       // Always return the generic response, even for rate limit errors,
       // to prevent leaking account existence/confirmation status through
       // observable response differences.
-      return genericResponse;
+      return ensureMinimumResponseTime(startTime, genericResponse);
     }
 
     const displayName =
@@ -118,7 +145,7 @@ export async function POST(request: NextRequest) {
       console.error("[ResendConfirmation] sendConfirmationEmail failed:", mailErr);
     }
 
-    return genericResponse;
+    return ensureMinimumResponseTime(startTime, genericResponse);
   } catch (error) {
     console.error("[ResendConfirmation] Unexpected error:", error);
     return NextResponse.json(

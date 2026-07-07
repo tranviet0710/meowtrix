@@ -556,4 +556,287 @@ describe('POST /api/auth/resend-confirmation', () => {
       );
     });
   });
+
+  describe('Security: Timing side-channel mitigation', () => {
+    /**
+     * CRITICAL SECURITY TEST: Verify that the endpoint enforces a minimum response
+     * time to prevent timing-based enumeration attacks.
+     * 
+     * The vulnerability: An attacker could measure response times to distinguish
+     * between different account states:
+     * - Non-existent accounts: Fast response (no generateLink call)
+     * - Confirmed accounts: Fast response (no generateLink call)
+     * - Unconfirmed accounts: Slower response (generateLink call + email send)
+     * 
+     * The mitigation: All responses are delayed to take at least MIN_RESPONSE_TIME_MS
+     * (1000ms), making timing analysis ineffective.
+     */
+    
+    it('enforces minimum response time for non-existent account (fast path)', async () => {
+      mockListUsers.mockResolvedValue({
+        data: { users: [] },
+        error: null,
+      });
+
+      const startTime = Date.now();
+      const request = createRequest({ email: 'nonexistent@example.com' });
+      const response = await resendConfirmationHandler(request as any);
+      const elapsed = Date.now() - startTime;
+      const json = await response.json();
+
+      // SECURITY ASSERTION: Response must take at least 1000ms
+      // Allow 5ms tolerance for timing precision
+      expect(elapsed).toBeGreaterThanOrEqual(995);
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+    });
+
+    it('enforces minimum response time for confirmed account (fast path)', async () => {
+      mockListUsers.mockResolvedValue({
+        data: {
+          users: [
+            {
+              id: 'user-confirmed-timing',
+              email: 'confirmed@example.com',
+              email_confirmed_at: '2024-01-01T00:00:00Z',
+              user_metadata: {},
+            },
+          ],
+        },
+        error: null,
+      });
+
+      const startTime = Date.now();
+      const request = createRequest({ email: 'confirmed@example.com' });
+      const response = await resendConfirmationHandler(request as any);
+      const elapsed = Date.now() - startTime;
+      const json = await response.json();
+
+      // SECURITY ASSERTION: Response must take at least 1000ms
+      // Allow 5ms tolerance for timing precision
+      expect(elapsed).toBeGreaterThanOrEqual(995);
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+    });
+
+    it('enforces minimum response time for unconfirmed account with rate limit error', async () => {
+      mockListUsers.mockResolvedValue({
+        data: {
+          users: [
+            {
+              id: 'user-unconfirmed-timing',
+              email: 'unconfirmed@example.com',
+              email_confirmed_at: null,
+              user_metadata: {},
+            },
+          ],
+        },
+        error: null,
+      });
+
+      mockGenerateLink.mockResolvedValue({
+        data: null,
+        error: { status: 429, message: 'Rate limit exceeded' },
+      });
+
+      const startTime = Date.now();
+      const request = createRequest({ email: 'unconfirmed@example.com' });
+      const response = await resendConfirmationHandler(request as any);
+      const elapsed = Date.now() - startTime;
+      const json = await response.json();
+
+      // SECURITY ASSERTION: Response must take at least 1000ms
+      // Allow 5ms tolerance for timing precision
+      expect(elapsed).toBeGreaterThanOrEqual(995);
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+    });
+
+    it('enforces minimum response time for successful unconfirmed account flow', async () => {
+      mockListUsers.mockResolvedValue({
+        data: {
+          users: [
+            {
+              id: 'user-success-timing',
+              email: 'success@example.com',
+              email_confirmed_at: null,
+              user_metadata: { display_name: 'Test User' },
+            },
+          ],
+        },
+        error: null,
+      });
+
+      mockGenerateLink.mockResolvedValue({
+        data: {
+          properties: {
+            action_link: 'https://example.com/confirm?token=abc123',
+          },
+        },
+        error: null,
+      });
+
+      const startTime = Date.now();
+      const request = createRequest({ email: 'success@example.com' });
+      const response = await resendConfirmationHandler(request as any);
+      const elapsed = Date.now() - startTime;
+      const json = await response.json();
+
+      // SECURITY ASSERTION: Response must take at least 1000ms
+      // Allow 5ms tolerance for timing precision
+      expect(elapsed).toBeGreaterThanOrEqual(995);
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+    });
+
+    it('timing differences between scenarios are minimized to prevent enumeration', async () => {
+      const timings: number[] = [];
+
+      // Measure timing for non-existent account
+      mockListUsers.mockResolvedValue({
+        data: { users: [] },
+        error: null,
+      });
+      let start = Date.now();
+      await resendConfirmationHandler(createRequest({ email: 'nonexistent@example.com' }) as any);
+      timings.push(Date.now() - start);
+
+      // Measure timing for confirmed account
+      mockListUsers.mockResolvedValue({
+        data: {
+          users: [
+            {
+              id: 'user-confirmed',
+              email: 'confirmed@example.com',
+              email_confirmed_at: '2024-01-01T00:00:00Z',
+              user_metadata: {},
+            },
+          ],
+        },
+        error: null,
+      });
+      start = Date.now();
+      await resendConfirmationHandler(createRequest({ email: 'confirmed@example.com' }) as any);
+      timings.push(Date.now() - start);
+
+      // Measure timing for unconfirmed account with rate limit
+      mockListUsers.mockResolvedValue({
+        data: {
+          users: [
+            {
+              id: 'user-unconfirmed',
+              email: 'unconfirmed@example.com',
+              email_confirmed_at: null,
+              user_metadata: {},
+            },
+          ],
+        },
+        error: null,
+      });
+      mockGenerateLink.mockResolvedValue({
+        data: null,
+        error: { status: 429, message: 'Rate limit exceeded' },
+      });
+      start = Date.now();
+      await resendConfirmationHandler(createRequest({ email: 'unconfirmed@example.com' }) as any);
+      timings.push(Date.now() - start);
+
+      // SECURITY ASSERTION: All timings should be close to 1000ms
+      // Allow 5ms tolerance for timing precision
+      for (const timing of timings) {
+        expect(timing).toBeGreaterThanOrEqual(995);
+        expect(timing).toBeLessThan(1200); // Should not be significantly longer
+      }
+
+      // Verify timing variance is minimal (all should cluster around 1000ms)
+      const maxTiming = Math.max(...timings);
+      const minTiming = Math.min(...timings);
+      const variance = maxTiming - minTiming;
+      
+      // Variance should be small (< 200ms) to prevent timing-based enumeration
+      expect(variance).toBeLessThan(200);
+    });
+  });
+
+  describe('Security: Combined exploit scenario verification', () => {
+    /**
+     * This test simulates the exact attack scenario from the pentest finding:
+     * An attacker repeatedly probes an email address and observes response
+     * characteristics to determine if it's an unconfirmed account.
+     * 
+     * The test verifies that:
+     * 1. Rate limit errors no longer return 429 status
+     * 2. Response timing is consistent across all scenarios
+     * 3. Response structure is identical for all scenarios
+     */
+    it('prevents account enumeration via repeated probing with rate limit observation', async () => {
+      const probeResults: Array<{ status: number; timing: number; body: any }> = [];
+
+      // Simulate attacker probing a non-existent email
+      mockListUsers.mockResolvedValue({
+        data: { users: [] },
+        error: null,
+      });
+      let start = Date.now();
+      let response = await resendConfirmationHandler(
+        createRequest({ email: 'probe-nonexistent@example.com' }) as any
+      );
+      probeResults.push({
+        status: response.status,
+        timing: Date.now() - start,
+        body: await response.json(),
+      });
+
+      // Simulate attacker probing an unconfirmed email that hits rate limit
+      mockListUsers.mockResolvedValue({
+        data: {
+          users: [
+            {
+              id: 'user-probe-unconfirmed',
+              email: 'probe-unconfirmed@example.com',
+              email_confirmed_at: null,
+              user_metadata: {},
+            },
+          ],
+        },
+        error: null,
+      });
+      mockGenerateLink.mockResolvedValue({
+        data: null,
+        error: { status: 429, code: 'over_email_send_rate_limit', message: 'Rate limit exceeded' },
+      });
+      start = Date.now();
+      response = await resendConfirmationHandler(
+        createRequest({ email: 'probe-unconfirmed@example.com' }) as any
+      );
+      probeResults.push({
+        status: response.status,
+        timing: Date.now() - start,
+        body: await response.json(),
+      });
+
+      // SECURITY ASSERTIONS: Attacker cannot distinguish between scenarios
+      
+      // 1. Both return 200, not 429
+      expect(probeResults[0].status).toBe(200);
+      expect(probeResults[1].status).toBe(200);
+      
+      // 2. Both have identical response structure
+      expect(probeResults[0].body).toEqual(probeResults[1].body);
+      expect(probeResults[0].body.success).toBe(true);
+      expect(probeResults[0].body.message).toContain('If an unconfirmed account exists');
+      
+      // 3. No rate limit information leaked in response
+      expect(JSON.stringify(probeResults[1].body)).not.toContain('rate limit');
+      expect(JSON.stringify(probeResults[1].body)).not.toContain('Too many');
+      expect(JSON.stringify(probeResults[1].body)).not.toContain('429');
+      
+      // 4. Timing is consistent (both >= 1000ms, variance < 200ms)
+      // Allow 5ms tolerance for timing precision
+      expect(probeResults[0].timing).toBeGreaterThanOrEqual(995);
+      expect(probeResults[1].timing).toBeGreaterThanOrEqual(995);
+      const timingVariance = Math.abs(probeResults[0].timing - probeResults[1].timing);
+      expect(timingVariance).toBeLessThan(200);
+    });
+  });
 });
