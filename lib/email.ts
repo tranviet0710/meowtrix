@@ -76,10 +76,10 @@ export async function sendClaimEmails(params: {
 }): Promise<ClaimEmailSendResult[]> {
   const { overlordOwnerEmail, overlordOwnerName, agentReporterEmail, agentReporterName, petName, matchId, matchScore } = params;
 
-  // Escape all user-controlled content to prevent HTML injection
-  const safePetName = escapeHtml(petName);
+  // Escape all user-controlled inputs to prevent HTML injection
   const safeOverlordOwnerName = escapeHtml(overlordOwnerName);
   const safeAgentReporterName = escapeHtml(agentReporterName);
+  const safePetName = escapeHtml(petName);
   const safeOverlordOwnerEmail = escapeHtml(overlordOwnerEmail);
   const safeAgentReporterEmail = escapeHtml(agentReporterEmail);
 
@@ -227,7 +227,7 @@ export async function sendClaimReminderEmail(params: {
 }): Promise<void> {
   const { email, displayName, petName, matchId } = params;
   
-  // Escape all user-controlled content to prevent HTML injection
+  // Escape all user-controlled inputs to prevent HTML injection
   const safeDisplayName = escapeHtml(displayName);
   const safePetName = escapeHtml(petName);
   
