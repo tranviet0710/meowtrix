@@ -81,9 +81,19 @@ export async function POST(request: NextRequest) {
         msg.includes('user already exists') ||
         linkError?.status === 422
       ) {
+        // To prevent account enumeration, return the same success response
+        // as if registration succeeded. The user will see "check your email"
+        // but no email will be sent (or optionally, send a security notification).
+        console.warn('[Register] Attempted registration with existing email:', email);
         return NextResponse.json(
-          { success: false, error: 'Email already in use' },
-          { status: 409 }
+          {
+            success: true,
+            user: {
+              id: 'enumeration-protection',
+              email: email,
+            },
+          },
+          { status: 201 }
         );
       }
 

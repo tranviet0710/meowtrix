@@ -357,12 +357,48 @@ export function buildValidatedImageUrl(imageUrl: string): string {
 
 /**
  * Fetches an image from a URL and returns its base64 data and MIME type.
+ * Manually handles redirects to prevent SSRF via redirect-based bypass.
  */
 async function fetchImageAsBase64(
   imageUrl: string
 ): Promise<{ base64: string; mimeType: string }> {
   const validatedUrl = buildValidatedImageUrl(imageUrl);
-  const response = await fetch(validatedUrl);
+  
+  // Disable automatic redirect following to prevent SSRF via redirect bypass
+  const response = await fetch(validatedUrl, { redirect: 'manual' });
+  
+  // Handle redirects manually with revalidation
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get('location');
+    if (!location) {
+      throw new Error('Redirect response missing Location header');
+    }
+    
+    // Resolve relative redirects against the original URL
+    const redirectUrl = new URL(location, validatedUrl).href;
+    
+    // Revalidate the redirect target against the same security checks
+    const validatedRedirectUrl = buildValidatedImageUrl(redirectUrl);
+    
+    // Follow the redirect (only one level to prevent redirect chains)
+    const redirectResponse = await fetch(validatedRedirectUrl, { redirect: 'manual' });
+    
+    // Reject further redirects
+    if (redirectResponse.status >= 300 && redirectResponse.status < 400) {
+      throw new Error('Multiple redirects not allowed');
+    }
+    
+    if (!redirectResponse.ok) {
+      throw new Error(`Failed to fetch image: ${redirectResponse.status} ${redirectResponse.statusText}`);
+    }
+    
+    const contentType = redirectResponse.headers.get("content-type") || "image/jpeg";
+    const buffer = await redirectResponse.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    
+    return { base64, mimeType: contentType };
+  }
+  
   if (!response.ok) {
     throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
   }
