@@ -1,5 +1,4 @@
-// tests/unit/visionProcess.test.ts - Unit tests for vision processing API route
-// Tests verify the authorization and ownership checks for vision processing
+// tests/unit/visionProcess.test.ts — Unit tests for vision processing API route authorization and ownership checks
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
