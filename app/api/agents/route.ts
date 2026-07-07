@@ -6,6 +6,7 @@ import { agentFormSchema } from "@/lib/validators";
 import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
 import { reverseGeocode } from "@/lib/geocoding";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -94,8 +95,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !agent) {
+      const sanitizedError = sanitizeDatabaseError(insertError, "create Agent", "[Agent POST]");
       return NextResponse.json(
-        { error: `Failed to create Agent: ${insertError?.message ?? "Unknown error"}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -253,8 +255,9 @@ export async function GET(request: NextRequest) {
     const { data: agents, error: fetchError } = await query;
 
     if (fetchError) {
+      const sanitizedError = sanitizeDatabaseError(fetchError, "fetch Agents", "[Agent GET]");
       return NextResponse.json(
-        { error: `Failed to fetch Agents: ${fetchError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

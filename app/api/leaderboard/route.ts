@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 const PAGE_SIZE = 50;
 
@@ -68,8 +69,9 @@ export async function GET(request: NextRequest) {
       .gt("total_points", 0);
 
     if (countError) {
+      const sanitizedError = sanitizeDatabaseError(countError, "fetch leaderboard count", "[Leaderboard GET]");
       return NextResponse.json(
-        { error: `Failed to fetch leaderboard count: ${countError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -85,8 +87,9 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + PAGE_SIZE - 1);
 
     if (fetchError) {
+      const sanitizedError = sanitizeDatabaseError(fetchError, "fetch leaderboard", "[Leaderboard GET]");
       return NextResponse.json(
-        { error: `Failed to fetch leaderboard: ${fetchError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

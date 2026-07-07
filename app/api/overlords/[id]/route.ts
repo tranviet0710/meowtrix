@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { executeResolutionFlow } from "@/lib/resolutionFlow";
 import { stripVerificationFields } from "@/lib/stripVerificationFields";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 /**
  * GET /api/overlords/[id]
@@ -196,8 +197,9 @@ export async function PATCH(
       .single();
 
     if (updateError || !updatedOverlord) {
+      const sanitizedError = sanitizeDatabaseError(updateError, "update Overlord", "[Overlord PATCH]");
       return NextResponse.json(
-        { error: `Failed to update Overlord: ${updateError?.message ?? "Unknown error"}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -283,8 +285,9 @@ export async function DELETE(
       .eq("id", id);
 
     if (deleteError) {
+      const sanitizedError = sanitizeDatabaseError(deleteError, "delete Overlord", "[Overlord DELETE]");
       return NextResponse.json(
-        { error: `Failed to delete Overlord: ${deleteError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -76,8 +77,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           { status: 404 }
         );
       }
+      const sanitizedError = sanitizeDatabaseError(matchError, "fetch match", "[Match GET]");
       return NextResponse.json(
-        { error: `Failed to fetch match: ${matchError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

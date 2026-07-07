@@ -6,6 +6,7 @@ import { overlordFormSchema } from "@/lib/validators";
 import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
 import { reverseGeocode } from "@/lib/geocoding";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 import { Connection, Client } from "@temporalio/client";
 import {
   getClientConnectionOptions,
@@ -160,8 +161,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !overlord) {
+      const sanitizedError = sanitizeDatabaseError(insertError, "create Overlord", "[Overlord POST]");
       return NextResponse.json(
-        { error: `Failed to create Overlord: ${insertError?.message ?? "Unknown error"}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -347,8 +349,9 @@ export async function GET(request: NextRequest) {
     const { data: overlords, error: fetchError } = await query;
 
     if (fetchError) {
+      const sanitizedError = sanitizeDatabaseError(fetchError, "fetch Overlords", "[Overlord GET]");
       return NextResponse.json(
-        { error: `Failed to fetch Overlords: ${fetchError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
