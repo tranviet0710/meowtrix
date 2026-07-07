@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 import type { TaggingStatus } from "@/types";
 
 interface ProcessRequest {
@@ -108,8 +109,9 @@ export async function POST(request: NextRequest) {
       .eq("id", body.record_id);
 
     if (updateError) {
+      const sanitizedError = sanitizeDatabaseError(updateError, "update record", "[Vision POST]");
       return NextResponse.json(
-        { error: `Failed to update record: ${updateError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

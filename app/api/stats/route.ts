@@ -3,6 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 // Ensure this route is always dynamic (never cached at build time)
 export const dynamic = "force-dynamic";
@@ -46,8 +47,9 @@ export async function GET() {
       .select("*", { count: "exact", head: true });
 
     if (totalError) {
+      const sanitizedError = sanitizeDatabaseError(totalError, "fetch total overlords", "[Stats GET]");
       return NextResponse.json(
-        { error: `Failed to fetch total overlords: ${totalError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -59,8 +61,9 @@ export async function GET() {
       .eq("status", "active");
 
     if (activeError) {
+      const sanitizedError = sanitizeDatabaseError(activeError, "fetch active searches", "[Stats GET]");
       return NextResponse.json(
-        { error: `Failed to fetch active searches: ${activeError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

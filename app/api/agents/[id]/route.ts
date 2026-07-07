@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 /**
  * GET /api/agents/[id]
@@ -189,8 +190,9 @@ export async function PATCH(
       .single();
 
     if (updateError || !updatedAgent) {
+      const sanitizedError = sanitizeDatabaseError(updateError, "update Agent", "[Agent PATCH]");
       return NextResponse.json(
-        { error: `Failed to update Agent: ${updateError?.message ?? "Unknown error"}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -260,8 +262,9 @@ export async function DELETE(
       .eq("id", id);
 
     if (deleteError) {
+      const sanitizedError = sanitizeDatabaseError(deleteError, "delete Agent", "[Agent DELETE]");
       return NextResponse.json(
-        { error: `Failed to delete Agent: ${deleteError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

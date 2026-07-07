@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
 import { settingsSchema } from "@/lib/validators";
 import { reverseGeocode } from "@/lib/geocoding";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 /**
  * GET /api/settings
@@ -162,8 +163,9 @@ export async function PATCH(request: NextRequest) {
       .eq("id", user.id);
 
     if (updateError) {
+      const sanitizedError = sanitizeDatabaseError(updateError, "update settings", "[Settings PATCH]");
       return NextResponse.json(
-        { error: `Failed to update settings: ${updateError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
