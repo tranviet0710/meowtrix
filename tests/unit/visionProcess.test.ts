@@ -1,4 +1,4 @@
-// tests/unit/visionProcess.test.ts — Unit tests for vision processing API route
+// tests/unit/visionProcess.test.ts - Unit tests for vision processing API route
 // Tests verify the authorization and ownership checks for vision processing
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -102,7 +102,7 @@ describe("POST /api/vision/process - Authorization Security", () => {
     const json = await response.json();
 
     expect(response.status).toBe(403);
-    expect(json.error).toBe("Forbidden — you can only process your own records");
+    expect(json.error).toBe("Forbidden - you can only process your own records");
     
     // Verify ownership was checked
     expect(mockServiceFrom).toHaveBeenCalledWith("overlords");
@@ -142,7 +142,7 @@ describe("POST /api/vision/process - Authorization Security", () => {
     const json = await response.json();
 
     expect(response.status).toBe(403);
-    expect(json.error).toBe("Forbidden — you can only process your own records");
+    expect(json.error).toBe("Forbidden - you can only process your own records");
     
     // Verify ownership was checked with correct field for agents
     expect(mockServiceFrom).toHaveBeenCalledWith("agents");
@@ -346,7 +346,7 @@ describe("POST /api/vision/process - Authorization Security", () => {
     const json = await response.json();
 
     expect(response.status).toBe(403);
-    expect(json.error).toBe("Forbidden — you can only process your own records");
+    expect(json.error).toBe("Forbidden - you can only process your own records");
     
     // Critical: match evaluation should never be triggered for unauthorized records
     expect(mockTriggerMatchEvaluation).not.toHaveBeenCalled();
