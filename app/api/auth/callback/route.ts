@@ -1,23 +1,11 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
+import { getSafeRedirectPath } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
-
-function getSafeNextPath(nextParam: string | null): string {
-  if (!nextParam) {
-    return "/dashboard";
-  }
-
-  // Only allow internal absolute paths (e.g. "/matches")
-  if (!nextParam.startsWith("/") || nextParam.startsWith("//")) {
-    return "/dashboard";
-  }
-
-  return nextParam;
-}
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = getSafeNextPath(url.searchParams.get("next"));
+  const next = getSafeRedirectPath(url.searchParams.get("next"));
   const origin = url.origin;
 
   if (!code) {
