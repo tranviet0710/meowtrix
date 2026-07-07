@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
-import { sendClaimEmails, sendEmail, type ClaimEmailSendResult } from "@/lib/email";
+import { sendClaimEmails, sendEmail, escapeHtml, type ClaimEmailSendResult } from "@/lib/email";
 import { Connection, Client, WorkflowExecutionAlreadyStartedError } from "@temporalio/client";
 import {
   getClientConnectionOptions,
@@ -248,14 +248,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
       for (const r of recipients) {
         try {
+          // Escape user-controlled content to prevent HTML injection
+          const safeName = escapeHtml(r.name);
+          const safePetName = escapeHtml(overlord.pet_name);
+          
           const { id } = await sendEmail({
             to: r.email,
-            subject: `🎯 Claim Initiated — ${overlord.pet_name}`,
+            subject: `🎯 Claim Initiated — ${safePetName}`,
             html: `
               <div style="font-family: monospace; background: #0A0A0F; color: #E6E6E6; padding: 32px; max-width: 600px;">
                 <h1 style="color: #FFCC00; font-size: 18px; text-transform: uppercase; letter-spacing: 2px;">⚡ CLAIM INITIATED</h1>
-                <p>Hello, <strong>${r.name}</strong>!</p>
-                <p>A claim has been initiated on the match for <strong style="color: #FFCC00;">${overlord.pet_name}</strong>.</p>
+                <p>Hello, <strong>${safeName}</strong>!</p>
+                <p>A claim has been initiated on the match for <strong style="color: #FFCC00;">${safePetName}</strong>.</p>
                 <p style="color: #FF4444;">The other party's contact information is currently unavailable. Please coordinate via the match page until this is resolved.</p>
                 <p style="margin-top: 24px;">
                   <a href="${matchUrl}" style="display: inline-block; background: #FFCC00; color: #0A0A0F; padding: 12px 24px; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">View Match Details</a>
