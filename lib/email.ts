@@ -76,10 +76,10 @@ export async function sendClaimEmails(params: {
 }): Promise<ClaimEmailSendResult[]> {
   const { overlordOwnerEmail, overlordOwnerName, agentReporterEmail, agentReporterName, petName, matchId, matchScore } = params;
 
+  // Escape all user-controlled content to prevent HTML injection
   const safePetName = escapeHtml(petName);
   const safeOverlordOwnerName = escapeHtml(overlordOwnerName);
   const safeAgentReporterName = escapeHtml(agentReporterName);
-  // Escape all user-controlled content to prevent HTML injection
   const safeOverlordOwnerEmail = escapeHtml(overlordOwnerEmail);
   const safeAgentReporterEmail = escapeHtml(agentReporterEmail);
 
