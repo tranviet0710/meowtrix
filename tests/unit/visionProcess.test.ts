@@ -1,5 +1,5 @@
 // tests/unit/visionProcess.test.ts — Unit tests for vision processing API route
-// Tests verify that the authorization bypass vulnerability is mitigated
+// Tests verify the authorization and ownership checks for vision processing
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
