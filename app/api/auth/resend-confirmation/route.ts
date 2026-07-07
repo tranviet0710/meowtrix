@@ -15,6 +15,20 @@ const USER_SEARCH_PER_PAGE = 200;
 const USER_SEARCH_MAX_PAGES = 10;
 
 /**
+ * Minimum time (ms) for any resend-confirmation attempt to prevent timing-based
+ * account enumeration. This ensures that responses for non-existent accounts,
+ * confirmed accounts, and unconfirmed accounts all take approximately the same time.
+ */
+const MIN_RESEND_DURATION_MS = 500;
+
+/**
+ * Sleep for the specified duration in milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * POST /api/auth/resend-confirmation
  *
  * Re-sends the activation link so an Informant can confirm their account.
@@ -27,11 +41,20 @@ const USER_SEARCH_MAX_PAGES = 10;
  * to avoid leaking account existence.
  */
 export async function POST(request: NextRequest) {
+  // Record start time for timing normalization
+  const startTime = Date.now();
+  
   try {
     const body = await request.json().catch(() => ({}));
     const parsed = bodySchema.safeParse(body);
 
     if (!parsed.success) {
+      // Ensure minimum duration before returning to prevent timing attacks
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_RESEND_DURATION_MS) {
+        await sleep(MIN_RESEND_DURATION_MS - elapsed);
+      }
+      
       return NextResponse.json(
         { success: false, error: "A valid email is required." },
         { status: 400 }
@@ -76,8 +99,23 @@ export async function POST(request: NextRequest) {
         "If an unconfirmed account exists for this email, a new activation link is on its way.",
     });
 
-    if (!user) return genericResponse;
-    if (user.email_confirmed_at) return genericResponse; // already confirmed
+    // If user doesn't exist or is already confirmed, we still need to ensure
+    // minimum duration to prevent timing-based enumeration
+    if (!user) {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_RESEND_DURATION_MS) {
+        await sleep(MIN_RESEND_DURATION_MS - elapsed);
+      }
+      return genericResponse;
+    }
+    
+    if (user.email_confirmed_at) {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_RESEND_DURATION_MS) {
+        await sleep(MIN_RESEND_DURATION_MS - elapsed);
+      }
+      return genericResponse; // already confirmed
+    }
 
     const appUrl =
       process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
@@ -97,6 +135,11 @@ export async function POST(request: NextRequest) {
       // Always return the generic response, even for rate limit errors,
       // to prevent leaking account existence/confirmation status through
       // observable response differences.
+      // Ensure minimum duration before returning to prevent timing attacks
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_RESEND_DURATION_MS) {
+        await sleep(MIN_RESEND_DURATION_MS - elapsed);
+      }
       return genericResponse;
     }
 
@@ -118,9 +161,23 @@ export async function POST(request: NextRequest) {
       console.error("[ResendConfirmation] sendConfirmationEmail failed:", mailErr);
     }
 
+    // Ensure minimum duration before returning to prevent timing attacks
+    // This normalizes response time across all code paths
+    const elapsed = Date.now() - startTime;
+    if (elapsed < MIN_RESEND_DURATION_MS) {
+      await sleep(MIN_RESEND_DURATION_MS - elapsed);
+    }
+
     return genericResponse;
   } catch (error) {
     console.error("[ResendConfirmation] Unexpected error:", error);
+    
+    // Ensure minimum duration before returning to prevent timing attacks
+    const elapsed = Date.now() - startTime;
+    if (elapsed < MIN_RESEND_DURATION_MS) {
+      await sleep(MIN_RESEND_DURATION_MS - elapsed);
+    }
+    
     return NextResponse.json(
       { success: false, error: "An unexpected error occurred." },
       { status: 500 }

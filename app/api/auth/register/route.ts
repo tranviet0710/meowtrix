@@ -4,6 +4,20 @@ import { registrationSchema } from '@/lib/validators';
 import { sendConfirmationEmail } from '@/lib/email';
 
 /**
+ * Minimum time (ms) for any registration attempt to prevent timing-based
+ * account enumeration. This ensures that responses for new accounts and
+ * existing accounts take approximately the same time.
+ */
+const MIN_REGISTER_DURATION_MS = 500;
+
+/**
+ * Sleep for the specified duration in milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * POST /api/auth/register
  *
  * Registers a new Informant with email/password using the Supabase Admin API
@@ -18,6 +32,9 @@ import { sendConfirmationEmail } from '@/lib/email';
  * Response: { success: true, user: { id, email } } or { success: false, error }
  */
 export async function POST(request: NextRequest) {
+  // Record start time for timing normalization
+  const startTime = Date.now();
+  
   try {
     const body = await request.json();
 
@@ -25,6 +42,13 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       const firstError = parsed.error.issues[0]?.message ?? 'Invalid input';
       console.error('[Register] Validation failed:', JSON.stringify(parsed.error.issues, null, 2));
+      
+      // Ensure minimum duration before returning to prevent timing attacks
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_REGISTER_DURATION_MS) {
+        await sleep(MIN_REGISTER_DURATION_MS - elapsed);
+      }
+      
       return NextResponse.json(
         { success: false, error: firstError },
         { status: 400 }
@@ -69,6 +93,12 @@ export async function POST(request: NextRequest) {
         linkError?.code === 'over_email_send_rate_limit' ||
         msg.includes('rate limit')
       ) {
+        // Ensure minimum duration before returning to prevent timing attacks
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MIN_REGISTER_DURATION_MS) {
+          await sleep(MIN_REGISTER_DURATION_MS - elapsed);
+        }
+        
         return NextResponse.json(
           { success: false, error: 'Too many sign-up attempts. Please wait a few minutes and try again.' },
           { status: 429 }
@@ -85,6 +115,13 @@ export async function POST(request: NextRequest) {
         // as if registration succeeded. The user will see "check your email"
         // but no email will be sent (or optionally, send a security notification).
         console.warn('[Register] Attempted registration with existing email:', email);
+        
+        // Ensure minimum duration before returning to prevent timing attacks
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MIN_REGISTER_DURATION_MS) {
+          await sleep(MIN_REGISTER_DURATION_MS - elapsed);
+        }
+        
         return NextResponse.json(
           {
             success: true,
@@ -95,6 +132,12 @@ export async function POST(request: NextRequest) {
           },
           { status: 201 }
         );
+      }
+
+      // Ensure minimum duration before returning to prevent timing attacks
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_REGISTER_DURATION_MS) {
+        await sleep(MIN_REGISTER_DURATION_MS - elapsed);
       }
 
       return NextResponse.json(
@@ -126,6 +169,13 @@ export async function POST(request: NextRequest) {
 
     if (insertError && insertError.code !== '23505') {
       console.error('[Register] Failed to create informant row:', insertError.message);
+      
+      // Ensure minimum duration before returning to prevent timing attacks
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_REGISTER_DURATION_MS) {
+        await sleep(MIN_REGISTER_DURATION_MS - elapsed);
+      }
+      
       return NextResponse.json(
         { success: false, error: 'Registration partially failed. Please try again.' },
         { status: 500 }
@@ -149,6 +199,13 @@ export async function POST(request: NextRequest) {
       console.warn('[Register] No action_link returned from generateLink; skipping email send');
     }
 
+    // Ensure minimum duration before returning to prevent timing attacks
+    // This normalizes response time between new and existing accounts
+    const elapsed = Date.now() - startTime;
+    if (elapsed < MIN_REGISTER_DURATION_MS) {
+      await sleep(MIN_REGISTER_DURATION_MS - elapsed);
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -161,6 +218,13 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('[Register] Unexpected error:', error);
+    
+    // Ensure minimum duration before returning to prevent timing attacks
+    const elapsed = Date.now() - startTime;
+    if (elapsed < MIN_REGISTER_DURATION_MS) {
+      await sleep(MIN_REGISTER_DURATION_MS - elapsed);
+    }
+    
     return NextResponse.json(
       { success: false, error: 'An unexpected error occurred' },
       { status: 500 }
