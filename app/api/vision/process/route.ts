@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceRoleClient } from "@/lib/supabaseServer";
+import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
 import type { TaggingStatus } from "@/types";
@@ -29,8 +29,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createServiceRoleClient();
+    // Authenticate the user
+    const authClient = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Verify ownership of the record before processing
     const table = body.record_type === "overlord" ? "overlords" : "agents";
+    const ownershipField = body.record_type === "overlord" ? "owner_id" : "reporter_id";
+
+    const { data: record, error: fetchError } = await authClient
+      .from(table)
+      .select(`id, ${ownershipField}`)
+      .eq("id", body.record_id)
+      .single();
+
+    if (fetchError || !record) {
+      return NextResponse.json(
+        { error: "Record not found" },
+        { status: 404 }
+      );
+    }
+
+    // Verify the authenticated user owns this record
+    if (record[ownershipField] !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden — you can only process your own records" },
+        { status: 403 }
+      );
+    }
+
+    // Now use service role client for the actual processing
+    const supabase = await createServiceRoleClient();
 
     let taggingStatus: TaggingStatus;
     let traitTags = null;
