@@ -123,9 +123,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    // Log the actual error server-side for debugging
+    console.error("Match detail fetch error:", error);
     return NextResponse.json(
-      { error: `Failed to fetch match detail: ${message}` },
+      { error: "Failed to fetch match detail" },
       { status: 500 }
     );
   }

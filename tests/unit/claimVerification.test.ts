@@ -16,11 +16,19 @@ describe("verifyAnswer", () => {
   it("returns true for exact case-insensitive match", () => {
     expect(verifyAnswer("Whiskers", "whiskers")).toBe(true);
     expect(verifyAnswer("whiskers", "WHISKERS")).toBe(true);
+    expect(verifyAnswer("White spot on left ear", "White spot on left ear")).toBe(true);
   });
 
-  it("returns true for valid substring match", () => {
-    expect(verifyAnswer("White spot on left ear", "white spot")).toBe(true);
-    expect(verifyAnswer("loves to chase laser pointers", "chase laser")).toBe(true);
+  it("returns true for exact match with whitespace normalization", () => {
+    expect(verifyAnswer("  Whiskers  ", "Whiskers")).toBe(true);
+    expect(verifyAnswer("Whiskers", "  whiskers  ")).toBe(true);
+    expect(verifyAnswer("  White spot  ", "  white spot  ")).toBe(true);
+  });
+
+  it("returns false for substring matches (not exact)", () => {
+    expect(verifyAnswer("White spot on left ear", "white spot")).toBe(false);
+    expect(verifyAnswer("loves to chase laser pointers", "chase laser")).toBe(false);
+    expect(verifyAnswer("Whiskers", "Whi")).toBe(false);
   });
 
   it("returns false for answer shorter than minimum length", () => {
@@ -30,18 +38,18 @@ describe("verifyAnswer", () => {
   });
 
   it("returns true for answer exactly at minimum length", () => {
-    expect(verifyAnswer("Whiskers", "Whi")).toBe(true);
     expect(verifyAnswer("Cat", "cat")).toBe(true);
+    expect(verifyAnswer("Dog", "DOG")).toBe(true);
   });
 
-  it("returns false when submitted is not a substring of stored", () => {
+  it("returns false when submitted does not match stored", () => {
     expect(verifyAnswer("Whiskers", "Fluffy")).toBe(false);
     expect(verifyAnswer("black spots", "white marks")).toBe(false);
   });
 
   it("performs case-insensitive comparison", () => {
-    expect(verifyAnswer("FLUFFY TAIL", "fluffy")).toBe(true);
-    expect(verifyAnswer("fluffy tail", "FLUFFY")).toBe(true);
+    expect(verifyAnswer("FLUFFY TAIL", "fluffy tail")).toBe(true);
+    expect(verifyAnswer("fluffy tail", "FLUFFY TAIL")).toBe(true);
   });
 });
 
@@ -52,27 +60,36 @@ describe("verifyClaimAnswers", () => {
     trait: "Loves belly rubs",
   };
 
-  it("returns 3 when all answers are correct", () => {
+  it("returns 3 when all answers are correct (exact match)", () => {
     const result = verifyClaimAnswers(stored, {
-      name: "whiskers",
-      marking: "white star",
-      trait: "belly rubs",
+      name: "Mr. Whiskers",
+      marking: "White star on forehead",
+      trait: "Loves belly rubs",
+    });
+    expect(result).toBe(3);
+  });
+
+  it("returns 3 when all answers are correct (case-insensitive)", () => {
+    const result = verifyClaimAnswers(stored, {
+      name: "mr. whiskers",
+      marking: "white star on forehead",
+      trait: "loves belly rubs",
     });
     expect(result).toBe(3);
   });
 
   it("returns 2 when 2 out of 3 are correct", () => {
     const result = verifyClaimAnswers(stored, {
-      name: "whiskers",
+      name: "Mr. Whiskers",
       marking: "wrong answer here",
-      trait: "belly rubs",
+      trait: "Loves belly rubs",
     });
     expect(result).toBe(2);
   });
 
   it("returns 1 when only 1 is correct", () => {
     const result = verifyClaimAnswers(stored, {
-      name: "whiskers",
+      name: "mr. whiskers",
       marking: "wrong answer",
       trait: "wrong trait",
     });
@@ -93,6 +110,15 @@ describe("verifyClaimAnswers", () => {
       name: "ab",
       marking: "xy",
       trait: "z",
+    });
+    expect(result).toBe(0);
+  });
+
+  it("returns 0 when answers are substrings (not exact matches)", () => {
+    const result = verifyClaimAnswers(stored, {
+      name: "Whiskers",  // Missing "Mr. "
+      marking: "White star",  // Missing " on forehead"
+      trait: "belly rubs",  // Missing "Loves "
     });
     expect(result).toBe(0);
   });

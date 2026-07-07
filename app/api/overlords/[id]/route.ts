@@ -149,10 +149,15 @@ export async function PATCH(
 
       // Trigger Vision Service for new photos (fire-and-forget)
       const baseUrl = request.nextUrl.origin;
+      const cookieHeader = request.headers.get("cookie");
       for (const photoUrl of body.photos as string[]) {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (cookieHeader) {
+          headers["Cookie"] = cookieHeader;
+        }
         fetch(`${baseUrl}/api/vision/process`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             record_id: id,
             record_type: "overlord",
@@ -206,7 +211,38 @@ export async function PATCH(
 
     // If status changed to resolved, trigger the resolution flow
     if (body.status === "resolved") {
-      const resolvedAgentId = body.resolved_agent_id ?? null;
+      let resolvedAgentId: string | null = null;
+
+      // If a resolved_agent_id is provided, validate it corresponds to a match
+      // for this overlord to prevent unauthorized resolution of arbitrary agents
+      if (body.resolved_agent_id) {
+        const { data: matchRecord, error: matchError } = await serviceClient
+          .from("match_suggestions")
+          .select("agent_id")
+          .eq("overlord_id", id)
+          .eq("agent_id", body.resolved_agent_id)
+          .maybeSingle();
+
+        if (matchError) {
+          console.error(
+            `[Overlord PATCH] Failed to validate resolved_agent_id for ${id}: ${matchError.message}`
+          );
+          return NextResponse.json(
+            { error: "Failed to validate resolved agent" },
+            { status: 500 }
+          );
+        }
+
+        if (!matchRecord) {
+          return NextResponse.json(
+            { error: "Invalid resolved_agent_id: no match exists between this Overlord and the specified Agent" },
+            { status: 400 }
+          );
+        }
+
+        resolvedAgentId = body.resolved_agent_id;
+      }
+
       try {
         await executeResolutionFlow(serviceClient, id, resolvedAgentId);
       } catch (resolutionError) {

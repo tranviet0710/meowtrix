@@ -68,14 +68,9 @@ export async function GET() {
       );
     }
 
-    // Update the current user's last_active_at timestamp
-    const serviceClient = await createServiceRoleClient();
-    await serviceClient
-      .from("informants")
-      .update({ last_active_at: new Date().toISOString() })
-      .eq("id", user.id);
-
     // Fetch informants online (active within last 5 minutes)
+    // Note: User presence updates are handled by POST /api/presence to prevent CSRF
+    const serviceClient = await createServiceRoleClient();
     // Use Supabase's server-side time calculation to avoid client/server clock skew
     const { data: rpcResult, error: onlineError } = await serviceClient
       .rpc("count_online_informants", { minutes_ago: 5 });
