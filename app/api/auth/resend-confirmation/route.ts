@@ -94,22 +94,9 @@ export async function POST(request: NextRequest) {
     if (linkError || !linkData?.properties?.action_link) {
       console.error("[ResendConfirmation] generateLink error:", linkError);
 
-      if (
-        linkError?.status === 429 ||
-        linkError?.code === "over_email_send_rate_limit" ||
-        linkError?.message?.toLowerCase().includes("rate limit")
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Too many requests. Please wait a few minutes before trying again.",
-          },
-          { status: 429 }
-        );
-      }
-
-      // Keep the generic response so we don't leak that the account exists.
+      // Always return the generic response, even for rate limit errors,
+      // to prevent leaking account existence/confirmation status through
+      // observable response differences.
       return genericResponse;
     }
 
