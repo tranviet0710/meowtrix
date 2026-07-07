@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceRoleClient } from "@/lib/supabaseServer";
+import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { extractTraitsFromImage } from "@/lib/gemini";
 import { triggerMatchEvaluation } from "@/lib/matchTrigger";
 import type { TaggingStatus } from "@/types";
@@ -29,8 +29,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createServiceRoleClient();
+    // Authenticate the user
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify ownership before processing
     const table = body.record_type === "overlord" ? "overlords" : "agents";
+    const ownershipField = body.record_type === "overlord" ? "owner_id" : "reporter_id";
+
+    const serviceClient = await createServiceRoleClient();
+    const { data: record, error: fetchError } = await serviceClient
+      .from(table)
+      .select(`id, ${ownershipField}`)
+      .eq("id", body.record_id)
+      .single();
+
+    if (fetchError || !record) {
+      return NextResponse.json(
+        { error: "Record not found" },
+        { status: 404 }
+      );
+    }
+
+    // Authorization check: only the owner/reporter can process their own record
+    if (record[ownershipField] !== user.id) {
+      return NextResponse.json(
+        { error: "Forbidden — you can only process your own records" },
+        { status: 403 }
+      );
+    }
 
     let taggingStatus: TaggingStatus;
     let traitTags = null;
@@ -63,7 +97,7 @@ export async function POST(request: NextRequest) {
       updateData.trait_tags = traitTags;
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceClient
       .from(table)
       .update(updateData)
       .eq("id", body.record_id);
@@ -78,7 +112,7 @@ export async function POST(request: NextRequest) {
     // Trigger match evaluation when tagging is complete
     if (taggingStatus === "complete" && traitTags) {
       try {
-        await triggerMatchEvaluation(supabase, body.record_id, body.record_type);
+        await triggerMatchEvaluation(serviceClient, body.record_id, body.record_type);
       } catch (matchError) {
         // Match evaluation failure should not fail the vision processing response
         // It will be retried when the record is re-evaluated
