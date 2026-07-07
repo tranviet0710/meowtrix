@@ -30,26 +30,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Authenticate the user
-<<<<<<< HEAD
-    const authClient = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await authClient.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Verify ownership of the record before processing
-    const table = body.record_type === "overlord" ? "overlords" : "agents";
-    const ownershipField = body.record_type === "overlord" ? "owner_id" : "reporter_id";
-
-    const { data: record, error: fetchError } = await authClient
-=======
     const supabase = await createClient();
     const {
       data: { user },
@@ -66,7 +46,6 @@ export async function POST(request: NextRequest) {
 
     const serviceClient = await createServiceRoleClient();
     const { data: record, error: fetchError } = await serviceClient
->>>>>>> origin/main
       .from(table)
       .select(`id, ${ownershipField}`)
       .eq("id", body.record_id)
@@ -79,18 +58,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-<<<<<<< HEAD
-    // Verify the authenticated user owns this record
-    if (record[ownershipField] !== user.id) {
-      return NextResponse.json(
-        { error: "Forbidden — you can only process your own records" },
-        { status: 403 }
-      );
-    }
-
-    // Now use service role client for the actual processing
-    const supabase = await createServiceRoleClient();
-=======
     // Authorization check: only the owner/reporter can process their own record
     const isAuthorized =
       ownershipField === "owner_id"
@@ -103,7 +70,6 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
->>>>>>> origin/main
 
     let taggingStatus: TaggingStatus;
     let traitTags = null;
