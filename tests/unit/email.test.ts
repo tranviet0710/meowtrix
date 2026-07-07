@@ -1,6 +1,6 @@
 // tests/unit/email.test.ts — Unit tests for email HTML injection mitigation
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { sendClaimEmails, sendClaimReminderEmail, escapeHtml } from "@/lib/email";
 
 // Create a mock send function that we can spy on
