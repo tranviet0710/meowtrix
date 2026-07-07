@@ -247,12 +247,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       for (const r of recipients) {
-        try {
-          // Escape user-controlled content to prevent HTML injection
-          const safeName = escapeHtml(r.name);
-          const safePetName = escapeHtml(overlord.pet_name);
+      try {
+        // Escape user-controlled content to prevent HTML injection
+        const safePetName = escapeHtml(overlord.pet_name);
+        const safeName = escapeHtml(r.name);
           
-          const { id } = await sendEmail({
+        const { id } = await sendEmail({
             to: r.email,
             subject: `🎯 Claim Initiated — ${safePetName}`,
             html: `

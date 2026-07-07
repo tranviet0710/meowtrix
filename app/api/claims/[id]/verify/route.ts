@@ -176,8 +176,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Update the claim with answers and result
     if (verified) {
-      // Mark claim as verified
-      await serviceClient
+      // Mark claim as verified using atomic compare-and-swap to prevent race conditions
+      // Only update if the claim is still in "pending" status
+      const { data: updatedClaim, error: updateError } = await serviceClient
         .from("claims")
         .update({
           answer_name,
@@ -186,7 +187,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           correct_count: correctCount,
           status: "verified",
         })
-        .eq("id", claimId);
+        .eq("id", claimId)
+        .eq("status", "pending")  // Atomic guard: only update if still pending
+        .select()
+        .single();
+
+      // If no rows were updated, another request already verified this claim
+      if (updateError || !updatedClaim) {
+        return NextResponse.json(
+          {
+            error: "Cannot verify: Claim has already been processed",
+            status: "conflict",
+          },
+          { status: 409 }
+        );
+      }
 
       // Update match suggestion status to resolved
       await serviceClient
@@ -217,6 +232,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       // Award 10 points to the Agent reporter
+      // This code only executes if we successfully won the atomic compare-and-swap above
       if (agent) {
         // Try RPC first, fall back to manual update
         const { error: rpcError } = await serviceClient.rpc(
@@ -277,10 +293,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         updateData.locked_until = calculateLockoutExpiry();
       }
 
-      await serviceClient
+      // Use atomic compare-and-swap to prevent race conditions on failed attempts
+      const { data: updatedClaim, error: updateError } = await serviceClient
         .from("claims")
         .update(updateData)
-        .eq("id", claimId);
+        .eq("id", claimId)
+        .eq("status", "pending")  // Atomic guard: only update if still pending
+        .select()
+        .single();
+
+      // If no rows were updated, another request already processed this claim
+      if (updateError || !updatedClaim) {
+        return NextResponse.json(
+          {
+            error: "Cannot verify: Claim has already been processed",
+            status: "conflict",
+          },
+          { status: 409 }
+        );
+      }
 
       // Notify the claimant about failed verification
       await serviceClient.from("notifications").insert({

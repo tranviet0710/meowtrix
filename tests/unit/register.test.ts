@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registrationSchema } from '@/lib/validators';
+import { NextRequest } from 'next/server';
 
 // Mock the Supabase modules before importing the route
 vi.mock('@/lib/supabaseServer', () => ({
@@ -16,6 +17,11 @@ vi.mock('next/headers', () => ({
     getAll: () => [],
     set: vi.fn(),
   })),
+}));
+
+// Mock the email module to prevent actual email sends during tests
+vi.mock('@/lib/email', () => ({
+  sendConfirmationEmail: vi.fn().mockResolvedValue({ id: 'mock-email-id' }),
 }));
 
 describe('Registration API - Input Validation', () => {
@@ -256,5 +262,389 @@ describe('Location Consent Validation', () => {
     };
     const result = locationConsentSchema.safeParse(input);
     expect(result.success).toBe(true);
+  });
+});
+
+describe('Registration API - Account Enumeration Protection', () => {
+  let mockServiceClient: any;
+  let POST: any;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    
+    // Setup mock service client
+    mockServiceClient = {
+      auth: {
+        admin: {
+          generateLink: vi.fn(),
+        },
+      },
+      from: vi.fn(() => ({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      })),
+    };
+
+    const { createServiceRoleClient } = await import('@/lib/supabaseServer');
+    vi.mocked(createServiceRoleClient).mockResolvedValue(mockServiceClient);
+
+    // Import the route handler after mocks are set up
+    const routeModule = await import('@/app/api/auth/register/route');
+    POST = routeModule.POST;
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+  });
+
+  it('returns HTTP 201 with success response when registration succeeds', async () => {
+    // Mock successful registration
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: {
+        user: {
+          id: 'new-user-id',
+          email: 'newuser@example.com',
+        },
+        properties: {
+          action_link: 'https://example.com/confirm',
+        },
+      },
+      error: null,
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'newuser@example.com',
+        password: 'securepass123',
+        display_name: 'NewUser',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.user).toBeDefined();
+    expect(data.user.email).toBe('newuser@example.com');
+  });
+
+  it('returns HTTP 201 with success response when email already exists (enumeration protection)', async () => {
+    // Mock duplicate email error from Supabase
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'User already registered',
+        status: 422,
+        code: 'user_already_exists',
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    // Should return success to prevent enumeration
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.user).toBeDefined();
+    expect(data.user.id).toBe('enumeration-protection');
+    expect(data.user.email).toBe('existing@example.com');
+  });
+
+  it('returns identical response structure for new and existing emails', async () => {
+    // Test with new email
+    mockServiceClient.auth.admin.generateLink.mockResolvedValueOnce({
+      data: {
+        user: {
+          id: 'new-user-id',
+          email: 'newuser@example.com',
+        },
+        properties: {
+          action_link: 'https://example.com/confirm',
+        },
+      },
+      error: null,
+    });
+
+    const newUserRequest = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'newuser@example.com',
+        password: 'securepass123',
+        display_name: 'NewUser',
+      }),
+    });
+
+    const newUserResponse = await POST(newUserRequest);
+    const newUserData = await newUserResponse.json();
+
+    // Reset modules to get fresh handler
+    vi.resetModules();
+    const routeModule = await import('@/app/api/auth/register/route');
+    POST = routeModule.POST;
+
+    // Test with existing email
+    mockServiceClient.auth.admin.generateLink.mockResolvedValueOnce({
+      data: null,
+      error: {
+        message: 'User already registered',
+        status: 422,
+      },
+    });
+
+    const existingUserRequest = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    const existingUserResponse = await POST(existingUserRequest);
+    const existingUserData = await existingUserResponse.json();
+
+    // Both should return 201 status
+    expect(newUserResponse.status).toBe(201);
+    expect(existingUserResponse.status).toBe(201);
+
+    // Both should have success: true
+    expect(newUserData.success).toBe(true);
+    expect(existingUserData.success).toBe(true);
+
+    // Both should have user object with id and email
+    expect(newUserData.user).toBeDefined();
+    expect(newUserData.user.id).toBeDefined();
+    expect(newUserData.user.email).toBeDefined();
+    
+    expect(existingUserData.user).toBeDefined();
+    expect(existingUserData.user.id).toBeDefined();
+    expect(existingUserData.user.email).toBeDefined();
+
+    // Response structure should be identical (same keys)
+    expect(Object.keys(newUserData).sort()).toEqual(Object.keys(existingUserData).sort());
+    expect(Object.keys(newUserData.user).sort()).toEqual(Object.keys(existingUserData.user).sort());
+  });
+
+  it('does NOT return HTTP 409 for duplicate email (prevents enumeration)', async () => {
+    // Mock duplicate email error
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'User already registered',
+        status: 422,
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    const response = await POST(request);
+
+    // Should NOT return 409 Conflict
+    expect(response.status).not.toBe(409);
+    // Should return 201 Created instead
+    expect(response.status).toBe(201);
+  });
+
+  it('does NOT return "Email already in use" error message (prevents enumeration)', async () => {
+    // Mock duplicate email error
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'User already registered',
+        status: 422,
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    // Should NOT contain error message revealing account existence
+    expect(data.error).toBeUndefined();
+    expect(JSON.stringify(data).toLowerCase()).not.toContain('already in use');
+    expect(JSON.stringify(data).toLowerCase()).not.toContain('already registered');
+    expect(JSON.stringify(data).toLowerCase()).not.toContain('already exists');
+  });
+
+  it('handles "already been registered" error message variant', async () => {
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Email has already been registered',
+        status: 422,
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.user.id).toBe('enumeration-protection');
+  });
+
+  it('handles "user already exists" error message variant', async () => {
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'User already exists',
+        status: 422,
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.user.id).toBe('enumeration-protection');
+  });
+
+  it('handles status 422 without specific message', async () => {
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Unprocessable entity',
+        status: 422,
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.user.id).toBe('enumeration-protection');
+  });
+
+  it('returns different error for rate limiting (not enumeration)', async () => {
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Rate limit exceeded',
+        status: 429,
+        code: 'over_email_send_rate_limit',
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'test@example.com',
+        password: 'securepass123',
+        display_name: 'TestUser',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    // Rate limiting should return 429, not 201
+    expect(response.status).toBe(429);
+    expect(data.success).toBe(false);
+    expect(data.error).toBeDefined();
+    expect(data.error.toLowerCase()).toContain('wait');
+  });
+
+  it('returns different error for validation failures (not enumeration)', async () => {
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'invalid-email',
+        password: 'short',
+        display_name: 'Test',
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    // Validation errors should return 400, not 201
+    expect(response.status).toBe(400);
+    expect(data.success).toBe(false);
+    expect(data.error).toBeDefined();
+  });
+
+  it('logs warning when duplicate email is detected', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    mockServiceClient.auth.admin.generateLink.mockResolvedValue({
+      data: null,
+      error: {
+        message: 'User already registered',
+        status: 422,
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'existing@example.com',
+        password: 'securepass123',
+        display_name: 'ExistingUser',
+      }),
+    });
+
+    await POST(request);
+
+    // Should log a warning for security monitoring
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[Register] Attempted registration with existing email:'),
+      'existing@example.com'
+    );
+
+    consoleWarnSpy.mockRestore();
   });
 });

@@ -1,42 +1,26 @@
 /**
- * Property-based tests for claim verification substring matching.
+ * Property-based tests for claim verification exact matching.
  *
  * **Validates: Requirements 9.2**
  *
  * Tests that the verifyAnswer function correctly:
- * 1. Any submitted answer that is a substring (≥3 chars) of the stored value returns true
+ * 1. Exact matches (≥3 chars, case-insensitive, trimmed) return true
  * 2. Any submitted answer shorter than 3 characters always returns false
  * 3. Verification is case-insensitive
- * 4. Exact match (≥3 chars) always passes
- * 5. Random text not contained in stored returns false
+ * 4. Whitespace is normalized (trimmed) before comparison
+ * 5. Non-exact matches return false (substring matches are rejected)
  */
 import { describe, it } from "vitest";
 import * as fc from "fast-check";
 import { verifyAnswer } from "@/lib/claimVerification";
 
-describe("Property 12: Claim verification substring matching", () => {
-  it("any submitted answer that is a substring (≥3 chars) of the stored value returns true", () => {
+describe("Property 12: Claim verification exact matching", () => {
+  it("exact match (≥3 chars) always passes", () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 3, maxLength: 200 }),
-        fc.nat({ max: 50 }),
-        fc.nat({ max: 50 }),
-        (stored, prefixLen, suffixLen) => {
-          // Ensure stored is at least 3 chars
-          if (stored.length < 3) return true; // skip trivial cases
-
-          // Pick a valid substring of at least 3 chars
-          const maxStart = Math.max(0, stored.length - 3);
-          const start = prefixLen % (maxStart + 1);
-          const minEnd = start + 3;
-          const maxEnd = stored.length;
-          if (minEnd > maxEnd) return true; // skip if can't get 3 chars
-          const end = minEnd + (suffixLen % (maxEnd - minEnd + 1));
-          const substring = stored.slice(start, end);
-
-          if (substring.length < 3) return true; // safety check
-
-          return verifyAnswer(stored, substring) === true;
+        (value) => {
+          return verifyAnswer(value, value) === true;
         }
       ),
       { numRuns: 500 }
@@ -63,42 +47,64 @@ describe("Property 12: Claim verification substring matching", () => {
         (stored) => {
           if (stored.length < 3) return true;
 
-          // Take a substring of at least 3 chars
-          const substring = stored.slice(0, Math.max(3, stored.length));
+          // Verify that upper/lower case variations of the same string all pass
+          const resultLower = verifyAnswer(stored, stored.toLowerCase());
+          const resultUpper = verifyAnswer(stored, stored.toUpperCase());
+          const resultOriginal = verifyAnswer(stored, stored);
 
-          // Verify that upper/lower case variations produce same result
-          const resultLower = verifyAnswer(stored, substring.toLowerCase());
-          const resultUpper = verifyAnswer(stored, substring.toUpperCase());
-          const resultOriginal = verifyAnswer(stored, substring);
-
-          return resultLower === resultUpper && resultUpper === resultOriginal;
+          return resultLower === true && resultUpper === true && resultOriginal === true;
         }
       ),
       { numRuns: 500 }
     );
   });
 
-  it("exact match (≥3 chars) always passes", () => {
+  it("whitespace is normalized (trimmed) before comparison", () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 3, maxLength: 200 }),
         (value) => {
-          return verifyAnswer(value, value) === true;
+          // Add leading/trailing whitespace to both stored and submitted
+          const withWhitespace = `  ${value}  `;
+          return verifyAnswer(withWhitespace, value) === true &&
+                 verifyAnswer(value, withWhitespace) === true &&
+                 verifyAnswer(withWhitespace, withWhitespace) === true;
         }
       ),
       { numRuns: 500 }
     );
   });
 
-  it("random text not contained in stored returns false", () => {
+  it("substring matches are rejected (not exact match)", () => {
+    fc.assert(
+      fc.property(
+        fc.string({ minLength: 6, maxLength: 200 }),
+        (stored) => {
+          // Take a proper substring (not the full string)
+          const substringLength = Math.floor(stored.length / 2);
+          if (substringLength < 3) return true; // skip if can't make valid substring
+          
+          const substring = stored.slice(0, substringLength);
+          if (substring.length < 3) return true; // safety check
+          if (substring === stored.trim()) return true; // skip if accidentally equal
+
+          // Substring should NOT pass verification
+          return verifyAnswer(stored, substring) === false;
+        }
+      ),
+      { numRuns: 500 }
+    );
+  });
+
+  it("random non-matching text returns false", () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 3, maxLength: 100 }),
         fc.string({ minLength: 3, maxLength: 100 }),
         (stored, submitted) => {
-          // Only assert when submitted is genuinely not a substring of stored
-          if (stored.toLowerCase().includes(submitted.toLowerCase())) {
-            return true; // skip — this case is covered by property 1
+          // Only assert when submitted is genuinely different from stored (after normalization)
+          if (stored.trim().toLowerCase() === submitted.trim().toLowerCase()) {
+            return true; // skip — this is an exact match
           }
           return verifyAnswer(stored, submitted) === false;
         }
