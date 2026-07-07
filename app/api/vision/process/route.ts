@@ -59,7 +59,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Authorization check: only the owner/reporter can process their own record
-    if (record[ownershipField] !== user.id) {
+    const recordOwnerId = "owner_id" in record ? record.owner_id : record.reporter_id;
+
+    if (recordOwnerId !== user.id) {
       return NextResponse.json(
         { error: "Forbidden — you can only process your own records" },
         { status: 403 }
