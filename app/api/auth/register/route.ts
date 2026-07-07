@@ -29,7 +29,11 @@ function sleep(ms: number): Promise<void> {
  *   3. Lets us insert the corresponding `informants` row synchronously.
  *
  * Request body: { email, password, display_name }
- * Response: { success: true, user: { id, email } } or { success: false, error }
+ * Response: { success: true, message: string } or { success: false, error: string }
+ *
+ * Security: To prevent account enumeration, all successful registration attempts
+ * (including duplicate emails) return an identical response. Detailed outcomes
+ * are logged server-side only.
  */
 export async function POST(request: NextRequest) {
   // Record start time for timing normalization
@@ -111,9 +115,9 @@ export async function POST(request: NextRequest) {
         msg.includes('user already exists') ||
         linkError?.status === 422
       ) {
-        // To prevent account enumeration, return the same success response
-        // as if registration succeeded. The user will see "check your email"
-        // but no email will be sent (or optionally, send a security notification).
+        // To prevent account enumeration, return an indistinguishable success response.
+        // The user will see "check your email" but no email will be sent.
+        // Detailed outcome is logged server-side only.
         console.warn('[Register] Attempted registration with existing email:', email);
         
         // Ensure minimum duration before returning to prevent timing attacks
@@ -125,12 +129,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: true,
-            user: {
-              id: 'enumeration-protection',
-              email: email,
-            },
+            message: 'If your email can be registered, you will receive a confirmation link shortly.',
           },
-          { status: 201 }
+          { status: 200 }
         );
       }
 
@@ -192,6 +193,7 @@ export async function POST(request: NextRequest) {
           actionLink,
           variant: 'signup',
         });
+        console.log('[Register] Confirmation email sent successfully to:', user.email);
       } catch (mailErr) {
         console.error('[Register] sendConfirmationEmail failed:', mailErr);
       }
@@ -199,22 +201,21 @@ export async function POST(request: NextRequest) {
       console.warn('[Register] No action_link returned from generateLink; skipping email send');
     }
 
-    // Ensure minimum duration before returning to prevent timing attacks
-    // This normalizes response time between new and existing accounts
+    // Return an indistinguishable response that matches the duplicate-email case.
+    // This prevents account enumeration by making all successful registration
+    // attempts look identical to the client.
+    // Ensure minimum duration before returning to prevent timing attacks and
+    // normalize response time between new and existing accounts.
     const elapsed = Date.now() - startTime;
     if (elapsed < MIN_REGISTER_DURATION_MS) {
       await sleep(MIN_REGISTER_DURATION_MS - elapsed);
     }
-
     return NextResponse.json(
       {
         success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-        },
+        message: 'If your email can be registered, you will receive a confirmation link shortly.',
       },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
     console.error('[Register] Unexpected error:', error);

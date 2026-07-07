@@ -265,8 +265,8 @@ describe('POST /api/auth/register - Timing Attack Mitigation', () => {
     const response = await registerHandler(request as any);
     const elapsed = Date.now() - startTime;
     
-    // Should return 201 (success) to prevent enumeration
-    expect(response.status).toBe(201);
+    // Should return generic success to prevent enumeration
+    expect(response.status).toBe(200);
     expect(elapsed).toBeGreaterThanOrEqual(500); // MIN_REGISTER_DURATION_MS
   });
 
