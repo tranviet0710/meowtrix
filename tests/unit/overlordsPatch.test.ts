@@ -85,7 +85,7 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
     });
   });
 
-  describe("resolved_agent_id validation - Security Fix", () => {
+  describe("resolved_agent_id parameter - Security Fix", () => {
     beforeEach(() => {
       // Setup default mocks for a valid owner updating their overlord
       const mockFetchOverlord = vi.fn().mockResolvedValue({
@@ -121,45 +121,8 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       });
     });
 
-    it("rejects resolved_agent_id when no match exists between overlord and agent", async () => {
-      // Mock match validation query - no match found
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: null, // No match record found
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      mockSelect.mockReturnValue({ eq: mockEqOverlordId });
-
-      const request = createPatchRequest(
-        { status: "resolved", resolved_agent_id: invalidAgentId },
-        overlordId
-      );
-      const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
-      const json = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(json.error).toContain("Invalid resolved_agent_id");
-      expect(json.error).toContain("no match exists");
-      
-      // Verify match validation was attempted
-      expect(mockEqOverlordId).toHaveBeenCalledWith("overlord_id", overlordId);
-      expect(mockEqAgentId).toHaveBeenCalledWith("agent_id", invalidAgentId);
-      
-      // Verify resolution flow was NOT called
-      expect(executeResolutionFlow).not.toHaveBeenCalled();
-    });
-
-    it("accepts resolved_agent_id when a valid match exists", async () => {
-      // Mock match validation query - match found
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: { agent_id: validAgentId }, // Match record exists
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      mockSelect.mockReturnValue({ eq: mockEqOverlordId });
-
+    it("ignores resolved_agent_id parameter and always calls resolution flow with null", async () => {
+      // Even if client sends resolved_agent_id, it should be ignored
       const request = createPatchRequest(
         { status: "resolved", resolved_agent_id: validAgentId },
         overlordId
@@ -170,19 +133,15 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       expect(response.status).toBe(200);
       expect(json.overlord).toBeDefined();
       
-      // Verify match validation was performed
-      expect(mockEqOverlordId).toHaveBeenCalledWith("overlord_id", overlordId);
-      expect(mockEqAgentId).toHaveBeenCalledWith("agent_id", validAgentId);
-      
-      // Verify resolution flow was called with the validated agent ID
+      // Critical: resolution flow should ALWAYS be called with null, never with the client-supplied agent ID
       expect(executeResolutionFlow).toHaveBeenCalledWith(
         expect.anything(),
         overlordId,
-        validAgentId
+        null
       );
     });
 
-    it("allows resolution without resolved_agent_id (null case)", async () => {
+    it("allows resolution without resolved_agent_id parameter", async () => {
       const request = createPatchRequest({ status: "resolved" }, overlordId);
       const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
       const json = await response.json();
@@ -198,28 +157,25 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       );
     });
 
-    it("returns 500 when match validation query fails", async () => {
-      // Mock database error during match validation
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: null,
-        error: { message: "Database connection error" },
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      mockSelect.mockReturnValue({ eq: mockEqOverlordId });
-
+    it("does not perform any match validation queries when resolved_agent_id is supplied", async () => {
+      // The endpoint should not even attempt to validate resolved_agent_id
       const request = createPatchRequest(
-        { status: "resolved", resolved_agent_id: validAgentId },
+        { status: "resolved", resolved_agent_id: invalidAgentId },
         overlordId
       );
       const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
-      const json = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(json.error).toContain("Failed to validate resolved agent");
+      expect(response.status).toBe(200);
       
-      // Verify resolution flow was NOT called
-      expect(executeResolutionFlow).not.toHaveBeenCalled();
+      // Verify no match validation queries were made
+      expect(mockSelect).not.toHaveBeenCalled();
+      
+      // Resolution flow should be called with null
+      expect(executeResolutionFlow).toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        null
+      );
     });
   });
 
@@ -256,18 +212,10 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       });
     });
 
-    it("prevents overlord owner from resolving arbitrary agent IDs not matched to their overlord", async () => {
+    it("prevents overlord owner from resolving arbitrary agent IDs via PATCH endpoint", async () => {
       const arbitraryAgentId = "agent-arbitrary-unrelated-123";
       
-      // Mock: no match exists for this arbitrary agent
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      mockSelect.mockReturnValue({ eq: mockEqOverlordId });
-
+      // Attacker tries to supply an arbitrary agent ID
       const request = createPatchRequest(
         { status: "resolved", resolved_agent_id: arbitraryAgentId },
         overlordId
@@ -275,77 +223,73 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
       const json = await response.json();
 
-      // Should be rejected with 400
-      expect(response.status).toBe(400);
-      expect(json.error).toContain("Invalid resolved_agent_id");
+      // Request succeeds but the agent ID is ignored
+      expect(response.status).toBe(200);
       
-      // Verify the validation checked for a match
-      expect(mockEqOverlordId).toHaveBeenCalledWith("overlord_id", overlordId);
-      expect(mockEqAgentId).toHaveBeenCalledWith("agent_id", arbitraryAgentId);
-      
-      // Critical: resolution flow should NOT be executed
-      expect(executeResolutionFlow).not.toHaveBeenCalled();
-    });
-
-    it("prevents overlord owner from resolving agent IDs from another user's matches", async () => {
-      const otherUsersAgentId = "agent-from-different-match-456";
-      
-      // Mock: no match exists between THIS overlord and the other agent
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: null, // No match for this overlord-agent pair
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      mockSelect.mockReturnValue({ eq: mockEqOverlordId });
-
-      const request = createPatchRequest(
-        { status: "resolved", resolved_agent_id: otherUsersAgentId },
-        overlordId
+      // Critical: resolution flow should be called with null, NOT the attacker-supplied agent ID
+      expect(executeResolutionFlow).toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        null
       );
-      const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
-      const json = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(json.error).toContain("Invalid resolved_agent_id");
-      expect(json.error).toContain("no match exists");
       
-      // Verify resolution flow was NOT called with unauthorized agent
-      expect(executeResolutionFlow).not.toHaveBeenCalled();
+      // Verify it was NOT called with the arbitrary agent ID
+      expect(executeResolutionFlow).not.toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        arbitraryAgentId
+      );
     });
 
-    it("only allows resolution with agent IDs that have a match_suggestions record linking them", async () => {
-      const matchedAgentId = "agent-properly-matched-789";
+    it("prevents overlord owner from resolving matched agent IDs via PATCH endpoint", async () => {
+      const matchedAgentId = "agent-from-match-456";
       
-      // Mock: match exists in match_suggestions table
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: { agent_id: matchedAgentId },
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      mockSelect.mockReturnValue({ eq: mockEqOverlordId });
-
+      // Attacker tries to supply a matched agent ID (from match APIs)
       const request = createPatchRequest(
         { status: "resolved", resolved_agent_id: matchedAgentId },
         overlordId
       );
       const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
-      const json = await response.json();
 
+      // Request succeeds but the agent ID is ignored
       expect(response.status).toBe(200);
       
-      // Verify the match was validated via match_suggestions table
-      expect(mockSelect).toHaveBeenCalledWith("agent_id");
-      expect(mockEqOverlordId).toHaveBeenCalledWith("overlord_id", overlordId);
-      expect(mockEqAgentId).toHaveBeenCalledWith("agent_id", matchedAgentId);
-      
-      // Resolution flow should be called with the validated agent
+      // Critical: resolution flow should be called with null, NOT the matched agent ID
       expect(executeResolutionFlow).toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        null
+      );
+      
+      // Verify it was NOT called with the matched agent ID
+      expect(executeResolutionFlow).not.toHaveBeenCalledWith(
         expect.anything(),
         overlordId,
         matchedAgentId
       );
+    });
+
+    it("enforces that agent resolution must go through the proper claim workflow", async () => {
+      // This test documents that PATCH /api/overlords/[id] cannot be used for agent resolution
+      // Agent resolution must go through PATCH /api/matches/[id]/claim with action="resolve"
+      
+      const request = createPatchRequest(
+        { status: "resolved", resolved_agent_id: validAgentId },
+        overlordId
+      );
+      const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
+
+      expect(response.status).toBe(200);
+      
+      // The endpoint always calls executeResolutionFlow with null
+      expect(executeResolutionFlow).toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        null
+      );
+      
+      // This means no agent will be marked as resolved via this endpoint
+      // Agent resolution requires the proper claim workflow at /api/matches/[id]/claim
     });
   });
 
@@ -381,7 +325,7 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       });
     });
 
-    it("handles empty string resolved_agent_id as falsy (no validation needed)", async () => {
+    it("ignores empty string resolved_agent_id (calls resolution flow with null)", async () => {
       const request = createPatchRequest(
         { status: "resolved", resolved_agent_id: "" },
         overlordId
@@ -391,7 +335,6 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
 
       expect(response.status).toBe(200);
       
-      // Empty string is falsy, so no match validation should occur
       // Resolution flow should be called with null
       expect(executeResolutionFlow).toHaveBeenCalledWith(
         expect.anything(),
@@ -400,17 +343,8 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       );
     });
 
-    it("validates resolved_agent_id when explicitly provided as non-empty string", async () => {
+    it("ignores non-empty resolved_agent_id (calls resolution flow with null)", async () => {
       const agentId = "agent-test-123";
-      
-      // Mock: match exists
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: { agent_id: agentId },
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      mockSelect.mockReturnValue({ eq: mockEqOverlordId });
 
       const request = createPatchRequest(
         { status: "resolved", resolved_agent_id: agentId },
@@ -420,9 +354,12 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
 
       expect(response.status).toBe(200);
       
-      // Validation should have occurred
-      expect(mockEqOverlordId).toHaveBeenCalledWith("overlord_id", overlordId);
-      expect(mockEqAgentId).toHaveBeenCalledWith("agent_id", agentId);
+      // Resolution flow should be called with null, not the supplied agent ID
+      expect(executeResolutionFlow).toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        null
+      );
     });
 
     it("returns 400 when overlord is already resolved", async () => {
@@ -448,8 +385,8 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
   });
 
   describe("Security property assertions", () => {
-    it("ensures resolved_agent_id validation uses match_suggestions table as allowlist", async () => {
-      const agentId = "agent-allowlist-test";
+    it("ensures PATCH endpoint never accepts client-supplied agent IDs", async () => {
+      const agentId = "agent-client-supplied";
       
       // Setup mocks
       const mockFetchOverlord = vi.fn().mockResolvedValue({
@@ -468,15 +405,6 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       const mockEqId2 = vi.fn().mockReturnValue({ select: mockSelectAfterUpdate });
       const mockUpdateFn = vi.fn().mockReturnValue({ eq: mockEqId2 });
 
-      // Mock match validation - agent is in allowlist
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: { agent_id: agentId },
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      const mockSelectMatch = vi.fn().mockReturnValue({ eq: mockEqOverlordId });
-
       let fromCallCount = 0;
       mockFrom.mockImplementation((table: string) => {
         if (table === "overlords") {
@@ -486,8 +414,6 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
           } else if (fromCallCount === 2) {
             return { update: mockUpdateFn };
           }
-        } else if (table === "match_suggestions") {
-          return { select: mockSelectMatch };
         }
         return { select: mockSelect };
       });
@@ -500,17 +426,27 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
 
       expect(response.status).toBe(200);
       
-      // Verify allowlist check was performed
-      expect(mockFrom).toHaveBeenCalledWith("match_suggestions");
-      expect(mockSelectMatch).toHaveBeenCalledWith("agent_id");
-      expect(mockEqOverlordId).toHaveBeenCalledWith("overlord_id", overlordId);
-      expect(mockEqAgentId).toHaveBeenCalledWith("agent_id", agentId);
+      // Critical: executeResolutionFlow must ALWAYS be called with null
+      expect(executeResolutionFlow).toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        null
+      );
+      
+      // Verify it was NOT called with the client-supplied agent ID
+      expect(executeResolutionFlow).not.toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        agentId
+      );
     });
 
-    it("ensures validation happens before executeResolutionFlow is called", async () => {
-      const invalidAgent = "agent-not-matched";
+    it("documents that agent resolution requires the claim workflow", async () => {
+      // This test documents the security invariant:
+      // PATCH /api/overlords/[id] can mark an overlord as resolved,
+      // but it CANNOT mark any agent as resolved.
+      // Agent resolution requires PATCH /api/matches/[id]/claim with action="resolve"
       
-      // Setup mocks
       const mockFetchOverlord = vi.fn().mockResolvedValue({
         data: { id: overlordId, owner_id: mockUser.id, status: "active" },
         error: null,
@@ -527,15 +463,6 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
       const mockEqId2 = vi.fn().mockReturnValue({ select: mockSelectAfterUpdate });
       const mockUpdateFn = vi.fn().mockReturnValue({ eq: mockEqId2 });
 
-      // Mock match validation - no match found
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: null,
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      const mockSelectMatch = vi.fn().mockReturnValue({ eq: mockEqOverlordId });
-
       let fromCallCount = 0;
       mockFrom.mockImplementation((table: string) => {
         if (table === "overlords") {
@@ -545,80 +472,27 @@ describe("PATCH /api/overlords/[id] - Security Fix for resolved_agent_id validat
           } else if (fromCallCount === 2) {
             return { update: mockUpdateFn };
           }
-        } else if (table === "match_suggestions") {
-          return { select: mockSelectMatch };
         }
         return { select: mockSelect };
       });
 
-      const request = createPatchRequest(
-        { status: "resolved", resolved_agent_id: invalidAgent },
-        overlordId
-      );
-      const response = await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
-
-      expect(response.status).toBe(400);
-      
-      // Critical: executeResolutionFlow must NOT be called when validation fails
-      expect(executeResolutionFlow).not.toHaveBeenCalled();
-      
-      // Verify validation was attempted
-      expect(mockMaybeSingleResult).toHaveBeenCalled();
-    });
-
-    it("ensures both overlord_id and agent_id are checked in match validation", async () => {
-      const agentId = "agent-double-check";
-      
-      // Setup mocks
-      const mockFetchOverlord = vi.fn().mockResolvedValue({
-        data: { id: overlordId, owner_id: mockUser.id, status: "active" },
-        error: null,
-      });
-      const mockUpdateOverlord = vi.fn().mockResolvedValue({
-        data: { id: overlordId, owner_id: mockUser.id, status: "resolved" },
-        error: null,
-      });
-
-      const mockEqId1 = vi.fn().mockReturnValue({ single: mockFetchOverlord });
-      const mockSelect1 = vi.fn().mockReturnValue({ eq: mockEqId1 });
-
-      const mockSelectAfterUpdate = vi.fn().mockReturnValue({ single: mockUpdateOverlord });
-      const mockEqId2 = vi.fn().mockReturnValue({ select: mockSelectAfterUpdate });
-      const mockUpdateFn = vi.fn().mockReturnValue({ eq: mockEqId2 });
-
-      // Mock match validation
-      const mockMaybeSingleResult = vi.fn().mockResolvedValue({
-        data: { agent_id: agentId },
-        error: null,
-      });
-      const mockEqAgentId = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingleResult });
-      const mockEqOverlordId = vi.fn().mockReturnValue({ eq: mockEqAgentId });
-      const mockSelectMatch = vi.fn().mockReturnValue({ eq: mockEqOverlordId });
-
-      let fromCallCount = 0;
-      mockFrom.mockImplementation((table: string) => {
-        if (table === "overlords") {
-          fromCallCount++;
-          if (fromCallCount === 1) {
-            return { select: mockSelect1 };
-          } else if (fromCallCount === 2) {
-            return { update: mockUpdateFn };
-          }
-        } else if (table === "match_suggestions") {
-          return { select: mockSelectMatch };
-        }
-        return { select: mockSelect };
-      });
-
-      const request = createPatchRequest(
-        { status: "resolved", resolved_agent_id: agentId },
-        overlordId
-      );
+      const request = createPatchRequest({ status: "resolved" }, overlordId);
       await PATCH(request, { params: Promise.resolve({ id: overlordId }) });
-
-      // Verify BOTH overlord_id and agent_id are used in the query
-      expect(mockEqOverlordId).toHaveBeenCalledWith("overlord_id", overlordId);
-      expect(mockEqAgentId).toHaveBeenCalledWith("agent_id", agentId);
+      
+      // The endpoint calls executeResolutionFlow with null
+      expect(executeResolutionFlow).toHaveBeenCalledWith(
+        expect.anything(),
+        overlordId,
+        null
+      );
+      
+      // This means:
+      // - The overlord will be marked as resolved
+      // - Pending claims will be rejected
+      // - Match suggestions will be cancelled
+      // - But NO agent will be marked as resolved
+      // 
+      // To mark an agent as resolved, the owner must use the proper claim workflow
     });
   });
 });

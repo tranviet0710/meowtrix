@@ -210,41 +210,15 @@ export async function PATCH(
     }
 
     // If status changed to resolved, trigger the resolution flow
+    // Note: This endpoint supports manual resolution without an agent (e.g., owner
+    // found their pet through other means). Agent-linked resolution must go through
+    // the proper claim workflow at /api/matches/[id]/claim to ensure authorization.
     if (body.status === "resolved") {
-      let resolvedAgentId: string | null = null;
-
-      // If a resolved_agent_id is provided, validate it corresponds to a match
-      // for this overlord to prevent unauthorized resolution of arbitrary agents
-      if (body.resolved_agent_id) {
-        const { data: matchRecord, error: matchError } = await serviceClient
-          .from("match_suggestions")
-          .select("agent_id")
-          .eq("overlord_id", id)
-          .eq("agent_id", body.resolved_agent_id)
-          .maybeSingle();
-
-        if (matchError) {
-          console.error(
-            `[Overlord PATCH] Failed to validate resolved_agent_id for ${id}: ${matchError.message}`
-          );
-          return NextResponse.json(
-            { error: "Failed to validate resolved agent" },
-            { status: 500 }
-          );
-        }
-
-        if (!matchRecord) {
-          return NextResponse.json(
-            { error: "Invalid resolved_agent_id: no match exists between this Overlord and the specified Agent" },
-            { status: 400 }
-          );
-        }
-
-        resolvedAgentId = body.resolved_agent_id;
-      }
-
       try {
-        await executeResolutionFlow(serviceClient, id, resolvedAgentId);
+        // Call resolution flow with no agent ID — this will cancel pending claims
+        // and match suggestions, but will not mark any agent as resolved.
+        // Agent resolution requires going through the verified claim workflow.
+        await executeResolutionFlow(serviceClient, id, null);
       } catch (resolutionError) {
         // Resolution flow errors are non-fatal — the status update already succeeded
         const errMsg = resolutionError instanceof Error ? resolutionError.message : String(resolutionError);
