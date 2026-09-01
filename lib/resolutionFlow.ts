@@ -9,11 +9,13 @@ import { SupabaseClient } from "@supabase/supabase-js";
  * 1. Cancel Search Protocol Temporal workflow (if workflow ID exists)
  * 2. Reject all pending claims on this Overlord and notify affected claimants
  * 3. If resolution is linked to a specific Agent → mark Agent as resolved
+ *    (SECURITY: Agent resolution requires a verified match relationship)
  * 4. Cancel other pending match suggestions for both records
  *
  * @param serviceClient - Supabase client with service role (bypasses RLS)
  * @param overlordId - The Overlord being resolved
- * @param resolvedAgentId - Optional Agent ID that matched (from verified claim)
+ * @param resolvedAgentId - Optional Agent ID that matched (from verified claim workflow only)
+ * @throws Error if resolvedAgentId is provided but no valid claimed/resolved match exists
  */
 export async function executeResolutionFlow(
   serviceClient: SupabaseClient,
@@ -82,7 +84,33 @@ export async function executeResolutionFlow(
   }
 
   // Step 3: If resolution linked to specific Agent → mark Agent as resolved
+  // SECURITY INVARIANT: Only resolve an agent if there is a valid match relationship
+  // in an authorized state (claimed or resolved). This prevents unauthorized
+  // resolution of arbitrary agents via IDOR attacks.
   if (resolvedAgentId) {
+    // Verify that a match exists between this overlord and agent in an authorized state
+    const { data: matchRecord, error: matchError } = await serviceClient
+      .from("match_suggestions")
+      .select("id, status")
+      .eq("overlord_id", overlordId)
+      .eq("agent_id", resolvedAgentId)
+      .in("status", ["claimed", "resolved"])
+      .maybeSingle();
+
+    if (matchError) {
+      throw new Error(
+        `Failed to validate match relationship for agent resolution: ${matchError.message}`
+      );
+    }
+
+    if (!matchRecord) {
+      throw new Error(
+        `Authorization failed: No valid claimed or resolved match exists between overlord ${overlordId} and agent ${resolvedAgentId}. ` +
+        `Agent resolution requires going through the proper claim workflow.`
+      );
+    }
+
+    // Authorization check passed — proceed with agent resolution
     await serviceClient
       .from("agents")
       .update({ status: "resolved" })

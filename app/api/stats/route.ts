@@ -3,6 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 // Ensure this route is always dynamic (never cached at build time)
 export const dynamic = "force-dynamic";
@@ -46,8 +47,9 @@ export async function GET() {
       .select("*", { count: "exact", head: true });
 
     if (totalError) {
+      const sanitizedError = sanitizeDatabaseError(totalError, "fetch total overlords", "[Stats GET]");
       return NextResponse.json(
-        { error: `Failed to fetch total overlords: ${totalError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -59,20 +61,16 @@ export async function GET() {
       .eq("status", "active");
 
     if (activeError) {
+      const sanitizedError = sanitizeDatabaseError(activeError, "fetch active searches", "[Stats GET]");
       return NextResponse.json(
-        { error: `Failed to fetch active searches: ${activeError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
 
-    // Update the current user's last_active_at timestamp
-    const serviceClient = await createServiceRoleClient();
-    await serviceClient
-      .from("informants")
-      .update({ last_active_at: new Date().toISOString() })
-      .eq("id", user.id);
-
     // Fetch informants online (active within last 5 minutes)
+    // Note: User presence updates are handled by POST /api/presence to prevent CSRF
+    const serviceClient = await createServiceRoleClient();
     // Use Supabase's server-side time calculation to avoid client/server clock skew
     const { data: rpcResult, error: onlineError } = await serviceClient
       .rpc("count_online_informants", { minutes_ago: 5 });

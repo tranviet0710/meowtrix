@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabaseServer";
 import { executeResolutionFlow } from "@/lib/resolutionFlow";
 import { stripVerificationFields } from "@/lib/stripVerificationFields";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 /**
  * GET /api/overlords/[id]
@@ -148,10 +149,15 @@ export async function PATCH(
 
       // Trigger Vision Service for new photos (fire-and-forget)
       const baseUrl = request.nextUrl.origin;
+      const cookieHeader = request.headers.get("cookie");
       for (const photoUrl of body.photos as string[]) {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (cookieHeader) {
+          headers["Cookie"] = cookieHeader;
+        }
         fetch(`${baseUrl}/api/vision/process`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             record_id: id,
             record_type: "overlord",
@@ -196,17 +202,23 @@ export async function PATCH(
       .single();
 
     if (updateError || !updatedOverlord) {
+      const sanitizedError = sanitizeDatabaseError(updateError, "update Overlord", "[Overlord PATCH]");
       return NextResponse.json(
-        { error: `Failed to update Overlord: ${updateError?.message ?? "Unknown error"}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
 
     // If status changed to resolved, trigger the resolution flow
+    // Note: This endpoint supports manual resolution without an agent (e.g., owner
+    // found their pet through other means). Agent-linked resolution must go through
+    // the proper claim workflow at /api/matches/[id]/claim to ensure authorization.
     if (body.status === "resolved") {
-      const resolvedAgentId = body.resolved_agent_id ?? null;
       try {
-        await executeResolutionFlow(serviceClient, id, resolvedAgentId);
+        // Call resolution flow with no agent ID — this will cancel pending claims
+        // and match suggestions, but will not mark any agent as resolved.
+        // Agent resolution requires going through the verified claim workflow.
+        await executeResolutionFlow(serviceClient, id, null);
       } catch (resolutionError) {
         // Resolution flow errors are non-fatal — the status update already succeeded
         const errMsg = resolutionError instanceof Error ? resolutionError.message : String(resolutionError);
@@ -283,8 +295,9 @@ export async function DELETE(
       .eq("id", id);
 
     if (deleteError) {
+      const sanitizedError = sanitizeDatabaseError(deleteError, "delete Overlord", "[Overlord DELETE]");
       return NextResponse.json(
-        { error: `Failed to delete Overlord: ${deleteError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

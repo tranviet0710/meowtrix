@@ -1,7 +1,7 @@
 // lib/claimVerification.ts — Pure verification logic for claim ownership
 
 /**
- * Minimum characters required for a substring match to be considered valid.
+ * Minimum characters required for an answer to be considered valid.
  * Prevents trivially short answers from passing verification.
  */
 export const MIN_ANSWER_LENGTH = 3;
@@ -23,15 +23,15 @@ export const LOCKOUT_DURATION_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Verifies a single claim answer against the stored value.
- * Uses case-insensitive substring matching with a minimum length requirement.
+ * Uses case-insensitive exact matching with whitespace normalization.
  *
  * @param stored - The stored verification value from the Overlord record
  * @param submitted - The answer submitted by the claimant
- * @returns true if the submitted answer is a valid substring of the stored value
+ * @returns true if the submitted answer exactly matches the stored value (case-insensitive, trimmed)
  */
 export function verifyAnswer(stored: string, submitted: string): boolean {
   if (submitted.length < MIN_ANSWER_LENGTH) return false;
-  return stored.toLowerCase().includes(submitted.toLowerCase());
+  return stored.trim().toLowerCase() === submitted.trim().toLowerCase();
 }
 
 /**

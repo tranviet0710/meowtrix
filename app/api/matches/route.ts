@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 
 /**
  * GET /api/matches
@@ -59,8 +60,9 @@ export async function GET() {
       .order("overall_score", { ascending: false });
 
     if (matchError) {
+      const sanitizedError = sanitizeDatabaseError(matchError, "fetch matches", "[Matches GET]");
       return NextResponse.json(
-        { error: `Failed to fetch matches: ${matchError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }

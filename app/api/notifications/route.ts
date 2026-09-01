@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabaseServer";
+import { sanitizeDatabaseError } from "@/lib/errorSanitizer";
 import { z } from "zod";
 
 /** Schema for PATCH request body — mark notifications as read */
@@ -65,8 +66,9 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (fetchError) {
+      const sanitizedError = sanitizeDatabaseError(fetchError, "fetch notifications", "[Notifications GET]");
       return NextResponse.json(
-        { error: `Failed to fetch notifications: ${fetchError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -79,8 +81,9 @@ export async function GET(request: NextRequest) {
       .eq("read", false);
 
     if (unreadError) {
+      const sanitizedError = sanitizeDatabaseError(unreadError, "fetch unread count", "[Notifications GET]");
       return NextResponse.json(
-        { error: `Failed to fetch unread count: ${unreadError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
@@ -153,8 +156,9 @@ export async function PATCH(request: NextRequest) {
       .select("id");
 
     if (updateError) {
+      const sanitizedError = sanitizeDatabaseError(updateError, "mark notifications as read", "[Notifications PATCH]");
       return NextResponse.json(
-        { error: `Failed to mark notifications as read: ${updateError.message}` },
+        { error: sanitizedError },
         { status: 500 }
       );
     }
